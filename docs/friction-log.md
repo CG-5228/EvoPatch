@@ -11,6 +11,8 @@ Raw entries, added as things happen. Each one was observed on this machine, not 
 | 5 Nov | Read the `exec` tool text, then ran `command -v genson helm` style checks | Tool text advertises Python 3.13, genson and helm; the sandbox has the host's Python 3.15.2 and no `python` or `pip` after `cd` | Tool text to match the local sandbox | The model is told things that aren't true here |
 | 5 Nov | Bound a socket on 127.0.0.1 from Python | `PermissionError: Operation not permitted` | Documented limit | Tests that open local ports can't run in the sandbox |
 | 5 Nov | Started the server with `PORT=8791` | It listens on `[::1]` only, so a `127.0.0.1` client gets connection refused while `localhost` works | Both to work | Readiness checks on IPv4 fail |
+| 5 Nov | Read `exec` results for a turn that wrote a long log | Stored `tool.response` events hold only the truncated preview, so full output can't be recovered afterwards | The full result, or a pointer to it | Harnesses must have the agent write logs to files and fetch them |
+| 5 Nov | Sent a 429, 500, 401 and 402 through the mock provider | All end the turn as `error` with `Request failed (<status>)` after one try, and the agent's work is lost | A retry on 429 and 5xx, or a machine-readable error class | Every harness has to parse the message to tell a provider failure from an agent failure |
 
 ## What worked
 
@@ -19,4 +21,5 @@ Raw entries, added as things happen. Each one was observed on this machine, not 
 | 5 Nov | Git skill pinned to a full pushed SHA in the local sandbox | Installs in seconds; `skills/.tfy-skill-downloader-state.json` records the ref. The starter marks this `TODO(verify)` |
 | 5 Nov | File part upload, then `downloadSandboxFile` | Works; `createTurn` took 7-12 s including sandbox setup |
 | 5 Nov | Four root turns at once in one session | All finished, each in its own sandbox, 21 s in total |
+| 5 Nov | Non-streaming `createTurn` plus `getTurn` polling | Reliable for long unattended turns, with the turn id returned at once. A better default for harnesses than the SSE stream, which has no keepalive |
 | 5 Nov | Heredocs, here-strings and `python3 - <<'PY'` under bash 3.2 | All work, from the root and from subfolders |
