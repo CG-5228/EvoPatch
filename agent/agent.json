@@ -2,7 +2,10 @@
   "name": "evopatch",
   "description": "Fixes real bugs: reproduces them, patches the code, tests the patch, and rewrites its own skills from what went wrong.",
   "model": {
-    "name": "provider/model"
+    "name": "truefoundry/mimo-v2-6-flash",
+    "params": {
+      "temperature": 0.6
+    }
   },
   "skill_mode": "git"
 }

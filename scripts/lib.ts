@@ -241,7 +241,7 @@ export function classifyTurn(state: { status: string; message?: string; reason?:
   return { outcome: "infra", fatal: false };
 }
 
-const WALL_CLOCK_LIMIT_MS = 35 * 60 * 1000; // above the server's 30 minute turn limit
+const WALL_CLOCK_LIMIT_MS = 65 * 60 * 1000; // above the server's 60 minute turn limit
 
 /**
  * Start one turn and poll until it ends. `previousTurnId: "none"` makes a new root turn with a fresh sandbox.
@@ -279,7 +279,7 @@ export async function runTurn(tf: TrueForge, sessionId: string, text: string, op
       return { turnId, status: s.status, text: messageText(s.output), error: s.message ?? s.reason, ...classifyTurn(s) };
     }
     if (Date.now() - started > WALL_CLOCK_LIMIT_MS) {
-      return { turnId, status: "lost", text: "", error: "no end after 35 minutes", outcome: "infra", fatal: false };
+      return { turnId, status: "lost", text: "", error: "no end after 65 minutes", outcome: "infra", fatal: false };
     }
     await new Promise((r) => setTimeout(r, 2000));
   }
