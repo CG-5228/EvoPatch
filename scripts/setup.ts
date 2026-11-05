@@ -15,13 +15,13 @@ try {
 }
 
 const type = need("MODEL_PROVIDER");
-const models = [
-  {
-    name: need("MODEL_ALIAS"),
-    modelId: need("MODEL_ID"),
-    properties: { contextLength: Number(process.env.MODEL_CONTEXT_LENGTH ?? 200000), maxOutputTokens: Number(process.env.MODEL_MAX_OUTPUT_TOKENS ?? 16000) },
-  },
-];
+// MODEL_ID can list several ids, comma-separated. Each gets an alias TrueForge accepts: the id's last part, with dots as hyphens.
+const properties = { contextLength: Number(process.env.MODEL_CONTEXT_LENGTH ?? 200000), maxOutputTokens: Number(process.env.MODEL_MAX_OUTPUT_TOKENS ?? 16000) };
+const models = need("MODEL_ID")
+  .split(",")
+  .map((id) => id.trim())
+  .filter(Boolean)
+  .map((modelId) => ({ name: modelId.split("/").pop()!.toLowerCase().replace(/[^a-z0-9-]/g, "-"), modelId, properties }));
 const auth = { apiKey: need("MODEL_API_KEY") };
 const baseUrl = process.env.MODEL_BASE_URL;
 const manifest = (type === "custom" ? { type, name: "custom", baseUrl, auth, models } : { type, ...(baseUrl ? { baseUrl } : {}), auth, models }) as Parameters<typeof tf.settings.modelProviders.createOrUpdate>[0]["manifest"];
