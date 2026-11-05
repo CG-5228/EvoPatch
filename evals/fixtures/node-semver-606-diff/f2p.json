@@ -1,0 +1,8 @@
+[
+ "test/functions/diff.js::(file)",
+ "test/functions/diff.js::diff versions test",
+ "test/functions/diff.js::diff versions test::diff(1.1.1-pre, 2.1.1) === major",
+ "test/functions/diff.js::diff versions test::diff(1.4.0-1, 2.3.5) === major",
+ "test/functions/diff.js::diff versions test::diff(1.6.1-5, 1.7.2) === minor",
+ "test/functions/diff.js::diff versions test::diff(1.7.2-1, 1.8.1) === minor"
+]

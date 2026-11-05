@@ -1,0 +1,18 @@
+{
+  "id": "humanize-359-metric",
+  "title": "metric digits after a rounding carry",
+  "holdout": false,
+  "language": "python",
+  "repo": "python-humanize/humanize",
+  "base_sha": "984526c02448110a8392dde3f5e26096dfd7c729",
+  "fix_sha": "e46732ed235019682b7bfc6c44443e247b332e95",
+  "pr": 359,
+  "issue": null,
+  "links": [
+    "https://github.com/python-humanize/humanize/pull/359"
+  ],
+  "merged_at": "2026-09-16T15:55:13Z",
+  "license": "MIT",
+  "bug_class": "rounding carry",
+  "issue_text": "`humanize.metric` sometimes prints one digit more than `precision` asks for. With the default of 3 I expect three significant figures, but a value that rounds up past a power of ten gets four:\n\n```python\n>>> import humanize\n>>> humanize.metric(9996)\n'10.00 k'\n>>> humanize.metric(99960)\n'100.0 k'\n>>> humanize.metric(9.9996)\n'10.00'\n```\n\nSlightly larger inputs look right: `humanize.metric(10_400)` gives `'10.4 k'` and `humanize.metric(104_000)` gives `'104 k'`. I expected the three calls above to show three digits as well, i.e. `'10.0 k'`, `'100 k'` and `'10.0'`. Values that round all the way up into the next prefix already work, for example `humanize.metric(999.8, \"W\")` returns `'1.00 kW'`, and that should stay as it is."
+}

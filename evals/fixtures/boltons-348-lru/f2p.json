@@ -1,0 +1,4 @@
+[
+ "tests.test_cacheutils::test_lru_dict_replacement[LRI]",
+ "tests.test_cacheutils::test_lru_dict_replacement[LRU]"
+]

@@ -1,0 +1,4 @@
+[
+ "tests.test_more.NumericRangeTests::test_reversed_datetime_limits",
+ "tests.test_more.NumericRangeTests::test_reversed_preserves_float_values"
+]

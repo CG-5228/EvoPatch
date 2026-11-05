@@ -1,0 +1,4 @@
+[
+ "test/ranges/subset.js::(file)",
+ "test/ranges/subset.js::^10.2.0-beta.2 ⊂ ^10.2.0-beta.1 = true"
+]

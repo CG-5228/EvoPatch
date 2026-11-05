@@ -1,0 +1,3 @@
+[
+ "tests.test_bump::test_next_version_matches_literal_prerelease_token_family[1.2.3-alphaXbeta9-alpha.beta-1.2.3-alpha.beta.1]"
+]

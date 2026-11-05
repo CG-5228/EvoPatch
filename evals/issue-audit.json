@@ -1,0 +1,183 @@
+{
+ "humanize-329-naturalsize": {
+  "reporter": "patchwright",
+  "source": "https://github.com/python-humanize/humanize/pull/329",
+  "draft_before_tests": "While showing file sizes in a dashboard with `humanize.naturalsize`, I noticed that values sitting just under a unit boundary come out looking wrong. The number rounds up, but the unit doesn't move with it:\n\n```python\n>>> from humanize import naturalsize\n>>> naturalsize(999_960)\n'1000.0 kB'\n>>> naturalsize(999_980_000)\n'1000.0 MB'\n>>> naturalsize(1024**3 - 1, binary=True)\n'1024.0 MiB'\n```\n\nI expected `'1.0 MB'`, `'1.0 GB'` and `'1.0 GiB'`, which is what you get by passing the round value itself. `gnu=True` output has the same problem at its boundaries. The largest unit is the exception: a huge number in `QB` or `QiB` should keep showing that unit, because there's nothing bigger to move up to.",
+  "decisions_added": [],
+  "assertions_not_inferable": []
+ },
+ "humanize-359-metric": {
+  "reporter": "vidigoat",
+  "source": "https://github.com/python-humanize/humanize/pull/359",
+  "draft_before_tests": "`humanize.metric` sometimes prints one digit more than `precision` asks for. With the default of 3 I expect three significant figures, but a value that rounds up past a power of ten gets four:\n\n```python\n>>> import humanize\n>>> humanize.metric(9996)\n'10.00 k'\n>>> humanize.metric(99960)\n'100.0 k'\n>>> humanize.metric(9.9996)\n'10.00'\n```\n\nSlightly larger inputs look right: `humanize.metric(10_000)` gives `'10.0 k'` and `humanize.metric(100_000)` gives `'100 k'`. I expected the three calls above to match those, i.e. `'10.0 k'`, `'100 k'` and `'10.0'`. Values that round all the way up into the next prefix already work, for example `humanize.metric(999.8, \"W\")` returns `'1.00 kW'`, and that should stay as it is.",
+  "decisions_added": [],
+  "assertions_not_inferable": []
+ },
+ "pysemver-484-rc": {
+  "reporter": "jzaia18",
+  "source": "https://github.com/python-semver/python-semver/issues/484",
+  "draft_before_tests": "After upgrading semver from 3.0.4 to 3.1.0, our release automation started producing release candidates that go backwards. Our existing tags use the older style, with the counter attached directly to the token and no dot, for example 2.4.0-rc7. Calling next_version on one of those now restarts the counter:\n\n```\n>>> import semver\n>>> semver.Version.parse(\"2.4.0-rc7\").next_version(\"prerelease\")\nVersion(major=2, minor=4, patch=0, prerelease='rc.1', build=None)\n```\n\nSo rc7 becomes rc.1, and the candidate number drops from 7 to 1. Our CI relies on candidate numbers only ever going up, so this breaks it. With default settings I expected the counter to carry on from the existing number, giving rc8 or rc.8. A library upgrade should not make the candidate number decrease.",
+  "decisions_added": [
+   "Added: the result stays in the no-dot style, so the next one after rc7 is rc8, not rc.8 (this replaces 'giving rc8 or rc.8' in the draft). Why: the report accepts either form, but the fix test requires 0.1.2-rc4 exactly, and the docs say nothing about old-style counters."
+  ],
+  "assertions_not_inferable": []
+ },
+ "pysemver-487-long": {
+  "reporter": "fitness-trener",
+  "source": "https://github.com/python-semver/python-semver/issues/487",
+  "draft_before_tests": "I validate version strings from untrusted input with Version.is_valid and then sort them. On Python 3.11 with semver 3.1.0, a version whose prerelease contains an all-digit identifier longer than 4300 digits passes validation but then cannot be ordered, not even against itself:\n\n```python\nimport semver\n\nbig = \"2.0.0-\" + \"7\" * 5000\nsemver.Version.is_valid(big)              # True\nsemver.Version.parse(big).compare(big)    # ValueError: Exceeds the limit for integer string conversion\nsemver.compare(big, \"2.0.0-3\")            # same ValueError\n```\n\nA related oddity: a major, minor or patch number of that length makes is_valid return False, even though the SemVer grammar sets no length limit.\n\n```python\nsemver.Version.is_valid(\"7\" * 5000 + \".0.0\")  # False\n```\n\nI expected is_valid and compare to agree: anything is_valid accepts should be comparable, or else is_valid should reject it, rather than compare blowing up with a ValueError.",
+  "decisions_added": [
+   "Added: is_valid keeps accepting these long prereleases and compare orders them numerically (this replaces 'or else is_valid should reject it' in the draft). Why: the report allows either outcome, but the tests require is_valid to stay True and require numeric ordering.",
+   "Added: nothing else changes, so any other value, including a Version built directly with prerelease text that parse would reject, gives the same results and errors as today. Why: the tests pin constructor-only values that already behave this way before the fix: leading zeros and non-ASCII digits compare by numeric value, and a superscript two raises ValueError. The docs and existing tests at the snapshot are silent on these, SemVer does not cover them, and because the report complains about compare raising ValueError, a reasonable fix could remove that error.",
+   "Wording only, not test-driven: the draft's 'related oddity' about long major, minor or patch numbers now says the reporter can live with it, which matches the original report's view. No changed test covers that case, so this keeps the agent from chasing it. Its code block was dropped to stay within the word limit, and the opening sentences were reworded because they sat too close to the original."
+  ],
+  "assertions_not_inferable": [
+   "test_should_preserve_eager_invalid_unicode_digit_error, cases (\"a.\u00b2\", \"b.0\") and (\"a.0\", \"b.\u00b2\"): compare must raise ValueError even though the first identifiers already settle the order. This pins the current code's conversion of every identifier up front, not any documented behaviour. The 'same results and errors' sentence technically covers it, but a sound fix that converts lazily would fail, and only a comparison of old and new behaviour on these unusual inputs would reveal it."
+  ]
+ },
+ "pysemver-497-token": {
+  "reporter": "Debasishhh",
+  "source": "https://github.com/python-semver/python-semver/issues/497",
+  "draft_before_tests": "I call next_version(\"prerelease\", prerelease_token=...) to move a version onto a different prerelease token. When the new token sorts before the current one, I get back a version lower than the one I started with, even though the docstring says next_version preserves natural order.\n\n```\n>>> from semver import Version\n>>> v = Version.parse(\"4.5.6-rc.2\")\n>>> n = v.next_version(\"prerelease\", prerelease_token=\"beta\")\n>>> n\nVersion(major=4, minor=5, patch=6, prerelease='beta.1', build=None)\n>>> n > v\nFalse\n```\n\nThe same thing happens going from beta to alpha, or from rc to dev. Moving to a token that sorts later, such as dev to rc, is fine.\n\nI expected next_version never to go backwards: the result should always be greater than the version it was called on. If restarting the new token on the same release would give a lower version, it should not silently return that.",
+  "decisions_added": [
+   "Added: if restarting the new token on the same release would not give a higher version, next_version moves to the next patch and starts the token there instead of raising an error, so 4.5.6-rc.2 with beta gives 4.5.7-beta.1 (this replaces the draft's last sentence). Why: the report leaves the choice open between bumping the patch and raising ValueError, the docs at the snapshot do not cover token switching, and the tests require the patch bump. An existing test at the snapshot still expects 1.2.3-alpha.beta.1 for alphaXbeta9, so the rule has to be explicit. It is worded by resulting order, not alphabetical token order, so the numeric token and alphaXbeta9 cases follow from it without being listed."
+  ],
+  "assertions_not_inferable": []
+ },
+ "pysemver-499-rollover": {
+  "reporter": "pabszero",
+  "source": "https://github.com/python-semver/python-semver/issues/499",
+  "draft_before_tests": "I was bumping an old-style prerelease, where the counter has no dot in front of it, and ended up with a version older than the one I started from. next_version is documented as keeping natural order, but here the result sorts below the input:\n\n```python\nfrom semver import Version\n\nstart = Version.parse(\"7.1.0-rc9\")\nbumped = start.next_version(\"prerelease\")\nprint(bumped)          # 7.1.0-rc10\nprint(bumped > start)  # False\n```\n\nThe comparison itself looks right under SemVer's ordering rules. The problem is that next_version hands back the lower version. It also happens going from rc99 to rc100, and with other tokens such as beta9. Smaller steps like rc7 to rc8, and the dotted form rc.9 to rc.10, move forward as expected.\n\nI expected the returned version to always be newer than the original.",
+  "decisions_added": [
+   "Added: when the raised counter alone cannot give a newer version, it keeps its no-dot form and the patch advances, so 7.1.0-rc9 gives 7.1.1-rc10; otherwise the patch stays. Why: other order-preserving results are defensible, such as the .0 suffix that bump_prerelease documents (rc9.0) or restarting at rc.1 on the next patch as token switching does. The tests require 1.2.4-rc10 exactly, and an existing test at the snapshot still expects 1.2.3-rc10. The original report proposes this outcome, so it stays within what the reporter asked for.",
+   "Wording only, not test-driven: the sentences on the comparison, rc99 and the working cases were reworded because they sat too close to the original, with rc4 to rc5 as my own values. The beta9 case now says it is bumped with the beta token, because a default call on beta9 takes the token-switch path and gives rc.1, so the draft was imprecise."
+  ],
+  "assertions_not_inferable": []
+ },
+ "mit-1284-bucket": {
+  "reporter": "onk3sh",
+  "source": "https://github.com/more-itertools/more-itertools/issues/1284",
+  "draft_before_tests": "Probing a `bucket` for a key it doesn't have changes what I get when I iterate over it afterwards:\n\n```python\nfrom more_itertools import bucket\n\nb = bucket(['x10', 'y20', 'x30'], key=lambda s: s[0])\nprint('w' in b)   # False\nprint(sorted(b))  # ['w', 'x', 'y'], expected ['x', 'y']\n```\n\nNo item ever had the key `'w'`, and the `in` check has just said so, yet it now shows up as a key. Reading an empty bucket directly, as in `list(b['w'])`, does the same thing, and a `validator` that accepts the key doesn't help. Every miss sticks, so a loop of lookups fills the key list with fakes.\n\nI expected iterating a `bucket` to yield only keys that at least one item really had, so `k in b` and `k in list(b)` always agree.",
+  "decisions_added": [
+   "No behaviour statement added: all four new expectations follow from the report. Wording edits after the audit, which add no test-derived detail: (1) dropped the draft's claim that `k in b` and `k in list(b)` always agree, because a key whose items were all read stays listed while `in` returns False, and replaced it with a lookup that finds nothing leaving the keys alone; (2) reworded three other sentences that tracked the reporter's phrasing too closely."
+  ],
+  "assertions_not_inferable": []
+ },
+ "mit-1277-zip-broadcast": {
+  "reporter": "vitalivo",
+  "source": "https://github.com/more-itertools/more-itertools/issues/1277",
+  "draft_before_tests": "`zip_broadcast` opens its iterable arguments more than once, so anything that can only be opened a single time blows up, even though the builtin `zip` accepts it:\n\n```python\nfrom more_itertools import zip_broadcast\n\nclass OneShot:\n    def __init__(self, items):\n        self.items = items\n        self.used = False\n\n    def __iter__(self):\n        if self.used:\n            raise ValueError('opened twice')\n        self.used = True\n        return iter(self.items)\n\nprint(list(zip(OneShot('xy'), [0, 0])))       # [('x', 0), ('y', 0)]\nprint(list(zip_broadcast(OneShot('xy'), 0)))  # ValueError: opened twice\n```\n\nI expected `[('x', 0), ('y', 0)]` from `zip_broadcast` too, with the source opened exactly once. It fails the same way when the iterable is empty and when `strict=True` is passed.",
+  "decisions_added": [],
+  "assertions_not_inferable": []
+ },
+ "mit-1250-value-chain": {
+  "reporter": "onk3sh",
+  "source": "https://github.com/more-itertools/more-itertools/issues/1250",
+  "draft_before_tests": "`value_chain` hides a `TypeError` raised while it is working through a lazy argument. Instead of the exception, I get the items produced so far, followed by the half-used iterator itself as an output item:\n\n```python\nfrom more_itertools import value_chain\n\nprint(list(value_chain(map(abs, [-1, 2, 'x']))))\n# [1, 2, <map object at 0x...>]\n```\n\n`abs('x')` is a genuine bug in my code, but nothing is raised, and the stray `map` object is already exhausted so it carries no data. The same thing happens with generators. `itertools.chain` and `always_iterable` both raise the `TypeError` on this input.\n\nI expected `value_chain` to let the exception reach the caller as well. Values that really can't be iterated should still come through unchanged, as documented.",
+  "decisions_added": [
+   "No behaviour statement added. The expectation that an object whose `__iter__` raises TypeError is emitted as-is was judged inferable: the snapshot already does this, `always_iterable` (named in the report) does the same, and the report keeps non-iterable values unchanged. Wording edits after the audit, no behaviour change: reworded the opening sentence and two sentences after the repro because they tracked the reporter's phrasing too closely, including the reused clause 'so it carries no data'."
+  ],
+  "assertions_not_inferable": []
+ },
+ "mit-1308-validator": {
+  "reporter": "widechaos",
+  "source": "https://github.com/more-itertools/more-itertools/issues/1308",
+  "draft_before_tests": "`bucket` acts as if I passed no `validator` when my validator object happens to be falsey. I use a callable `set` subclass as an allow-list, and when it's empty nothing should be allowed:\n\n```python\nfrom more_itertools import bucket\n\nclass Allowed(set):\n    def __call__(self, key):\n        return key in self\n\nsource = iter('abc')\nb = bucket(source, key=str.upper, validator=Allowed())\nprint(list(b['A']))  # ['a'], expected []\n```\n\nBecause the validator rejects every key, selecting a bucket should give me an empty iterator and leave `source` unconsumed. `in` checks and iterating over the keys let rejected keys through as well. With an infinite source, looking up a rejected key that never appears can scan forever rather than returning straight away.",
+  "decisions_added": [
+   "No behaviour statement added: the new expectations (empty selection, `in` false, no keys listed) are all in the report. Wording edit after the audit, no behaviour change: reworded the three sentences after the repro because they tracked the reporter's phrasing too closely."
+  ],
+  "assertions_not_inferable": []
+ },
+ "mit-1275-numeric-range": {
+  "reporter": "emme1t",
+  "source": "https://github.com/more-itertools/more-itertools/issues/1275",
+  "draft_before_tests": "Calling `reversed()` on a `numeric_range` goes wrong in two ways.\n\nWith floats, the reversed values aren't the forward values backwards, and there can be one too many:\n\n```python\nfrom more_itertools import numeric_range\n\nr = numeric_range(0.0, 0.5, 0.1)\nprint(len(list(r)), len(list(reversed(r))))  # 5 6\nprint(list(reversed(r))[-1])                 # -0.09999999999999998\n```\n\nThat last value isn't even in the range. I expected `list(reversed(r)) == list(r)[::-1]`.\n\nWith datetimes, reversing a perfectly valid range that begins at `datetime.min` blows up:\n\n```python\nfrom datetime import datetime, timedelta\n\nr = numeric_range(datetime.min, datetime.min + timedelta(hours=6), timedelta(hours=2))\nprint(list(reversed(r)))  # OverflowError: date value out of range\n```\n\nI expected the three datetimes in descending order. A descending range that starts at `datetime.max` fails the same way.",
+  "decisions_added": [
+   "No behaviour statement added; issue_text is identical to the draft. Caveat rather than a decision: no repro in this batch was executed, since this step allows gh api GET only. All were traced by hand against the snapshot source. This one's float output (5 6, -0.09999999999999998) depends on rounding, so it is the one to run before publishing."
+  ],
+  "assertions_not_inferable": []
+ },
+ "node-semver-606-diff": {
+  "reporter": "erikjalevik",
+  "source": "https://github.com/npm/node-semver/issues/606",
+  "draft_before_tests": "`semver.diff` reports the wrong level going from a prerelease to a release on a later minor\n\nI was using `semver.diff` to classify an upgrade from a prerelease build to a stable version on the next minor line:\n\n```js\nconst semver = require('semver')\nsemver.diff('3.4.6-2', '3.5.2') // returns 'patch'\n```\n\nThat looks wrong to me. The minor number has gone from 4 to 5, so I expected `'minor'`, the same answer you get for a jump between those two lines without the prerelease tag.",
+  "decisions_added": [
+   "No behaviour statement added. Removal only: I cut the draft's closing clause ('the same answer you get for a jump between those two lines without the prerelease tag'). It was my wording, not the reporter's, and read as a general rule it contradicts the expectation that 2.0.0-1 to 2.1.1 is 'major'. That expectation needs no hint. The README does not cover it, but the pre-fix code comment and the existing case 1.0.0-1 to 1.1.1 = 'major' establish it, and it already passes before the fix. To check this I read the README, the diff tests and the diff function at the pre-fix commit, which goes beyond the test patches; I did not read the fix's source patch."
+  ],
+  "assertions_not_inferable": []
+ },
+ "node-semver-512-tilde": {
+  "reporter": "WalkerCodeRanger",
+  "source": "https://github.com/npm/node-semver/issues/512",
+  "draft_before_tests": "Tilde range with no patch number misses prereleases under includePrerelease\n\nWith `includePrerelease` turned on, a tilde range that leaves out the patch number doesn't match a prerelease of the first version in the range. The README says `~3.4` means the same as `3.4.x`, and the x-range and caret forms both match it.\n\n```js\nconst semver = require('semver')\nconst opts = { includePrerelease: true }\nsemver.satisfies('3.4.0-beta', '3.4.*', opts)   // true\nsemver.satisfies('3.4.0-beta', '>=3.4.*', opts) // true\nsemver.satisfies('3.4.0-beta', '^3.4.*', opts)  // true\nsemver.satisfies('3.4.0-beta', '~3.4.*', opts)  // false\nsemver.satisfies('3.4.0-beta', '~3.4', opts)    // false\n```\n\nI expected the last two to return `true` as well, so a tilde range behaves like the x-range it is documented to equal.",
+  "decisions_added": [
+   "No behaviour statement added. Wording only: changed 'The README says' to 'The docs say', because issue_text may not name files. Every new expectation follows from the documented tilde and x-range equivalence, including ~1 and ~2. ~0.0 giving <0.1.0-0 is mechanical, because a >=0.0.0-0 bound is already dropped under includePrerelease. ~1.2.3 and ~1.2.3-beta.4 keep their current output, which the report never asks to change. To check this I read the README, the range fixtures and the range code at the pre-fix commit, which goes beyond the test patches; I did not read the fix's source patch."
+  ],
+  "assertions_not_inferable": []
+ },
+ "node-semver-226-dotted-inc": {
+  "reporter": "stephenlacy",
+  "source": "https://github.com/npm/node-semver/issues/226",
+  "draft_before_tests": "`semver.inc` resets the prerelease counter when the identifier contains a dot\n\nI bump prereleases with `semver.inc`, passing a dot-separated identifier so the version keeps its two-part tag. The counter never moves. Whatever number the version is on, it goes back to zero:\n\n```js\nconst semver = require('semver')\nsemver.inc('5.2.0-rc.next.3', 'prerelease', 'rc.next')\n// got:      5.2.0-rc.next.0\n// expected: 5.2.0-rc.next.4\n```\n\nIf I leave the identifier out, the number goes up as it should:\n\n```js\nsemver.inc('5.2.0-rc.next.3', 'prerelease') // 5.2.0-rc.next.4\n```\n\nThe version already carries that identifier, so I expected passing it to give the same result as leaving it out, not a restart from zero.",
+  "decisions_added": [
+   "No behaviour statement added. Correction only: the draft's closing sentence said passing the identifier should match leaving it out. That is false for 3.0.0-alpha.beta.gamma with alpha.beta, which must give 3.0.0-alpha.beta.0, whereas leaving the identifier out appends .0 after gamma. I narrowed the sentence to the reporter's own case so it does not steer the fix the wrong way. The reset itself needs no hint. The README does not cover it, but the snapshot already returns that output, and both the code comment about 1.2.0-beta.fooblz and the existing case 1.2.3-dev.bar with dev giving 1.2.3-dev.0 show the same rule for single-word identifiers. To check this I read the README, the increment fixtures and the prerelease branch of inc at the pre-fix commit, which goes beyond the test patches; I did not read the fix's source patch."
+  ],
+  "assertions_not_inferable": []
+ },
+ "node-semver-757-subset": {
+  "reporter": "rrosenshain-sc",
+  "source": "https://github.com/npm/node-semver/issues/757",
+  "draft_before_tests": "`semver.subset` returns false for a prerelease caret range inside another one\n\n`semver.subset(a, b)` should return `true` when every version allowed by `a` is also allowed by `b`. That doesn't hold for caret ranges that start on prereleases of the same version:\n\n```js\nconst semver = require('semver')\nsemver.subset('^6.3.0-rc.5', '^6.3.0-rc.4') // false\n```\n\nEverything `^6.3.0-rc.5` accepts, such as 6.3.0-rc.5, 6.3.0-rc.6 and later versions below 7.0.0, is accepted by `^6.3.0-rc.4` too, which only adds 6.3.0-rc.4 on top. So I expected `true` here.",
+  "decisions_added": [],
+  "assertions_not_inferable": []
+ },
+ "node-semver-775-coerce": {
+  "reporter": "nhedger",
+  "source": "https://github.com/npm/node-semver/issues/775",
+  "draft_before_tests": "`semver.coerce` cuts off prerelease identifiers that begin with a digit\n\nI call `semver.coerce` with `{ includePrerelease: true }` on nightly version strings that end in a commit hash. When the hash starts with a digit, everything after the leading digits is lost:\n\n```js\nconst semver = require('semver')\nconst opts = { includePrerelease: true }\nsemver.coerce('2.3.1-nightly.7f3c', opts).version\n// got 2.3.1-nightly.7, expected 2.3.1-nightly.7f3c\nsemver.coerce('2.3.1-nightly.4821.9e1d', opts).version\n// got 2.3.1-nightly.4821.9, expected 2.3.1-nightly.4821.9e1d\n```\n\nIdentifiers that are all digits, or that start with a letter, such as `2.3.1-nightly.4821` or `2.3.1-nightly.a7f3`, come through intact. I expected the whole identifier to survive.",
+  "decisions_added": [],
+  "assertions_not_inferable": []
+ },
+ "boltons-423-indexedset": {
+  "reporter": "chuenchen309",
+  "source": "https://github.com/mahmoud/boltons/pull/423",
+  "draft_before_tests": "IndexedSet slices go wrong once something has been removed\n\n`IndexedSet` is meant to support list-style slicing, but after I take an element out of the set, slices come back with the wrong items. Nothing raises; I just get bad data back.\n\n```python\nfrom boltons.setutils import IndexedSet\n\ns = IndexedSet('abcdefghij')\ns.remove('c')    # a b d e f g h i j\n\nlist(s[2:5])     # got ['e', 'f', 'g'], expected ['d', 'e', 'f']\nlist(s[-2:])     # got ['j'], expected ['i', 'j']\n```\n\nRebuilding the set from its remaining items makes the slices correct again. I expected a slice of an `IndexedSet` to hold the same items as the same slice of `list(s)`, whether or not anything was removed earlier.",
+  "decisions_added": [
+   "Added: out-of-range negative positions should raise IndexError like a list (s[-10] and s.pop(-15)). The slicing report never touches plain indexing or pop, so this could not be inferred from it. It is a second bug fixed in the same change, and test_iset_scalar_index_bounds and test_iset_scalar_index_multiple_dead_intervals need it. Hand trace of the base commit: x[-10] returns 9, x.pop(-15) removes 4, iset[-96] returns 99.",
+   "Changed the closing expectation from 'the same slice of list(s)' to 'the same slice of a freshly built set, with forward slices lining up with list(s)'. Negative-step slices here are not list-like: the existing assertion x[2:4:-1] == IndexedSet([8, 7]) pins them, the maintainer kept that on purpose, and the new agreement check compares them to a rebuilt set, not a list. Nothing in the report determines this, and the draft wording could have pushed an agent to rewrite that behaviour."
+  ],
+  "assertions_not_inferable": []
+ },
+ "boltons-404-omd-eq": {
+  "reporter": "DucMinhNe",
+  "source": "https://github.com/mahmoud/boltons/pull/404",
+  "draft_before_tests": "`OrderedMultiDict == dict` is True even when the values differ\n\nWhen I compare an `OrderedMultiDict` with a regular dict, only the keys seem to matter. If the keys line up, `==` says the two are equal even when the values are completely different.\n\n```python\nfrom boltons.dictutils import OrderedMultiDict\n\nomd = OrderedMultiDict([('x', 10), ('y', 20)])\nomd == {'x': 10, 'y': 5000}    # True, expected False\n```\n\n`QueryParamDict` from `boltons.urlutils` does the same thing:\n\n```python\nfrom boltons.urlutils import QueryParamDict\n\nparams = QueryParamDict([('x', '10')])\nparams == {'x': 'other'}    # True, expected False\n```\n\nI expected `==` to be `False` as soon as a value differs, and `True` only when both the keys and the values match.",
+  "decisions_added": [],
+  "assertions_not_inferable": []
+ },
+ "boltons-458-addlist": {
+  "reporter": "youdie006",
+  "source": "https://github.com/mahmoud/boltons/pull/458",
+  "draft_before_tests": "Passing a generator to OrderedMultiDict.addlist leaves the dict in a broken state\n\nThe docs for `addlist` say iterables work, but if I hand it a one-shot iterator such as a generator, the dict ends up inconsistent.\n\n```python\nfrom boltons.dictutils import OrderedMultiDict\n\nomd = OrderedMultiDict()\nomd.addlist('k', (n * 2 for n in range(3)))\n\nomd.getlist('k')   # [], expected [0, 2, 4]\nomd.get('k')       # IndexError, expected 4\n```\n\n`repr(omd)` and `keys()` still show the values, so the dict disagrees with itself. With an empty generator, `len(omd)` is 1 while `keys()` is empty and `'k' in omd` is `True`. `QueryParamDict` in `boltons.urlutils` has the same problem.\n\nI expected a one-shot iterable to behave exactly like the equivalent list: all values stored and retrievable, and an empty one adding nothing.",
+  "decisions_added": [
+   "No behaviour statement added. Factual correction only: removed keys() from the sentence about what still shows the values, because at the base commit keys() lists the key rather than the values. This came from reading the source, not the tests."
+  ],
+  "assertions_not_inferable": []
+ },
+ "boltons-348-lru": {
+  "reporter": "nicoddemus",
+  "source": "https://github.com/mahmoud/boltons/issues/348",
+  "draft_before_tests": "Overwriting a key in an LRU leaves the old value in dict() and .values()\n\nAfter I overwrite an existing key in an `LRU`, the new value shows up through `cache[key]` and `.get()`, but converting the cache to a dict or calling `.values()` still gives me the old one.\n\n```python\nfrom boltons.cacheutils import LRU\n\ncache = LRU()\ncache['color'] = 'red'\ncache['color'] = 'blue'\n\ncache['color']          # 'blue', as expected\ndict(cache)             # {'color': 'red'}, expected {'color': 'blue'}\nlist(cache.values())    # ['red'], expected ['blue']\n```\n\nI expected every way of reading the cache to agree with `cache['color']`: once a key has been replaced, the old value should be gone.",
+  "decisions_added": [],
+  "assertions_not_inferable": []
+ },
+ "boltons-452-backoff": {
+  "reporter": "kmeasabingias-a11y",
+  "source": "https://github.com/mahmoud/boltons/issues/452",
+  "draft_before_tests": "backoff_iter crashes on factor=1.0 when count is left out\n\n`backoff_iter` rejects a `factor` below 1.0 with a `ValueError`, so 1.0 looks like valid input. But if I pass exactly 1.0 and leave out `count`, it dies with an unhandled error:\n\n```python\nfrom boltons.iterutils import backoff_iter\n\nlist(backoff_iter(2.0, 30.0, factor=1.0))\n# ZeroDivisionError: float division by zero\n```\n\nGiving an explicit `count` works and produces a flat sequence:\n\n```python\nlist(backoff_iter(2.0, 30.0, count=4, factor=1.0))\n# [2.0, 2.0, 2.0, 2.0]\n```\n\nA value the function's own validation lets through shouldn't end in a raw `ZeroDivisionError`. I expected this case to be handled deliberately rather than crashing with a math error.",
+  "decisions_added": [
+   "Added: 'A flat sequence can never climb to a larger stop, so no count can be worked out here, and I expected a descriptive ValueError instead', replacing the draft's open-ended last sentence. The issue offers three outcomes and leaves the choice to the maintainers, and the merged tests require ValueError, so nothing else determines it. 'Larger stop' keeps the sentence true for backoff(5, 5, factor=1.0) == [5.0]. That case stays unlisted as an inferable edge case, given the existing backoff(1, 1) == [1.0] assertion and the docstring's default count of the steps between start and stop."
+  ],
+  "assertions_not_inferable": []
+ }
+}

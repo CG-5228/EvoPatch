@@ -21,7 +21,13 @@
     "mock-model": "tsx scripts/mock-model.ts",
     "probe": "tsx scripts/probe-sandbox.ts",
     "curate": "tsx scripts/curate.ts",
-    "evolve": "tsx scripts/evolve.ts"
+    "evolve": "tsx scripts/evolve.ts",
+    "report": "tsx scripts/report.ts",
+    "compare": "tsx scripts/report.ts compare",
+    "verify-submission": "tsx scripts/verify-submission.ts",
+    "rerun": "tsx scripts/run-evals.ts --kind scratch",
+    "guards-selftest": "tsx scripts/guards-selftest.ts",
+    "check-shim": "tsx scripts/check-shim.ts"
   },
   "dependencies": {
     "@truefoundry/trueforge-sdk": "0.182.0",

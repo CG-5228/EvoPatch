@@ -1,0 +1,7 @@
+[
+ "test/functions/coerce.js::(file)",
+ "test/functions/coerce.js::coerce tests",
+ "test/functions/coerce.js::coerce tests::coerce(1.0.0-1a, {\"includePrerelease\":true}) should be equal to 1.0.0-1a",
+ "test/functions/coerce.js::coerce tests::coerce(1.0.0-alpha.1234.23cd, {\"includePrerelease\":true}) should be equal to 1.0.0-alpha.1234.23cd",
+ "test/functions/coerce.js::coerce tests::coerce(1.0.0-alpha.12ab, {\"includePrerelease\":true}) should be equal to 1.0.0-alpha.12ab"
+]

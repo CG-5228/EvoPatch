@@ -1,0 +1,19 @@
+{
+  "id": "mit-1308-validator",
+  "title": "bucket with a falsey validator",
+  "holdout": true,
+  "language": "python",
+  "repo": "more-itertools/more-itertools",
+  "base_sha": "1ea82a711c69f590054987b5cb194157f8ce8ac4",
+  "fix_sha": "67fcf640477c78605580f5ee703a54c73c1e7a8a",
+  "pr": 1309,
+  "issue": 1308,
+  "links": [
+    "https://github.com/more-itertools/more-itertools/pull/1309",
+    "https://github.com/more-itertools/more-itertools/issues/1308"
+  ],
+  "merged_at": "2026-10-07T15:04:42Z",
+  "license": "MIT",
+  "bug_class": "falsy vs None",
+  "issue_text": "`bucket` acts as if I passed no `validator` when my validator object happens to be falsey. I use a callable `set` subclass as an allow-list, and when it's empty nothing should be allowed:\n\n```python\nfrom more_itertools import bucket\n\nclass Allowed(set):\n    def __call__(self, key):\n        return key in self\n\nsource = iter('abc')\nb = bucket(source, key=str.upper, validator=Allowed())\nprint(list(b['A']))  # ['a'], expected []\n```\n\nNothing can pass that validator, so `b['A']` ought to come back empty and `source` should be left untouched. It's not only selection either: `in` and looping over the keys ignore the validator too. If the source never ends, asking for a key that doesn't occur can hang, when the validator should have stopped it at once."
+}

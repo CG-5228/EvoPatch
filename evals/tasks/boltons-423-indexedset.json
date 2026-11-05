@@ -1,0 +1,19 @@
+{
+  "id": "boltons-423-indexedset",
+  "title": "IndexedSet indexing after removals",
+  "holdout": false,
+  "language": "python",
+  "repo": "mahmoud/boltons",
+  "base_sha": "609cabe932a1ea1423b24568644945abb1b8bb84",
+  "fix_sha": "d0a284fc7ef1aebceb54798600d73be4eeb76ed8",
+  "pr": 424,
+  "issue": 423,
+  "links": [
+    "https://github.com/mahmoud/boltons/pull/424",
+    "https://github.com/mahmoud/boltons/issues/423"
+  ],
+  "merged_at": "2026-07-17T06:36:33Z",
+  "license": "BSD-3-Clause",
+  "bug_class": "index boundaries",
+  "issue_text": "IndexedSet slices go wrong once something has been removed\n\n`IndexedSet` is meant to support list-style slicing, but after I take an element out of the set, slices come back with the wrong items. Nothing raises; I just get bad data back.\n\n```python\nfrom boltons.setutils import IndexedSet\n\ns = IndexedSet('abcdefghij')\ns.remove('c')    # a b d e f g h i j\n\nlist(s[2:5])     # got ['e', 'f', 'g'], expected ['d', 'e', 'f']\nlist(s[-2:])     # got ['j'], expected ['i', 'j']\n```\n\nRebuilding the set from its remaining items makes the slices correct again. I expected removals not to matter: a slice should match the same slice of a freshly built set with the same items, and forward slices should line up with `list(s)`.\n\nIndexing and `pop` have a related problem: out-of-range negative positions should raise `IndexError` like a list, but `s[-10]` returns `'j'` and `s.pop(-15)` removes `'e'`."
+}

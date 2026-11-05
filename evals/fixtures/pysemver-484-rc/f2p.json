@@ -1,0 +1,5 @@
+[
+ "tests.test_issue484::test_issue_484_custom_token",
+ "tests.test_issue484::test_issue_484_rc3_to_rc4",
+ "tests.test_issue484::test_issue_484_rc9_to_rc10"
+]

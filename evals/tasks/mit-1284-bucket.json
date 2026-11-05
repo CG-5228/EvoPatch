@@ -1,0 +1,19 @@
+{
+  "id": "mit-1284-bucket",
+  "title": "bucket lookups",
+  "holdout": true,
+  "language": "python",
+  "repo": "more-itertools/more-itertools",
+  "base_sha": "b2f3aff7633057d234ec9186c18a53f4df306d08",
+  "fix_sha": "3ea9b009b19db0e01a83d51cee43e9935c0d657f",
+  "pr": 1285,
+  "issue": 1284,
+  "links": [
+    "https://github.com/more-itertools/more-itertools/pull/1285",
+    "https://github.com/more-itertools/more-itertools/issues/1284"
+  ],
+  "merged_at": "2026-09-17T14:26:17Z",
+  "license": "MIT",
+  "bug_class": "lookups must not mutate",
+  "issue_text": "Probing a `bucket` for a key it doesn't have changes what I get when I iterate over it afterwards:\n\n```python\nfrom more_itertools import bucket\n\nb = bucket(['x10', 'y20', 'x30'], key=lambda s: s[0])\nprint('w' in b)   # False\nprint(sorted(b))  # ['w', 'x', 'y'], expected ['x', 'y']\n```\n\nNothing in the input has the key `'w'`, and the `in` check has just told me so, yet it's now listed as a key. Reading an empty bucket directly, as in `list(b['w'])`, does the same thing, and supplying a `validator` that allows `'w'` makes no difference. Repeated failed lookups keep piling more of these up.\n\nI expected the keys to be only those that some item in the input actually produced, with a lookup that finds nothing leaving them alone."
+}

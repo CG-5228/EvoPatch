@@ -1,0 +1,19 @@
+{
+  "id": "node-semver-606-diff",
+  "title": "diff between a prerelease and a stable version",
+  "holdout": false,
+  "language": "js",
+  "repo": "npm/node-semver",
+  "base_sha": "753e02b9d0cb3ac23e085dc33efcab3e08d61f2b",
+  "fix_sha": "d588e3782864b1cab2fe9f2452b848e8c7f609d1",
+  "pr": 755,
+  "issue": 606,
+  "links": [
+    "https://github.com/npm/node-semver/pull/755",
+    "https://github.com/npm/node-semver/issues/606"
+  ],
+  "merged_at": "2025-01-29T16:22:06Z",
+  "license": "ISC",
+  "bug_class": "prerelease ordering",
+  "issue_text": "`semver.diff` reports the wrong level going from a prerelease to a release on a later minor\n\nI was using `semver.diff` to classify an upgrade from a prerelease build to a stable version on the next minor line:\n\n```js\nconst semver = require('semver')\nsemver.diff('3.4.6-2', '3.5.2') // returns 'patch'\n```\n\nThat looks wrong to me. The minor number has gone from 4 to 5, so I expected `'minor'`."
+}

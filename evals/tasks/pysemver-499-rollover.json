@@ -1,0 +1,19 @@
+{
+  "id": "pysemver-499-rollover",
+  "title": "legacy prerelease counter rollover",
+  "holdout": true,
+  "language": "python",
+  "repo": "python-semver/python-semver",
+  "base_sha": "bcd151fa63df3053b9f30e698e9ae1020187be1a",
+  "fix_sha": "9ef41316dbe85f7d0fae6e396c45a1bbf69ebb29",
+  "pr": 500,
+  "issue": 499,
+  "links": [
+    "https://github.com/python-semver/python-semver/pull/500",
+    "https://github.com/python-semver/python-semver/issues/499"
+  ],
+  "merged_at": "2026-10-21T07:53:56Z",
+  "license": "BSD-3-Clause",
+  "bug_class": "prerelease ordering",
+  "issue_text": "I was bumping an old-style prerelease, where the counter has no dot in front of it, and ended up with a version older than the one I started from. next_version is documented as keeping natural order, but here the result sorts below the input:\n\n```python\nfrom semver import Version\n\nstart = Version.parse(\"7.1.0-rc9\")\nbumped = start.next_version(\"prerelease\")\nprint(bumped)          # 7.1.0-rc10\nprint(bumped > start)  # False\n```\n\nComparison itself isn't broken: SemVer really does put rc10 below rc9. What's wrong is that next_version returns the smaller one. The step from rc99 to rc100 has the same problem, and so does beta9 when bumped with the beta token. Ordinary steps such as rc4 to rc5 are fine, and so is the dotted style, where rc.9 goes to rc.10.\n\nI expected the result to sort above the version I started with. When the raised counter alone can't do that, it should be kept in its no-dot form and the patch should advance, so 7.1.0-rc9 gives 7.1.1-rc10. Otherwise the patch stays."
+}

@@ -1,0 +1,18 @@
+{
+  "id": "boltons-458-addlist",
+  "title": "addlist with a one-shot iterable",
+  "holdout": false,
+  "language": "python",
+  "repo": "mahmoud/boltons",
+  "base_sha": "d45cc414e33aa4e08a73e0993574df4397e2e9db",
+  "fix_sha": "a1ea1030ed85137e999c0bd9b11d16368d3ab241",
+  "pr": 458,
+  "issue": null,
+  "links": [
+    "https://github.com/mahmoud/boltons/pull/458"
+  ],
+  "merged_at": "2026-09-07T08:41:34Z",
+  "license": "BSD-3-Clause",
+  "bug_class": "one-shot iterables",
+  "issue_text": "Passing a generator to OrderedMultiDict.addlist leaves the dict in a broken state\n\nThe docs for `addlist` say iterables work, but if I hand it a one-shot iterator such as a generator, the dict ends up inconsistent.\n\n```python\nfrom boltons.dictutils import OrderedMultiDict\n\nomd = OrderedMultiDict()\nomd.addlist('k', (n * 2 for n in range(3)))\n\nomd.getlist('k')   # [], expected [0, 2, 4]\nomd.get('k')       # IndexError, expected 4\n```\n\n`repr(omd)` still shows the values, so the dict disagrees with itself. With an empty generator, `len(omd)` is 1 while `keys()` is empty and `'k' in omd` is `True`. `QueryParamDict` in `boltons.urlutils` has the same problem.\n\nI expected a one-shot iterable to behave exactly like the equivalent list: all values stored and retrievable, and an empty one adding nothing."
+}

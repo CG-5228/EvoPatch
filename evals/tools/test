@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+"""Run this project's tests. Usage: tools/test [paths or pytest/node arguments].
+
+With no arguments it runs the project's visible test suite. It stops after 50 seconds and says so, because the
+sandbox kills any command at 60 seconds and reports only exit code 1.
+"""
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+LIMIT_S = 50
+TOOLS = Path(__file__).resolve().parent
+WORK = TOOLS.parent
+REPO = WORK / "repo"
+task = json.loads((TOOLS / "task.json").read_text())
+
+
+def env():
+    tmp = WORK / ".tmp"
+    tmp.mkdir(exist_ok=True)
+    out = dict(os.environ, TMPDIR=str(tmp), PYTHONDONTWRITEBYTECODE="1", PYTHONHASHSEED="0", PYTHONUTF8="1", TZ="UTC")
+    paths = [str(REPO / p) for p in task.get("pythonpath", ".").split(":")]
+    out["PYTHONPATH"] = os.pathsep.join([str(TOOLS / "pylib"), *paths])
+    return out
+
+
+def run(cmd):
+    try:
+        return subprocess.run(cmd, cwd=REPO, env=env(), timeout=LIMIT_S).returncode
+    except subprocess.TimeoutExpired:
+        print(f"TIMEOUT after {LIMIT_S}s: run fewer tests at once, for example one test file.")
+        return 124
+
+
+def python_tests(args):
+    cmd = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "--continue-on-collection-errors", "--tb=short", *task.get("pytest_args", [])]
+    cmd += [f"--deselect={t}" for t in task.get("deselect", [])]
+    cmd += [f"--deselect={p}" for p in task.get("ignore", [])]  # not --ignore: a conftest hook can overrule it
+    return run(cmd + (args or task.get("targets", [])))
+
+
+def node_tests(args):
+    excluded = tuple(task.get("test_exclude", []))
+    files = args or sorted(
+        str(p.relative_to(REPO))
+        for root in task["test_paths"]
+        for p in (REPO / root).rglob("*.js")
+        if not str(p.relative_to(REPO)).startswith(excluded)
+    )
+    failed = 0
+    for rel in files:
+        try:
+            proc = subprocess.run(["node", rel], cwd=REPO, env=env(), capture_output=True, text=True, timeout=LIMIT_S)
+        except subprocess.TimeoutExpired:
+            print(f"TIMEOUT after {LIMIT_S}s: {rel}")
+            failed += 1
+            continue
+        if proc.returncode:
+            failed += 1
+            lines = [l for l in proc.stdout.splitlines() if "not ok" in l]
+            print(f"FAILED {rel}\n" + "\n".join(lines[:15]) + (proc.stderr[-400:] if not lines else ""))
+    print(f"{len(files) - failed} of {len(files)} test files passed")
+    return 1 if failed else 0
+
+
+sys.exit(node_tests(sys.argv[1:]) if task["language"] == "js" else python_tests(sys.argv[1:]))

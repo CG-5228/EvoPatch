@@ -1,0 +1,8 @@
+[
+ "tests.test_compare::test_should_compare_long_numeric_prerelease",
+ "tests.test_compare::test_should_ignore_build_and_preserve_release_order_with_long_prerelease",
+ "tests.test_compare::test_should_order_long_numeric_prereleases[digit-count]",
+ "tests.test_compare::test_should_order_long_numeric_prereleases[equal-length]",
+ "tests.test_compare::test_should_order_long_numeric_prereleases[numeric-before-text]",
+ "tests.test_compare::test_should_order_long_numeric_prereleases[prefix]"
+]

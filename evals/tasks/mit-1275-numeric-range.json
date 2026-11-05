@@ -1,0 +1,19 @@
+{
+  "id": "mit-1275-numeric-range",
+  "title": "reversed numeric_range",
+  "holdout": true,
+  "language": "python",
+  "repo": "more-itertools/more-itertools",
+  "base_sha": "3ea9b009b19db0e01a83d51cee43e9935c0d657f",
+  "fix_sha": "8a930acd4fa0222af8209ae84806c18f260ee9a3",
+  "pr": 1276,
+  "issue": 1275,
+  "links": [
+    "https://github.com/more-itertools/more-itertools/pull/1276",
+    "https://github.com/more-itertools/more-itertools/issues/1275"
+  ],
+  "merged_at": "2026-09-17T14:28:12Z",
+  "license": "MIT",
+  "bug_class": "numeric edge cases",
+  "issue_text": "Calling `reversed()` on a `numeric_range` goes wrong in two ways.\n\nWith floats, the reversed values aren't the forward values backwards, and there can be one too many:\n\n```python\nfrom more_itertools import numeric_range\n\nr = numeric_range(0.0, 0.5, 0.1)\nprint(len(list(r)), len(list(reversed(r))))  # 5 6\nprint(list(reversed(r))[-1])                 # -0.09999999999999998\n```\n\nThat last value isn't even in the range. I expected `list(reversed(r)) == list(r)[::-1]`.\n\nWith datetimes, reversing a perfectly valid range that begins at `datetime.min` blows up:\n\n```python\nfrom datetime import datetime, timedelta\n\nr = numeric_range(datetime.min, datetime.min + timedelta(hours=6), timedelta(hours=2))\nprint(list(reversed(r)))  # OverflowError: date value out of range\n```\n\nI expected the three datetimes in descending order. A descending range that starts at `datetime.max` fails the same way."
+}

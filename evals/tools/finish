@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+"""Usage: tools/finish "one sentence: what you changed and why".
+
+Compares repo/ with the original project and writes the patch to out/patch.diff and your note to out/report.json.
+Run it last. Running it again replaces both files.
+"""
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tarfile
+from pathlib import Path
+
+TOOLS = Path(__file__).resolve().parent
+WORK = TOOLS.parent
+ROOT = WORK.parent
+task = json.loads((TOOLS / "task.json").read_text())
+base = WORK / ".finish"
+shutil.rmtree(base, ignore_errors=True)
+base.mkdir()
+with tarfile.open(ROOT / "uploads" / task["tarball"]) as tar:
+    tar.extractall(base / "orig", members=[m for m in tar.getmembers() if m.name == "repo" or m.name.startswith("repo/")], filter="tar")
+os.symlink(base / "orig" / "repo", base / "a")
+os.symlink(WORK / "repo", base / "b")
+excludes = ["__pycache__", "*.pyc", ".pytest_cache", "node_modules", "*.orig", "*.rej", ".DS_Store"]
+cmd = ["diff", "-ruN", *[arg for e in excludes for arg in ("-x", e)], "a/", "b/"]
+env = dict(os.environ, LC_ALL="C", TZ="UTC")
+proc = subprocess.run(cmd, cwd=base, env=env, capture_output=True)
+if proc.returncode not in (0, 1):
+    sys.exit(f"finish failed: {proc.stderr.decode(errors='replace')[-400:]}")
+out = ROOT / "out"
+out.mkdir(exist_ok=True)
+(out / "patch.diff").write_bytes(proc.stdout)
+(out / "report.json").write_text(json.dumps({"summary": " ".join(sys.argv[1:])}, indent=1) + "\n")
+shutil.rmtree(base, ignore_errors=True)
+print(f"out/patch.diff: {len(proc.stdout)} bytes" if proc.stdout else "out/patch.diff is empty: repo/ has no changes")

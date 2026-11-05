@@ -1,0 +1,19 @@
+{
+  "id": "mit-1250-value-chain",
+  "title": "value_chain and TypeError",
+  "holdout": true,
+  "language": "python",
+  "repo": "more-itertools/more-itertools",
+  "base_sha": "a826a4e09e3f2782822c71da6670e9275735ad3e",
+  "fix_sha": "d92f081a089714e0aa92434c797fdd1a06da1290",
+  "pr": 1251,
+  "issue": 1250,
+  "links": [
+    "https://github.com/more-itertools/more-itertools/pull/1251",
+    "https://github.com/more-itertools/more-itertools/issues/1250"
+  ],
+  "merged_at": "2026-09-03T15:34:38Z",
+  "license": "MIT",
+  "bug_class": "exception scope",
+  "issue_text": "If a lazy argument to `value_chain` raises `TypeError` partway through, I never see the exception. Instead I get the items produced so far, followed by the half-used iterator itself as an output item:\n\n```python\nfrom more_itertools import value_chain\n\nprint(list(value_chain(map(abs, [-1, 2, 'x']))))\n# [1, 2, <map object at 0x...>]\n```\n\n`abs('x')` should fail because my data is wrong, but no error appears, and the leftover `map` object is empty by then, so it's useless to me. The same thing happens with generators. Consuming an identical `map` with `itertools.chain` or `always_iterable` raises the `TypeError` as I'd expect.\n\nI expected `value_chain` to let the exception reach the caller as well. Values that really can't be iterated should still come through unchanged, as documented."
+}

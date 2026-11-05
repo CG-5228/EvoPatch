@@ -1,0 +1,19 @@
+{
+  "id": "node-semver-226-dotted-inc",
+  "title": "incrementing a dotted prerelease identifier",
+  "holdout": false,
+  "language": "js",
+  "repo": "npm/node-semver",
+  "base_sha": "76416081a8413383cf6e24c82cafa438bd076d41",
+  "fix_sha": "bea6028694a75e840f48b288ac019e9644cfe6e8",
+  "pr": 870,
+  "issue": 226,
+  "links": [
+    "https://github.com/npm/node-semver/pull/870",
+    "https://github.com/npm/node-semver/issues/226"
+  ],
+  "merged_at": "2026-06-04T14:43:32Z",
+  "license": "ISC",
+  "bug_class": "prerelease ordering",
+  "issue_text": "`semver.inc` resets the prerelease counter when the identifier contains a dot\n\nI bump prereleases with `semver.inc`, passing a dot-separated identifier so the version keeps its two-part tag. The counter never moves. Whatever number the version is on, it goes back to zero:\n\n```js\nconst semver = require('semver')\nsemver.inc('5.2.0-rc.next.3', 'prerelease', 'rc.next')\n// got:      5.2.0-rc.next.0\n// expected: 5.2.0-rc.next.4\n```\n\nIf I leave the identifier out, the number goes up as it should:\n\n```js\nsemver.inc('5.2.0-rc.next.3', 'prerelease') // 5.2.0-rc.next.4\n```\n\nThe version already has that identifier followed by a counter, so I expected the counter to go up, not restart from zero."
+}

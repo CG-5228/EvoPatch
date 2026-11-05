@@ -1,0 +1,19 @@
+{
+  "id": "pysemver-487-long",
+  "title": "comparing very long numeric prereleases",
+  "holdout": true,
+  "language": "python",
+  "repo": "python-semver/python-semver",
+  "base_sha": "887d057e66b7fdfe0adf5a206ac810766b5af938",
+  "fix_sha": "1d515915d50b31f23fd1fb0f572ef608453e80e3",
+  "pr": 488,
+  "issue": 487,
+  "links": [
+    "https://github.com/python-semver/python-semver/pull/488",
+    "https://github.com/python-semver/python-semver/issues/487"
+  ],
+  "merged_at": "2026-10-01T19:58:07Z",
+  "license": "BSD-3-Clause",
+  "bug_class": "unbounded input",
+  "issue_text": "My service takes version strings from outside sources, screens them with Version.is_valid and sorts whatever passes. On Python 3.11 with semver 3.1.0, a version whose prerelease has an all-digit identifier over 4300 digits long gets through that check, but comparing it then crashes, even against an identical version:\n\n```python\nimport semver\n\nbig = \"2.0.0-\" + \"7\" * 5000\nsemver.Version.is_valid(big)              # True\nsemver.Version.parse(big).compare(big)    # ValueError: Exceeds the limit for integer string conversion\nsemver.compare(big, \"2.0.0-3\")            # same ValueError\n```\n\nA major, minor or patch number of that length is rejected by is_valid, and I can live with that.\n\nI expected anything is_valid approves to be sortable. These long prereleases are legal SemVer, so is_valid should keep accepting them and compare should order them numerically. Nothing else should change: comparing any other value, including a Version built directly with prerelease text that parse would reject, must give the same results and errors as today."
+}

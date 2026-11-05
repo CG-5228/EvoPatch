@@ -1,0 +1,19 @@
+{
+  "id": "pysemver-484-rc",
+  "title": "bumping old-style prereleases",
+  "holdout": true,
+  "language": "python",
+  "repo": "python-semver/python-semver",
+  "base_sha": "f53d13d13814a180a464763d6363bacb8a9f6c7f",
+  "fix_sha": "8c0a3f7d80b98962b9db2861a02a035af831b2ac",
+  "pr": 485,
+  "issue": 484,
+  "links": [
+    "https://github.com/python-semver/python-semver/pull/485",
+    "https://github.com/python-semver/python-semver/issues/484"
+  ],
+  "merged_at": "2026-09-24T15:40:10Z",
+  "license": "BSD-3-Clause",
+  "bug_class": "prerelease ordering",
+  "issue_text": "After upgrading semver from 3.0.4 to 3.1.0, our release automation started producing release candidates that go backwards. Our existing tags use the older style, with the counter attached directly to the token and no dot, for example 2.4.0-rc7. Calling next_version on one of those now restarts the counter:\n\n```\n>>> import semver\n>>> semver.Version.parse(\"2.4.0-rc7\").next_version(\"prerelease\")\nVersion(major=2, minor=4, patch=0, prerelease='rc.1', build=None)\n```\n\nSo rc7 becomes rc.1, and the candidate number drops from 7 to 1. Our CI relies on candidate numbers only ever going up, so this breaks it. With default settings I expected the counter to carry on from the existing number. The result should also stay in the no-dot style, so the next one after rc7 is rc8, not rc.8. A library upgrade should not make the candidate number decrease."
+}

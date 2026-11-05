@@ -1,0 +1,8 @@
+[
+ "tests.test_bump::test_next_version_matches_literal_prerelease_token_family[1.2.3-alphaXbeta9-alpha.beta-1.2.4-alpha.beta.1]",
+ "tests.test_issue484::test_token_switch_preserves_version_order[1.2.3-beta.3-alpha-1.2.4-alpha.1]",
+ "tests.test_issue484::test_token_switch_preserves_version_order[1.2.3-rc.1+build.7-dev-1.2.4-dev.1]",
+ "tests.test_issue484::test_token_switch_preserves_version_order[1.2.3-rc.1-2-1.2.4-2.1]",
+ "tests.test_issue484::test_token_switch_preserves_version_order[1.2.3-rc.1-alpha-1.2.4-alpha.1]",
+ "tests.test_issue484::test_token_switch_preserves_version_order[1.2.3-rc3-alpha-1.2.4-alpha.1]"
+]

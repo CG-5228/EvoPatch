@@ -1,0 +1,30 @@
+{
+  "id": "boltons-348-lru",
+  "title": "LRU contents after overwriting a key",
+  "holdout": false,
+  "language": "python",
+  "repo": "mahmoud/boltons",
+  "base_sha": "46599bc0d498dd8adc3aea833ce1445feed349dd",
+  "fix_sha": "4815fc8dd1768da5f2d903846d2ab994aa57b0cf",
+  "pr": 349,
+  "issue": 348,
+  "links": [
+    "https://github.com/mahmoud/boltons/pull/349",
+    "https://github.com/mahmoud/boltons/issues/348"
+  ],
+  "merged_at": "2023-10-30T04:31:17Z",
+  "license": "BSD-3-Clause",
+  "bug_class": "sibling code paths",
+  "issue_text": "Overwriting a key in an LRU leaves the old value in dict() and .values()\n\nAfter I overwrite an existing key in an `LRU`, the new value shows up through `cache[key]` and `.get()`, but converting the cache to a dict or calling `.values()` still gives me the old one.\n\n```python\nfrom boltons.cacheutils import LRU\n\ncache = LRU()\ncache['color'] = 'red'\ncache['color'] = 'blue'\n\ncache['color']          # 'blue', as expected\ndict(cache)             # {'color': 'red'}, expected {'color': 'blue'}\nlist(cache.values())    # ['red'], expected ['blue']\n```\n\nI expected every way of reading the cache to agree with `cache['color']`: once a key has been replaced, the old value should be gone.",
+  "profile_overrides": {
+    "pytest_args": [
+      "-o",
+      "addopts=",
+      "--noconftest"
+    ],
+    "visible_ignore": [
+      "tests/test_socketutils.py",
+      "tests/test_tbutils.py::test_exception_info"
+    ]
+  }
+}

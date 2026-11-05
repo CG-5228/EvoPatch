@@ -1,0 +1,19 @@
+{
+  "id": "node-semver-775-coerce",
+  "title": "prerelease identifiers that start with digits",
+  "holdout": false,
+  "language": "js",
+  "repo": "npm/node-semver",
+  "base_sha": "2677f2a88334b0e728dbfe9ad9f5f57458437c87",
+  "fix_sha": "c99f336fa3bdff465652f9041eab2127d2f52eb2",
+  "pr": 781,
+  "issue": 775,
+  "links": [
+    "https://github.com/npm/node-semver/pull/781",
+    "https://github.com/npm/node-semver/issues/775"
+  ],
+  "merged_at": "2025-05-08T16:09:48Z",
+  "license": "ISC",
+  "bug_class": "parsing edge cases",
+  "issue_text": "`semver.coerce` cuts off prerelease identifiers that begin with a digit\n\nI call `semver.coerce` with `{ includePrerelease: true }` on nightly version strings that end in a commit hash. When the hash starts with a digit, everything after the leading digits is lost:\n\n```js\nconst semver = require('semver')\nconst opts = { includePrerelease: true }\nsemver.coerce('2.3.1-nightly.7f3c', opts).version\n// got 2.3.1-nightly.7, expected 2.3.1-nightly.7f3c\nsemver.coerce('2.3.1-nightly.4821.9e1d', opts).version\n// got 2.3.1-nightly.4821.9, expected 2.3.1-nightly.4821.9e1d\n```\n\nIdentifiers that are all digits, or that start with a letter, such as `2.3.1-nightly.4821` or `2.3.1-nightly.a7f3`, come through intact. I expected the whole identifier to survive."
+}

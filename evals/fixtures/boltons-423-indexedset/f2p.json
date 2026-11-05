@@ -1,0 +1,4 @@
+[
+ "tests.test_setutils::test_iset_scalar_index_bounds",
+ "tests.test_setutils::test_iset_scalar_index_multiple_dead_intervals"
+]

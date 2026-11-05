@@ -1,0 +1,3 @@
+[
+ "tests.test_more.ValueChainTests::test_type_error_while_iterating"
+]

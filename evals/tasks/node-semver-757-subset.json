@@ -1,0 +1,19 @@
+{
+  "id": "node-semver-757-subset",
+  "title": "subset with prerelease bounds",
+  "holdout": false,
+  "language": "js",
+  "repo": "npm/node-semver",
+  "base_sha": "efa4be6096c1f9b77d9d27d6132f6220c43b4e31",
+  "fix_sha": "5f3ca133e040210b6ea80c350a1d61d9da02e722",
+  "pr": 867,
+  "issue": 757,
+  "links": [
+    "https://github.com/npm/node-semver/pull/867",
+    "https://github.com/npm/node-semver/issues/757"
+  ],
+  "merged_at": "2026-05-21T16:09:18Z",
+  "license": "ISC",
+  "bug_class": "prerelease ordering",
+  "issue_text": "`semver.subset` returns false for a prerelease caret range inside another one\n\n`semver.subset(a, b)` should return `true` when every version allowed by `a` is also allowed by `b`. That doesn't hold for caret ranges that start on prereleases of the same version:\n\n```js\nconst semver = require('semver')\nsemver.subset('^6.3.0-rc.5', '^6.3.0-rc.4') // false\n```\n\nEverything `^6.3.0-rc.5` accepts, such as 6.3.0-rc.5, 6.3.0-rc.6 and later versions below 7.0.0, is accepted by `^6.3.0-rc.4` too, which only adds 6.3.0-rc.4 on top. So I expected `true` here."
+}

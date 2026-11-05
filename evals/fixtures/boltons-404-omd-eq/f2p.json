@@ -1,0 +1,4 @@
+[
+ "tests.test_dictutils::test_eq_with_dict",
+ "tests.test_urlutils::test_query_param_dict_eq_with_dict"
+]

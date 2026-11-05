@@ -1,0 +1,8 @@
+[
+ "tests.test_filesize::test_naturalsize[test_args70-1.0 MB]",
+ "tests.test_filesize::test_naturalsize[test_args71-1.0 GB]",
+ "tests.test_filesize::test_naturalsize[test_args72-1.0 TB]",
+ "tests.test_filesize::test_naturalsize[test_args73-1.0 MiB]",
+ "tests.test_filesize::test_naturalsize[test_args74-1.0 GiB]",
+ "tests.test_filesize::test_naturalsize[test_args75-1.0M]"
+]

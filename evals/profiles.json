@@ -1,0 +1,133 @@
+{
+  "npm/node-semver": {
+    "language": "js",
+    "test_paths": [
+      "test"
+    ],
+    "source_paths": [
+      "classes/",
+      "functions/",
+      "internal/",
+      "ranges/",
+      "bin/",
+      "index.js",
+      "preload.js"
+    ],
+    "drop": [
+      ".github",
+      ".tap",
+      "tap-snapshots",
+      "CHANGELOG.md"
+    ],
+    "test_exclude": [
+      "test/fixtures/",
+      "test/bin/",
+      "test/map.js"
+    ]
+  },
+  "mahmoud/boltons": {
+    "language": "python",
+    "test_paths": [
+      "tests"
+    ],
+    "source_paths": [
+      "boltons/"
+    ],
+    "drop": [
+      ".github",
+      "docs",
+      "CHANGELOG.md",
+      "TODO.rst"
+    ],
+    "pythonpath": ".",
+    "pytest_args": [
+      "-o",
+      "addopts="
+    ],
+    "targets": [
+      "tests"
+    ],
+    "visible_ignore": [
+      "tests/test_socketutils.py"
+    ]
+  },
+  "python-humanize/humanize": {
+    "language": "python",
+    "test_paths": [
+      "tests"
+    ],
+    "source_paths": [
+      "src/humanize/"
+    ],
+    "drop": [
+      ".github",
+      "docs",
+      "scripts"
+    ],
+    "pythonpath": "src",
+    "pytest_args": [
+      "-o",
+      "addopts=",
+      "-o",
+      "filterwarnings=default"
+    ],
+    "targets": [
+      "tests/test_number.py",
+      "tests/test_filesize.py"
+    ],
+    "generated": {
+      "src/humanize/_version.py": "__version__ = version = \"0.0.0\"\n__version_tuple__ = version_tuple = (0, 0, 0)\n"
+    }
+  },
+  "more-itertools/more-itertools": {
+    "language": "python",
+    "test_paths": [
+      "tests"
+    ],
+    "source_paths": [
+      "more_itertools/"
+    ],
+    "drop": [
+      ".github",
+      "docs"
+    ],
+    "pythonpath": ".",
+    "pytest_args": [
+      "-o",
+      "addopts=",
+      "--deselect=tests/test_more.py::TestConcurrentTee"
+    ],
+    "targets": [
+      "tests/test_more.py",
+      "tests/test_recipes.py"
+    ]
+  },
+  "python-semver/python-semver": {
+    "language": "python",
+    "test_paths": [
+      "tests"
+    ],
+    "source_paths": [
+      "src/semver/"
+    ],
+    "drop": [
+      ".github",
+      "changelog.d",
+      "docs/usage",
+      "docs/_static",
+      "docs/images",
+      "docs/migration",
+      "docs/development"
+    ],
+    "pythonpath": "src:tests",
+    "pytest_args": [
+      "-o",
+      "addopts=--import-mode=importlib",
+      "-o",
+      "pythonpath=src tests"
+    ],
+    "targets": [
+      "tests"
+    ]
+  }
+}

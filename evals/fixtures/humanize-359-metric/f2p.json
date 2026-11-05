@@ -1,0 +1,7 @@
+[
+ "tests.test_number::test_metric[[-9999]--10.0 k]",
+ "tests.test_number::test_metric[[9.999, '', 2]-10]",
+ "tests.test_number::test_metric[[9.99999]-10.0]",
+ "tests.test_number::test_metric[[99999]-100 k]",
+ "tests.test_number::test_metric[[9999]-10.0 k]"
+]

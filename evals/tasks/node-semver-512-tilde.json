@@ -1,0 +1,19 @@
+{
+  "id": "node-semver-512-tilde",
+  "title": "tilde ranges with includePrerelease",
+  "holdout": false,
+  "language": "js",
+  "repo": "npm/node-semver",
+  "base_sha": "8640bd68f1653e504b53e9be4030eccdfe4c307a",
+  "fix_sha": "9c8692ae05416e9dbe88d95ffe2b80e6964550fe",
+  "pr": 878,
+  "issue": 512,
+  "links": [
+    "https://github.com/npm/node-semver/pull/878",
+    "https://github.com/npm/node-semver/issues/512"
+  ],
+  "merged_at": "2026-06-19T18:22:01Z",
+  "license": "ISC",
+  "bug_class": "sibling code paths",
+  "issue_text": "Tilde range with no patch number misses prereleases under includePrerelease\n\nWith `includePrerelease` turned on, a tilde range that leaves out the patch number doesn't match a prerelease of the first version in the range. The docs say `~3.4` means the same as `3.4.x`, and the x-range and caret forms both match it.\n\n```js\nconst semver = require('semver')\nconst opts = { includePrerelease: true }\nsemver.satisfies('3.4.0-beta', '3.4.*', opts)   // true\nsemver.satisfies('3.4.0-beta', '>=3.4.*', opts) // true\nsemver.satisfies('3.4.0-beta', '^3.4.*', opts)  // true\nsemver.satisfies('3.4.0-beta', '~3.4.*', opts)  // false\nsemver.satisfies('3.4.0-beta', '~3.4', opts)    // false\n```\n\nI expected the last two to return `true` as well, so a tilde range behaves like the x-range it is documented to equal."
+}

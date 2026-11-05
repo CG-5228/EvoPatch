@@ -1,0 +1,18 @@
+{
+  "id": "boltons-404-omd-eq",
+  "title": "OrderedMultiDict equality with plain mappings",
+  "holdout": false,
+  "language": "python",
+  "repo": "mahmoud/boltons",
+  "base_sha": "766b5547392fe8d54c1e000098499dc556bb5cb7",
+  "fix_sha": "c463d1633a075c398d6ffad7d8653064a615b696",
+  "pr": 404,
+  "issue": null,
+  "links": [
+    "https://github.com/mahmoud/boltons/pull/404"
+  ],
+  "merged_at": "2026-06-17T20:57:15Z",
+  "license": "BSD-3-Clause",
+  "bug_class": "duplicated code",
+  "issue_text": "`OrderedMultiDict == dict` is True even when the values differ\n\nWhen I compare an `OrderedMultiDict` with a regular dict, only the keys seem to matter. If the keys line up, `==` says the two are equal even when the values are completely different.\n\n```python\nfrom boltons.dictutils import OrderedMultiDict\n\nomd = OrderedMultiDict([('x', 10), ('y', 20)])\nomd == {'x': 10, 'y': 5000}    # True, expected False\n```\n\n`QueryParamDict` from `boltons.urlutils` does the same thing:\n\n```python\nfrom boltons.urlutils import QueryParamDict\n\nparams = QueryParamDict([('x', '10')])\nparams == {'x': 'other'}    # True, expected False\n```\n\nI expected `==` to be `False` as soon as a value differs, and `True` only when both the keys and the values match."
+}

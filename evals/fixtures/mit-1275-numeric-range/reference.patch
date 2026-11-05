@@ -1,0 +1,24 @@
+diff --git a/more_itertools/more.py b/more_itertools/more.py
+index 83131cb..4594409 100755
+--- a/more_itertools/more.py
++++ b/more_itertools/more.py
+@@ -2458,15 +2458,10 @@ class numeric_range(Sequence):
+         )
+ 
+     def __reversed__(self):
+-        # Empty iterator
+-        try:
+-            start = self._get_by_index(-1)
+-        except IndexError:
+-            return iter([])
+-
+-        return iter(
+-            numeric_range(start, self._start - self._step, -self._step)
+-        )
++        start = self._start
++        step = self._step
++        for i in reversed(range(self._len)):
++            yield start + i * step
+ 
+     def count(self, value):
+         return int(value in self)

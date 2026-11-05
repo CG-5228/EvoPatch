@@ -1,0 +1,11 @@
+[
+ "tests.test_issue484::test_issue_484_rc9_to_rc10",
+ "tests.test_next_version_legacy_order::test_next_legacy_counter_preserves_order[0.0.0-rc9-rc-0.0.1-rc10]",
+ "tests.test_next_version_legacy_order::test_next_legacy_counter_preserves_order[1.2.3-0rc9-0rc-1.2.4-0rc10]",
+ "tests.test_next_version_legacy_order::test_next_legacy_counter_preserves_order[1.2.3-alpha.beta9-alpha.beta-1.2.4-alpha.beta10]",
+ "tests.test_next_version_legacy_order::test_next_legacy_counter_preserves_order[1.2.3-beta9-beta-1.2.4-beta10]",
+ "tests.test_next_version_legacy_order::test_next_legacy_counter_preserves_order[1.2.3-rc9-rc-1.2.4-rc10]",
+ "tests.test_next_version_legacy_order::test_next_legacy_counter_preserves_order[1.2.3-rc99-rc-1.2.4-rc100]",
+ "tests.test_next_version_legacy_order::test_next_legacy_counter_preserves_order[1.2.3-rc999+build.7-rc-1.2.4-rc1000]",
+ "tests.test_next_version_legacy_order::test_repeated_legacy_bumps_preserve_order_and_subclass"
+]

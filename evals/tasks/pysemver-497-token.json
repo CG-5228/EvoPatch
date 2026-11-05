@@ -1,0 +1,19 @@
+{
+  "id": "pysemver-497-token",
+  "title": "switching prerelease tokens",
+  "holdout": true,
+  "language": "python",
+  "repo": "python-semver/python-semver",
+  "base_sha": "94debf9d3e714ccb08ca7c0199b5bce96cfd7687",
+  "fix_sha": "bcd151fa63df3053b9f30e698e9ae1020187be1a",
+  "pr": 498,
+  "issue": 497,
+  "links": [
+    "https://github.com/python-semver/python-semver/pull/498",
+    "https://github.com/python-semver/python-semver/issues/497"
+  ],
+  "merged_at": "2026-10-19T06:33:04Z",
+  "license": "BSD-3-Clause",
+  "bug_class": "prerelease ordering",
+  "issue_text": "I call next_version(\"prerelease\", prerelease_token=...) to move a version onto a different prerelease token. When the new token sorts before the current one, I get back a version lower than the one I started with, even though the docstring says next_version preserves natural order.\n\n```\n>>> from semver import Version\n>>> v = Version.parse(\"4.5.6-rc.2\")\n>>> n = v.next_version(\"prerelease\", prerelease_token=\"beta\")\n>>> n\nVersion(major=4, minor=5, patch=6, prerelease='beta.1', build=None)\n>>> n > v\nFalse\n```\n\nThe same thing happens going from beta to alpha, or from rc to dev. Moving to a token that sorts later, such as dev to rc, is fine.\n\nI expected next_version never to go backwards: the result should always be greater than the version it was called on. If restarting the new token on the same release would not give a higher version, it should move to the next patch and start the token there instead of raising an error, so the example above gives 4.5.7-beta.1."
+}

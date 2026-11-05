@@ -3,20 +3,93 @@
     "Today you improve yourself": "improve"
   },
   "default": [
-    {"exec": "cat skills/fix-workflow/SKILL.md"},
-    {"exec": "mkdir -p work out && tar -xzf uploads/*.tar.gz -C work && ls work work/tools"},
-    {"exec": "work/tools/test > out/test.log 2>&1; tail -n 3 out/test.log"},
-    {"exec": "cd work/repo && if [ -f src/humanize/filesize.py ]; then python3 - <<'PY'\nfrom pathlib import Path\np = Path('src/humanize/filesize.py')\ns = p.read_text()\nold = '    ret: str = format % (bytes_ / (base**exp)) + _\\n'\nprint(s.count('for i, s in'))\nPY\nfi; sed -n 1,5p README.md | head -3"},
-    {"subagent": {"name": "reviewer", "input": "Review the fix in work/repo. Don't edit files."}},
-    {"exec": "work/tools/finish 'mock attempt: no change'"},
-    {"text": "I made no change."}
+    {
+      "exec": "cat skills/fix-workflow/SKILL.md"
+    },
+    {
+      "exec": "mkdir -p work out && tar -xzf uploads/*.tar.gz -C work && ls work work/tools"
+    },
+    {
+      "exec": "work/tools/test > out/test.log 2>&1; grep -E '^(FAILED|ERROR)|^FAILED|not ok' out/test.log | head -12; tail -n 2 out/test.log"
+    },
+    {
+      "exec": "cd work/repo && if [ -f src/humanize/filesize.py ]; then python3 - <<'PY'\nfrom pathlib import Path\np = Path('src/humanize/filesize.py')\ns = p.read_text()\nold = '    space = \"\" if gnu else \" \"\\n'\nnew = '    if exp < len(suffix) and abs(float(format % (abs_bytes / (base**exp)))) >= base:\\n        exp += 1\\n' + old\nassert s.count(old) == 1\np.write_text(s.replace(old, new))\nPY\nfi; echo edited"
+    },
+    {
+      "subagent": {
+        "name": "reviewer",
+        "input": "Review the fix in work/repo. Don't edit files."
+      }
+    },
+    {
+      "exec": "work/tools/finish 'mock attempt: no change'"
+    },
+    {
+      "text": "I made no change."
+    }
   ],
   "improve": [
-    {"exec": "mkdir -p bundle out && tar -xzf uploads/improve-bundle.tar.gz -C bundle && ls bundle bundle/failures"},
-    {"subagent": {"name": "analyst", "input": "Read bundle/failures and report what went wrong in the process."}},
-    {"subagent": {"name": "skeptic", "input": "Check the cause against bundle/passes."}},
-    {"exec": "python3 - <<'PY'\nimport json, os, re\nids = sorted(os.listdir('bundle/failures'))\nseen, cited = set(), []\nfor f in ids:\n    a = f.replace('--', '/', 1)\n    t = re.sub(r'-\\d+$', '', a.split('/')[1])\n    if t not in seen:\n        seen.add(t); cited.append(a)\nos.makedirs('out/agent/skills/fix-workflow', exist_ok=True)\ntext = open('bundle/agent/skills/fix-workflow/SKILL.md').read().replace('3. **Fix.** Change the source, not the tests.', '3. **Fix.** Change the source, not the tests. Check the same rule on the boundary values next to the reported one.')\nopen('out/agent/skills/fix-workflow/SKILL.md', 'w').write(text)\njson.dump({'cause': 'Stopped at the reported example', 'rule': 'Check neighbouring boundary values', 'cited': cited[:2], 'predicted_effect': 'Fewer partial fixes'}, open('out/diagnosis.json', 'w'))\njson.dump({'files': ['agent/skills/fix-workflow/SKILL.md']}, open('out/manifest.json', 'w'))\nopen('out/LEARNED.md', 'w').write('I stopped at the reported example instead of checking the values next to it.')\nprint(cited)\nPY"},
-    {"exec": "shasum -a 256 out/agent/skills/fix-workflow/SKILL.md out/diagnosis.json"},
-    {"text": "Done."}
+    {
+      "exec": "mkdir -p bundle out && tar -xzf uploads/improve-bundle.tar.gz -C bundle && ls bundle bundle/failures"
+    },
+    {
+      "subagent": {
+        "name": "analyst",
+        "input": "Read bundle/failures and report what went wrong in the process."
+      }
+    },
+    {
+      "subagent": {
+        "name": "skeptic",
+        "input": "Check the cause against bundle/passes."
+      }
+    },
+    {
+      "exec": "python3 - <<'PY'\nimport json, os, re\nids = sorted(os.listdir('bundle/failures'))\nseen, cited = set(), []\nfor f in ids:\n    a = f.replace('--', '/', 1)\n    t = re.sub(r'-\\d+$', '', a.split('/')[1])\n    if t not in seen:\n        seen.add(t); cited.append(a)\nos.makedirs('out/agent/skills/fix-workflow', exist_ok=True)\ntext = open('bundle/agent/skills/fix-workflow/SKILL.md').read().replace('3. **Fix.** Change the source, not the tests.', '3. **Fix.** Change the source, not the tests. Check the same rule on the boundary values next to the reported one.')\nopen('out/agent/skills/fix-workflow/SKILL.md', 'w').write(text)\njson.dump({'cause': 'Stopped at the reported example', 'rule': 'Check neighbouring boundary values', 'cited': cited[:2], 'predicted_effect': 'Fewer partial fixes'}, open('out/diagnosis.json', 'w'))\njson.dump({'files': ['agent/skills/fix-workflow/SKILL.md']}, open('out/manifest.json', 'w'))\nopen('out/LEARNED.md', 'w').write('I stopped at the reported example instead of checking the values next to it.')\nprint(cited)\nPY"
+    },
+    {
+      "exec": "shasum -a 256 out/agent/skills/fix-workflow/SKILL.md out/diagnosis.json"
+    },
+    {
+      "text": "Done."
+    }
+  ],
+  "s429": [
+    {
+      "status": 429
+    }
+  ],
+  "s500": [
+    {
+      "status": 500
+    }
+  ],
+  "s401": [
+    {
+      "status": 401
+    }
+  ],
+  "s402": [
+    {
+      "status": 402
+    }
+  ],
+  "midstream": [
+    {
+      "streamError": "gateway went away"
+    }
+  ],
+  "length": [
+    {
+      "finish": "length"
+    }
+  ],
+  "slow": [
+    {
+      "exec": "sleep 70; echo done"
+    },
+    {
+      "text": "Finished."
+    }
   ]
 }

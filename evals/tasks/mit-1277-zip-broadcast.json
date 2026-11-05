@@ -1,0 +1,19 @@
+{
+  "id": "mit-1277-zip-broadcast",
+  "title": "zip_broadcast with single-use iterables",
+  "holdout": true,
+  "language": "python",
+  "repo": "more-itertools/more-itertools",
+  "base_sha": "9ed3dbb0ae527230cd156d91d0af305478558fba",
+  "fix_sha": "4ebeea3e569388911a0bec740092f3cf996d79f3",
+  "pr": 1278,
+  "issue": 1277,
+  "links": [
+    "https://github.com/more-itertools/more-itertools/pull/1278",
+    "https://github.com/more-itertools/more-itertools/issues/1277"
+  ],
+  "merged_at": "2026-09-14T14:27:49Z",
+  "license": "MIT",
+  "bug_class": "one-shot iterables",
+  "issue_text": "`zip_broadcast` opens its iterable arguments more than once, so anything that can only be opened a single time blows up, even though the builtin `zip` accepts it:\n\n```python\nfrom more_itertools import zip_broadcast\n\nclass OneShot:\n    def __init__(self, items):\n        self.items = items\n        self.used = False\n\n    def __iter__(self):\n        if self.used:\n            raise ValueError('opened twice')\n        self.used = True\n        return iter(self.items)\n\nprint(list(zip(OneShot('xy'), [0, 0])))       # [('x', 0), ('y', 0)]\nprint(list(zip_broadcast(OneShot('xy'), 0)))  # ValueError: opened twice\n```\n\nI expected `[('x', 0), ('y', 0)]` from `zip_broadcast` too, with the source opened exactly once. It fails the same way when the iterable is empty and when `strict=True` is passed."
+}

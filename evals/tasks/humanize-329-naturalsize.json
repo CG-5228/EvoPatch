@@ -1,0 +1,18 @@
+{
+  "id": "humanize-329-naturalsize",
+  "title": "naturalsize at unit boundaries",
+  "holdout": false,
+  "language": "python",
+  "repo": "python-humanize/humanize",
+  "base_sha": "7574e0cc377d80db0d2756fc2c5e0b8799a6f8b4",
+  "fix_sha": "823ad6096e1e5ba82ea876ce761fc2efebd76157",
+  "pr": 329,
+  "issue": null,
+  "links": [
+    "https://github.com/python-humanize/humanize/pull/329"
+  ],
+  "merged_at": "2026-06-30T15:36:42Z",
+  "license": "MIT",
+  "bug_class": "rounding carry",
+  "issue_text": "While showing file sizes in a dashboard with `humanize.naturalsize`, I noticed that values sitting just under a unit boundary come out looking wrong. The number rounds up, but the unit doesn't move with it:\n\n```python\n>>> from humanize import naturalsize\n>>> naturalsize(999_960)\n'1000.0 kB'\n>>> naturalsize(999_980_000)\n'1000.0 MB'\n>>> naturalsize(1024**3 - 1, binary=True)\n'1024.0 MiB'\n```\n\nI expected `'1.0 MB'`, `'1.0 GB'` and `'1.0 GiB'`, which is what you get by passing the round value itself. `gnu=True` output has the same problem at its boundaries. The largest unit is the exception: a huge number in `QB` or `QiB` should keep showing that unit, because there's nothing bigger to move up to."
+}

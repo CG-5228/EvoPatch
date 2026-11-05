@@ -1,0 +1,19 @@
+{
+  "id": "boltons-452-backoff",
+  "title": "backoff with factor 1.0",
+  "holdout": false,
+  "language": "python",
+  "repo": "mahmoud/boltons",
+  "base_sha": "57cb026b7f47cd2765a0d5acdc83849ed5f1f6a3",
+  "fix_sha": "ead236e278ca0466bf468de746b5960fb12d7e5b",
+  "pr": 428,
+  "issue": 452,
+  "links": [
+    "https://github.com/mahmoud/boltons/pull/428",
+    "https://github.com/mahmoud/boltons/issues/452"
+  ],
+  "merged_at": "2026-07-18T00:43:23Z",
+  "license": "BSD-3-Clause",
+  "bug_class": "input edge cases",
+  "issue_text": "backoff_iter crashes on factor=1.0 when count is left out\n\n`backoff_iter` rejects a `factor` below 1.0 with a `ValueError`, so 1.0 looks like valid input. But if I pass exactly 1.0 and leave out `count`, it dies with an unhandled error:\n\n```python\nfrom boltons.iterutils import backoff_iter\n\nlist(backoff_iter(2.0, 30.0, factor=1.0))\n# ZeroDivisionError: float division by zero\n```\n\nGiving an explicit `count` works and produces a flat sequence:\n\n```python\nlist(backoff_iter(2.0, 30.0, count=4, factor=1.0))\n# [2.0, 2.0, 2.0, 2.0]\n```\n\nA value the function's own validation lets through shouldn't end in a raw `ZeroDivisionError`. A flat sequence can never climb to a larger `stop`, so no count can be worked out here, and I expected a descriptive `ValueError` instead."
+}

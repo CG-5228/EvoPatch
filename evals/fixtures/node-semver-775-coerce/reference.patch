@@ -1,0 +1,45 @@
+diff --git a/classes/semver.js b/classes/semver.js
+index 6fbc062..97049a4 100644
+--- a/classes/semver.js
++++ b/classes/semver.js
+@@ -1,6 +1,6 @@
+ const debug = require('../internal/debug')
+ const { MAX_LENGTH, MAX_SAFE_INTEGER } = require('../internal/constants')
+-const { safeRe: re, safeSrc: src, t } = require('../internal/re')
++const { safeRe: re, t } = require('../internal/re')
+ 
+ const parseOptions = require('../internal/parse-options')
+ const { compareIdentifiers } = require('../internal/identifiers')
+@@ -182,8 +182,7 @@ class SemVer {
+       }
+       // Avoid an invalid semver results
+       if (identifier) {
+-        const r = new RegExp(`^${this.options.loose ? src[t.PRERELEASELOOSE] : src[t.PRERELEASE]}$`)
+-        const match = `-${identifier}`.match(r)
++        const match = `-${identifier}`.match(this.options.loose ? re[t.PRERELEASELOOSE] : re[t.PRERELEASE])
+         if (!match || match[1] !== identifier) {
+           throw new Error(`invalid identifier: ${identifier}`)
+         }
+diff --git a/internal/re.js b/internal/re.js
+index 2a956ba..0a1c0e6 100644
+--- a/internal/re.js
++++ b/internal/re.js
+@@ -76,12 +76,14 @@ createToken('MAINVERSIONLOOSE', `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` +
+ 
+ // ## Pre-release Version Identifier
+ // A numeric identifier, or a non-numeric identifier.
++// Non-numberic identifiers include numberic identifiers but can be longer.
++// Therefore non-numberic identifiers must go first.
+ 
+-createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NUMERICIDENTIFIER]
+-}|${src[t.NONNUMERICIDENTIFIER]})`)
++createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NONNUMERICIDENTIFIER]
++}|${src[t.NUMERICIDENTIFIER]})`)
+ 
+-createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NUMERICIDENTIFIERLOOSE]
+-}|${src[t.NONNUMERICIDENTIFIER]})`)
++createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NONNUMERICIDENTIFIER]
++}|${src[t.NUMERICIDENTIFIERLOOSE]})`)
+ 
+ // ## Pre-release Version
+ // Hyphen, followed by one or more dot-separated pre-release version
