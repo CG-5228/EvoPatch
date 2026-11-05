@@ -61,6 +61,7 @@ turn("bad key", { status: "error", message: "Request failed (401): bad key" }, "
 turn("out of credit", { status: "error", message: "Request failed (402): payment required" }, "infra", true);
 turn("output truncated", { status: "error", message: "Output truncated at the token limit" }, "failed");
 turn("ran out of time", { status: "cancelled", reason: "server-execution-timeout" }, "failed");
+turn("ran out of steps", { status: "error", message: "You have reached iteration limit of 120, please request again" }, "failed");
 turn("abandoned", { status: "cancelled", reason: "abandoned" }, "infra");
 
 console.log(failed ? `\n${failed} check(s) failed` : "\nAll checks passed");

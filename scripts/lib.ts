@@ -227,7 +227,7 @@ export interface TurnResult {
 }
 
 const FATAL_ERROR = /\b(401|402|403)\b|unauthori[sz]ed|insufficient|quota|credit|budget/i;
-const REAL_FAILURE = /^Output (truncated|blocked)/;
+const REAL_FAILURE = /^Output (truncated|blocked)|iteration limit/i; // the agent ran out of room: that counts
 
 /** Decide whose fault a finished turn was. Written into docs/protocol.md before run 1. */
 export function classifyTurn(state: { status: string; message?: string; reason?: string; requiredActions?: unknown[] }): Pick<TurnResult, "outcome" | "fatal"> {
@@ -261,7 +261,8 @@ export async function runTurn(tf: TrueForge, sessionId: string, text: string, op
     );
     turnId = data.id;
   } catch (e) {
-    const error = `createTurn rejected: ${(e as Error).message.slice(0, 300)}`;
+    const cause = (e as { cause?: { code?: string; message?: string } }).cause;
+    const error = `createTurn rejected: ${(e as Error).message.slice(0, 300)}${cause ? ` (${cause.code ?? ""} ${cause.message ?? ""})` : ""}`;
     return { turnId: "", status: "rejected", text: "", error, outcome: "infra", fatal: FATAL_ERROR.test(error) };
   }
   const started = Date.now();
