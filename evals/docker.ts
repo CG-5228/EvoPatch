@@ -33,6 +33,11 @@ export interface RunnerResult {
   tail: string;
 }
 
+/** The scorer image's id, or "" if it isn't built. `docker image inspect` can't see it on Docker Desktop's image store. */
+export function scorerImageId(): string {
+  return execFileSync("docker", ["images", "--no-trunc", "--format", "{{.ID}}", IMAGE], { encoding: "utf8" }).trim();
+}
+
 export function loadProfiles(): Record<string, Profile> {
   return JSON.parse(readFileSync(join(EVALS_DIR, "profiles.json"), "utf8"));
 }

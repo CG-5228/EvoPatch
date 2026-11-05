@@ -8,11 +8,10 @@
 //   scratch   runs-scratch/<label>: not committed; for pilots and development
 // Counted, search and control runs are listed in runs/registry.csv before they start, so an aborted run stays visible.
 
-import { execFileSync } from "node:child_process";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { loadTasks, tarballName, taskPrompt, taskTarball, type Task } from "../evals/prompt.ts";
-import { IMAGE } from "../evals/docker.ts";
+import { IMAGE, scorerImageId } from "../evals/docker.ts";
 import { scoreAttempt, scoreRun, scoreTask, type AttemptScore, type FailureClass } from "../evals/score.ts";
 import {
   client,
@@ -59,6 +58,10 @@ if (official) {
   if (git("diff", "--name-only", FREEZE_TAG, "--", "evals", "agent/agent.json")) die(`evals/ or agent/agent.json changed since ${FREEZE_TAG}.`);
   if (kind === "counted" && (option("tasks") || option("k") || flag("train-only"))) die("Counted runs always use every task at the frozen k.");
 }
+
+// Anything that could fail after the run must fail now, before it spends anything.
+const imageId = scorerImageId();
+if (!imageId) die(`The scorer image isn't built: docker build -t ${IMAGE} evals`);
 
 const sha = option("at") ?? headSha();
 const k = Number(option("k") ?? protocol.k);
@@ -219,7 +222,7 @@ writeJson(join(dir, "env.json"), {
   concurrency: protocol.concurrency,
   node: process.version,
   scorer_image: IMAGE,
-  scorer_image_id: execFileSync("docker", ["image", "inspect", "--format", "{{.Id}}", IMAGE], { encoding: "utf8" }).trim(),
+  scorer_image_id: imageId,
   server: "@truefoundry/trueforge@0.182.0",
 });
 
