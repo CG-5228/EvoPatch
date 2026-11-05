@@ -2,8 +2,9 @@
 //
 // Dev only: an OpenAI-compatible server that replays scripted steps, so the sandbox and the harness can be tested
 // with no model key. TrueForge only ever calls POST {base_url}/chat/completions with stream:true.
-// The first user message picks the scenario with a [[mock:NAME]] marker. The step is the number of assistant
-// messages so far, so the server keeps no state. Subagents and anything unscripted get a plain text answer.
+// The first user message picks the scenario: a [[mock:NAME]] marker, or a "routes" entry whose text it contains.
+// The step is the number of assistant messages so far, so the server keeps no state. Subagents and anything
+// unscripted get a plain text answer.
 //
 // A step is one of: {"exec": "command"}, {"subagent": {"name": "...", "input": "..."}}, {"text": "final reply"},
 // {"status": 429}, {"streamError": "message"}, {"finish": "length"}.
@@ -26,7 +27,7 @@ interface Message {
 
 const [file, port = "8799"] = process.argv.slice(2);
 if (!file) throw new Error("usage: mock-model <scenarios.json> [port]");
-const scenarios = JSON.parse(readFileSync(file, "utf8")) as Record<string, Step[]>;
+const { routes = {}, ...scenarios } = JSON.parse(readFileSync(file, "utf8")) as Record<string, Step[]> & { routes?: Record<string, string> };
 
 function text(m: Message): string {
   if (typeof m.content === "string") return m.content;
@@ -72,7 +73,9 @@ createServer((req, res) => {
       return;
     }
     const firstUser = messages.find((m) => m.role === "user");
-    const name = (firstUser ? text(firstUser) : "").match(/\[\[mock:([\w-]+)\]\]/)?.[1] ?? "default";
+    const said = firstUser ? text(firstUser) : "";
+    const routed = Object.entries(routes as Record<string, string>).find(([needle]) => said.includes(needle))?.[1];
+    const name = said.match(/\[\[mock:([\w-]+)\]\]/)?.[1] ?? routed ?? "default";
     const index = messages.filter((m) => m.role === "assistant").length;
     const step = scenarios[name]?.[index];
     if (step && "status" in step) {

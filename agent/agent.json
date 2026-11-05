@@ -1,9 +1,8 @@
 {
-  "name": "code-reviewer",
-  "description": "Reviews a small code change and lists the real problems in it, as JSON.",
+  "name": "evopatch",
+  "description": "Fixes real bugs: reproduces them, patches the code, tests the patch, and rewrites its own skills from what went wrong.",
   "model": {
-    "name": "anthropic/claude-sonnet-4-6",
-    "params": { "temperature": 0 }
+    "name": "provider/model"
   },
-  "skill_mode": "inline"
+  "skill_mode": "git"
 }

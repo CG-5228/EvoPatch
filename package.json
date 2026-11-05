@@ -19,10 +19,13 @@
     "score": "tsx evals/score.ts",
     "typecheck": "tsc --noEmit",
     "mock-model": "tsx scripts/mock-model.ts",
-    "probe": "tsx scripts/probe-sandbox.ts"
+    "probe": "tsx scripts/probe-sandbox.ts",
+    "curate": "tsx scripts/curate.ts",
+    "evolve": "tsx scripts/evolve.ts"
   },
   "dependencies": {
-    "@truefoundry/trueforge-sdk": "0.182.0"
+    "@truefoundry/trueforge-sdk": "0.182.0",
+    "undici": "7.30.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

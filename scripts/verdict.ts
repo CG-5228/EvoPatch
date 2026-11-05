@@ -11,7 +11,8 @@
 
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { die, findLeaks, git, RUNS_DIR } from "./lib.ts";
+import { findLeaks } from "./guards.ts";
+import { die, git, RUNS_DIR } from "./lib.ts";
 import { fiveChecks, parseRunList, readRun, spreadMarkdown, verdictLine, verdictMarkdown, type GitFacts } from "./realgain.ts";
 
 const baseline = parseRunList(process.argv[2], "baseline runs").map(readRun);
