@@ -6,3 +6,5 @@ runs-scratch/
 .tmp/
 .cache/
 .tmp-improve-*
+__pycache__/
+*.pyc

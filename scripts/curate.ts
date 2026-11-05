@@ -95,6 +95,10 @@ function curate(task: Task, profile: Profile) {
   const touched = touchedTests(upstream, task, profile);
   const untraced = f2p.filter((id) => !fromFixedFile(id, touched));
 
+  // A project's own .gitignore can hide files we generate. Force-add them, or a fresh clone won't have them.
+  const hidden = git(ROOT, "ls-files", "-o", "-i", "--exclude-standard", "--", dir).split("\n").filter(Boolean);
+  if (hidden.length) git(ROOT, "add", "-f", "--", ...hidden);
+
   writeFileSync(join(dir, "f2p.json"), JSON.stringify(f2p, null, 1) + "\n");
   writeFileSync(join(dir, "p2p.json"), JSON.stringify(p2p, null, 1) + "\n");
   writeFileSync(join(dir, "stale.json"), JSON.stringify(stale, null, 1) + "\n");

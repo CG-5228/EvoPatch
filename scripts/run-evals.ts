@@ -54,6 +54,8 @@ const official = kind !== "scratch";
 if (official) {
   if (process.env.TF_MODEL || process.env.TF_AGENT_NAME) die("TF_MODEL and TF_AGENT_NAME override agent/agent.json. Unset them for an official run.");
   if (!isClean("agent", "evals", "scripts", "package.json", "package-lock.json")) die("agent/, evals/, scripts/ or the package files have uncommitted changes. Commit them first.");
+  const hidden = git("ls-files", "-o", "-i", "--exclude-standard", "--", "evals").split("\n").filter((f) => f && !f.includes("__pycache__"));
+  if (hidden.length) die(`Files under evals/ exist here but aren't in git, so a fresh clone would differ:\n  ${hidden.join("\n  ")}`);
   if (!git("tag", "--list", FREEZE_TAG)) die(`No ${FREEZE_TAG} tag yet: freeze the evaluation before an official run.`);
   if (git("diff", "--name-only", FREEZE_TAG, "--", "evals", "agent/agent.json")) die(`evals/ or agent/agent.json changed since ${FREEZE_TAG}.`);
   if (kind === "counted" && (option("tasks") || option("k") || flag("train-only"))) die("Counted runs always use every task at the frozen k.");
