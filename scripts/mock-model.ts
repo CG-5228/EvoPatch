@@ -27,6 +27,8 @@ interface Message {
 
 const [file, port = "8799"] = process.argv.slice(2);
 if (!file) throw new Error("usage: mock-model <scenarios.json> [port]");
+// After the Nth "improve" scenario, tasks use the scenario "better-N", if there is one: a stand-in for a better agent.
+let improvements = 0;
 const { routes = {}, ...scenarios } = JSON.parse(readFileSync(file, "utf8")) as Record<string, Step[]> & { routes?: Record<string, string> };
 
 function text(m: Message): string {
@@ -77,7 +79,9 @@ createServer((req, res) => {
     const routed = Object.entries(routes as Record<string, string>).find(([needle]) => said.includes(needle))?.[1];
     const name = said.match(/\[\[mock:([\w-]+)\]\]/)?.[1] ?? routed ?? "default";
     const index = messages.filter((m) => m.role === "assistant").length;
-    const step = scenarios[name]?.[index];
+    if (name === "improve" && index === 0) improvements++;
+    const better = name === "default" && scenarios[`better-${improvements}`] ? `better-${improvements}` : name;
+    const step = scenarios[better]?.[index];
     if (step && "status" in step) {
       res.writeHead(step.status, { "content-type": "application/json" });
       res.end(JSON.stringify({ error: { message: `mock status ${step.status}` } }));

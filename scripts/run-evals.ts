@@ -34,6 +34,7 @@ import {
   runDir,
   RUNS_DIR,
   runTurn,
+  skillRef,
   SUMMARY_CSV,
   syncAgent,
   turnStats,
@@ -156,7 +157,7 @@ async function attemptOnce(task: Task, attempt: number): Promise<void> {
     infraStreak = 0;
     const state = await downloadFile(tf, sessionId, turn.turnId, "skills/.tfy-skill-downloader-state.json");
     const refs = state ? (JSON.parse(state.toString()) as { downloaded_git_skills: { ref: string }[] }).downloaded_git_skills.map((s) => s.ref) : [];
-    if (usage.execs && refs.some((r) => r !== sha)) {
+    if (usage.execs && refs.some((r) => r !== skillRef(sha))) {
       aborted = `skills ran at ${refs[0]?.slice(0, 7)}, not ${sha.slice(0, 7)}: something changed the registry during this run`;
       return;
     }

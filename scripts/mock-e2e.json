@@ -13,9 +13,6 @@
       "exec": "work/tools/test > out/test.log 2>&1; grep -E '^(FAILED|ERROR)|^FAILED|not ok' out/test.log | head -12; tail -n 2 out/test.log"
     },
     {
-      "exec": "cd work/repo && if [ -f src/humanize/filesize.py ]; then python3 - <<'PY'\nfrom pathlib import Path\np = Path('src/humanize/filesize.py')\ns = p.read_text()\nold = '    space = \"\" if gnu else \" \"\\n'\nnew = '    if exp < len(suffix) and abs(float(format % (abs_bytes / (base**exp)))) >= base:\\n        exp += 1\\n' + old\nassert s.count(old) == 1\np.write_text(s.replace(old, new))\nPY\nfi; echo edited"
-    },
-    {
       "subagent": {
         "name": "reviewer",
         "input": "Review the fix in work/repo. Don't edit files."
@@ -90,6 +87,58 @@
     },
     {
       "text": "Finished."
+    }
+  ],
+  "better-1": [
+    {
+      "exec": "cat skills/fix-workflow/SKILL.md"
+    },
+    {
+      "exec": "mkdir -p work out && tar -xzf uploads/*.tar.gz -C work && ls work work/tools"
+    },
+    {
+      "exec": "work/tools/test > out/test.log 2>&1; grep -E '^(FAILED|ERROR)|^FAILED|not ok' out/test.log | head -12; tail -n 2 out/test.log"
+    },
+    {
+      "exec": "cd work/repo && if [ -f src/humanize/filesize.py ]; then python3 - <<'PY'\nfrom pathlib import Path\np = Path('src/humanize/filesize.py')\ns = p.read_text()\nold = '    space = \"\" if gnu else \" \"\\n'\nnew = '    if exp < len(suffix) and abs(float(format % (abs_bytes / (base**exp)))) >= base:\\n        exp += 1\\n' + old\nassert s.count(old) == 1\np.write_text(s.replace(old, new))\nPY\nfi; echo edited"
+    },
+    {
+      "subagent": {
+        "name": "reviewer",
+        "input": "Review the fix in work/repo. Don't edit files."
+      }
+    },
+    {
+      "exec": "work/tools/finish 'mock attempt: no change'"
+    },
+    {
+      "text": "I made no change."
+    }
+  ],
+  "better-2": [
+    {
+      "exec": "cat skills/fix-workflow/SKILL.md"
+    },
+    {
+      "exec": "mkdir -p work out && tar -xzf uploads/*.tar.gz -C work && ls work work/tools"
+    },
+    {
+      "exec": "work/tools/test > out/test.log 2>&1; grep -E '^(FAILED|ERROR)|^FAILED|not ok' out/test.log | head -12; tail -n 2 out/test.log"
+    },
+    {
+      "exec": "cd work/repo && if [ -f src/humanize/filesize.py ]; then python3 - <<'PY'\nfrom pathlib import Path\np = Path('src/humanize/filesize.py')\ns = p.read_text()\nold = '    space = \"\" if gnu else \" \"\\n'\nnew = '    if exp < len(suffix) and abs(float(format % (abs_bytes / (base**exp)))) >= base:\\n        exp += 1\\n' + old\nassert s.count(old) == 1\np.write_text(s.replace(old, new))\nPY\nfi; echo edited"
+    },
+    {
+      "subagent": {
+        "name": "reviewer",
+        "input": "Review the fix in work/repo. Don't edit files."
+      }
+    },
+    {
+      "exec": "work/tools/finish 'mock attempt: no change'"
+    },
+    {
+      "text": "I made no change."
     }
   ]
 }

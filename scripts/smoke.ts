@@ -6,7 +6,7 @@
 
 import { loadTasks, tarballName, taskPrompt, taskTarball } from "../evals/prompt.ts";
 import { scoreAttempt } from "../evals/score.ts";
-import { client, commandsOf, die, downloadFile, env, exportTurn, featureUsage, headSha, option, runTurn, syncAgent } from "./lib.ts";
+import { client, commandsOf, die, downloadFile, env, exportTurn, featureUsage, headSha, option, runTurn, skillRef, syncAgent } from "./lib.ts";
 
 const tf = client();
 let agent;
@@ -28,7 +28,7 @@ const { turn: exported } = await exportTurn(tf, session.id, turn.turnId);
 const usage = featureUsage([exported]);
 if (usage.init_failures) die(`Smoke test failed: the sandbox didn't start (session ${session.id}).`);
 const state = await downloadFile(tf, session.id, turn.turnId, "skills/.tfy-skill-downloader-state.json");
-const pinned = state ? (JSON.parse(state.toString()) as { downloaded_git_skills: { ref: string }[] }).downloaded_git_skills.every((s) => s.ref === agent.at.sha) : false;
+const pinned = state ? (JSON.parse(state.toString()) as { downloaded_git_skills: { ref: string }[] }).downloaded_git_skills.every((s) => s.ref === skillRef(agent.at.sha)) : false;
 if (!pinned) die(`Smoke test failed: the sandbox didn't install skills at ${agent.at.sha.slice(0, 7)} (session ${session.id}).`);
 
 const patch = await downloadFile(tf, session.id, turn.turnId, "out/patch.diff");

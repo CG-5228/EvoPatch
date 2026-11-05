@@ -77,8 +77,15 @@ export function isClean(...paths: string[]): boolean {
   return git("status", "--porcelain", "--", ...paths) === "";
 }
 
+/** Dev only: rehearse the protocol in a throwaway clone. Nothing is pushed, and skills stay at this pushed commit. */
+const REHEARSAL_REF = process.env.EVOPATCH_REHEARSAL_REF;
+
+/** The commit a run's skills are fetched at. */
+export const skillRef = (sha: string) => REHEARSAL_REF ?? sha;
+
 /** True when GitHub has this commit: git skills are fetched from there. */
 export function isPushed(sha: string): boolean {
+  if (REHEARSAL_REF) return true;
   try {
     execFileSync("gh", ["api", `repos/${GITHUB_REPO}/commits/${sha}`, "--jq", ".sha"], { stdio: ["ignore", "pipe", "ignore"] });
     return true;
@@ -88,6 +95,7 @@ export function isPushed(sha: string): boolean {
 }
 
 export function push(): void {
+  if (REHEARSAL_REF) return;
   for (let i = 0; i < 3; i++) {
     try {
       git("push", "-q", "origin", "HEAD:main");
@@ -175,7 +183,7 @@ export async function syncAgent(tf: TrueForge, sha: string): Promise<{ saved: Tr
   if (!isPushed(sha)) die(`Commit ${sha.slice(0, 7)} isn't on GitHub yet, and skills are fetched from there. Push first.`);
   for (const s of at.skills) {
     await tf.settings.skills.createOrUpdate({
-      manifest: { type: "git", name: s.name, description: s.description, url: `https://github.com/${GITHUB_REPO}`, path: s.path, ref: sha },
+      manifest: { type: "git", name: s.name, description: s.description, url: `https://github.com/${GITHUB_REPO}`, path: s.path, ref: skillRef(sha) },
     });
   }
   const manifest = buildManifest(at);
