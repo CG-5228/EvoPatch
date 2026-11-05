@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EvoPatch results</title>
+<link rel="icon" href="data:,">
+<meta name="description" content="Run-by-run results for EvoPatch, a bug-fixing agent on TrueForge that rewrites its own skills.">
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #6f6d68;
+  --grid: #e1e0d9; --axis: #c3c2b7; --ring: rgba(11,11,11,.10);
+  --series-1: #2a78d6; --series-2: #eb6834; --band: rgba(42,120,214,.10);
+  --seq-0: #cde2fb; --seq-1: #9ec5f4; --seq-2: #6da7ec; --seq-3: #3987e5; --seq-4: #1c5cab;
+  --seq-ink-0: #0b0b0b; --seq-ink-1: #0b0b0b; --seq-ink-2: #0b0b0b; --seq-ink-3: #0b0b0b; --seq-ink-4: #ffffff;
+  --good: #006300; --critical: #b02a2a; --warning: #7a5200;
+  --code: #f0efec;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #a09e96;
+    --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,.10);
+    --series-1: #3987e5; --series-2: #d95926; --band: rgba(57,135,229,.16);
+    --seq-0: #0d366b; --seq-1: #184f95; --seq-2: #256abf; --seq-3: #5598e7; --seq-4: #9ec5f4;
+    --seq-ink-0: #f0efec; --seq-ink-1: #ffffff; --seq-ink-2: #ffffff; --seq-ink-3: #0b0b0b; --seq-ink-4: #0b0b0b;
+    --good: #0ca30c; --critical: #e66767; --warning: #fab219;
+    --code: #252523;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #a09e96;
+  --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,.10);
+  --series-1: #3987e5; --series-2: #d95926; --band: rgba(57,135,229,.16);
+  --seq-0: #0d366b; --seq-1: #184f95; --seq-2: #256abf; --seq-3: #5598e7; --seq-4: #9ec5f4;
+  --seq-ink-0: #f0efec; --seq-ink-1: #ffffff; --seq-ink-2: #ffffff; --seq-ink-3: #0b0b0b; --seq-ink-4: #0b0b0b;
+  --good: #0ca30c; --critical: #e66767; --warning: #fab219;
+  --code: #252523;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1040px; margin: 0 auto; padding: 40px 16px 72px; }
+h1 { font-size: 30px; line-height: 1.2; margin: 0 0 8px; }
+h2 { font-size: 20px; margin: 44px 0 4px; }
+.lede, .note { color: var(--ink-2); margin: 0 0 16px; max-width: 68ch; }
+.note { font-size: 14px; }
+a { color: var(--series-1); }
+code, pre { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.card { background: var(--surface); border: 1px solid var(--ring); border-radius: 10px; padding: 16px; }
+.line { font-size: 18px; font-weight: 600; margin: 0 0 12px; }
+.checks { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.checks li { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: baseline; }
+.badge { font-size: 13px; font-weight: 600; white-space: nowrap; }
+.badge.PASS, .badge.kept { color: var(--good); }
+.badge.FAIL, .badge.dropped { color: var(--critical); }
+.badge.MANUAL { color: var(--warning); }
+.checks b { font-weight: 600; }
+.checks span.detail { color: var(--ink-2); font-size: 14px; display: block; overflow-wrap: anywhere; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 12px; }
+.tile .label { color: var(--ink-2); font-size: 14px; }
+.tile .value { font-size: 30px; font-weight: 600; line-height: 1.25; }
+.tile .sub { color: var(--ink-2); font-size: 13px; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 14px; color: var(--ink-2); margin: 0 0 8px; }
+.key { display: inline-block; width: 16px; height: 2px; border-radius: 1px; margin-right: 6px; vertical-align: middle; }
+#chart svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+#chart text { font: 12px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--muted); font-variant-numeric: tabular-nums; }
+#chart text.end { fill: var(--ink); font-weight: 600; }
+.scroll { overflow-x: auto; }
+table { border-collapse: separate; border-spacing: 2px; font-size: 14px; }
+.plain { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+.plain th, .plain td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+.plain th { color: var(--ink-2); font-weight: 500; }
+.plain th:first-child, .plain td:first-child { text-align: left; }
+.matrix th { font-weight: 500; color: var(--ink-2); padding: 2px 6px; text-align: left; white-space: nowrap; }
+.matrix thead th { text-align: center; font-variant-numeric: tabular-nums; }
+.matrix tbody th { position: sticky; left: 0; background: var(--surface); }
+.matrix .group th { color: var(--ink); font-weight: 600; padding-top: 12px; }
+.matrix td { padding: 0; }
+.cell { display: block; min-width: 40px; height: 30px; line-height: 30px; text-align: center; border-radius: 4px; text-decoration: none; font-variant-numeric: tabular-nums; outline-offset: 1px; }
+.cell:hover, .cell:focus-visible { outline: 2px solid var(--ink); }
+.q0 { background: var(--seq-0); color: var(--seq-ink-0); } .q1 { background: var(--seq-1); color: var(--seq-ink-1); }
+.q2 { background: var(--seq-2); color: var(--seq-ink-2); } .q3 { background: var(--seq-3); color: var(--seq-ink-3); }
+.q4 { background: var(--seq-4); color: var(--seq-ink-4); }
+.scale { display: flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: 13px; margin-top: 10px; }
+.scale i { width: 26px; height: 12px; border-radius: 2px; display: inline-block; }
+.round { margin-top: 12px; }
+.round h3 { font-size: 16px; margin: 0 0 6px; display: flex; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+.round dl { display: grid; grid-template-columns: 124px 1fr; gap: 4px 12px; margin: 0; font-size: 14px; }
+.round dt { color: var(--ink-2); }
+.round dd { margin: 0; overflow-wrap: anywhere; }
+details { margin-top: 10px; }
+summary { cursor: pointer; font-size: 14px; color: var(--ink-2); }
+pre { background: var(--code); border-radius: 6px; padding: 10px; overflow-x: auto; margin: 8px 0 0; }
+.add { color: var(--good); } .del { color: var(--critical); }
+#tip { position: fixed; z-index: 5; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--ring); border-radius: 8px; padding: 8px 10px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,.14); max-width: 300px; display: none; }
+#tip .row { display: flex; align-items: center; gap: 6px; }
+#tip b { font-variant-numeric: tabular-nums; }
+#tip .dim { color: var(--ink-2); }
+.empty { color: var(--ink-2); }
+footer { margin-top: 48px; color: var(--ink-2); font-size: 14px; }
+@media (max-width: 560px) {
+  .checks li { grid-template-columns: 1fr; gap: 0; }
+  .round dl { grid-template-columns: 1fr; }
+  .round dd { margin-bottom: 6px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>EvoPatch results</h1>
+  <p class="lede">A bug-fixing agent on TrueForge attempts real merged bug fixes, then rewrites its own skills from what went wrong. Everything here is generated from the <a id="repo-link" href="https://github.com/CG-5228/EvoPatch">repo's</a> saved runs.</p>
+
+  <section aria-labelledby="h-verdict">
+    <h2 id="h-verdict">Is the gain real?</h2>
+    <p class="note">TrueFoundry's five checks. If any check fails, the gain counts as not shown, even when a later run scored higher.</p>
+    <div class="card" id="verdict"></div>
+    <div class="tiles" id="tiles"></div>
+  </section>
+
+  <section aria-labelledby="h-runs">
+    <h2 id="h-runs">Score by run</h2>
+    <p class="note">Held-out tasks come from repos the agent never learns from, so they carry the claim. Train scores are in-sample: the agent saw which of those tests failed.</p>
+    <div class="card" id="chart"></div>
+    <div class="card scroll" style="margin-top:12px"><table class="plain" id="runs"></table></div>
+  </section>
+
+  <section aria-labelledby="h-tasks">
+    <h2 id="h-tasks">Every task, every run</h2>
+    <p class="note">Share of attempts that passed all of the maintainers' tests. Select a cell to open that task's patch.</p>
+    <div class="card scroll"><table class="matrix" id="matrix"></table><div class="scale" id="scale"></div></div>
+  </section>
+
+  <section aria-labelledby="h-rounds">
+    <h2 id="h-rounds">What the agent changed</h2>
+    <p class="note">One small change per round. The agent wrote each cause and edit; a change stays only if it beats the bar on two screens of the training tasks, and it is otherwise reverted.</p>
+    <div id="rounds"></div>
+  </section>
+
+  <section aria-labelledby="h-tf">
+    <h2 id="h-tf">TrueForge in each run</h2>
+    <p class="note">Counted from each session's own events.</p>
+    <div class="card scroll"><table class="plain" id="evidence"></table></div>
+  </section>
+
+  <footer id="footer"></footer>
+</main>
+<div id="tip" role="status"></div>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+const NS = "http://www.w3.org/2000/svg";
+const svgEl = (tag, attrs, text) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (text !== undefined) n.textContent = text; return n; };
+const nn = (r) => String(r).padStart(2, "0");
+const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
+const fmt = (x) => (x === null || x === undefined || Number.isNaN(x) ? "-" : (Math.round(x * 10) / 10).toString());
+const ICON = { PASS: "✓ Pass", FAIL: "✕ Fail", MANUAL: "◔ Read it" };
+
+const tip = $("tip");
+function showTip(x, y, build) {
+  tip.replaceChildren();
+  build(tip);
+  tip.style.display = "block";
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.max(8, Math.min(x + 14, innerWidth - w - 8)) + "px";
+  tip.style.top = Math.max(8, Math.min(y + 14, innerHeight - h - 8)) + "px";
+}
+const hideTip = () => { tip.style.display = "none"; };
+
+function verdictCard(data) {
+  const box = $("verdict");
+  if (!data.verdict) { box.append(el("p", "empty", data.runs.length ? "The verdict comes after the final runs." : "No counted runs yet.")); return; }
+  box.append(el("p", "line", data.verdict.line));
+  const list = el("ul", "checks");
+  for (const c of data.verdict.checks) {
+    const li = el("li");
+    li.append(el("span", "badge " + c.result, ICON[c.result] || c.result));
+    const text = el("div");
+    text.append(el("b", "", c.name.replace(/^\d+ /, "")), el("span", "detail", c.detail));
+    li.append(text);
+    list.append(li);
+  }
+  box.append(list);
+}
+
+function split(data) {
+  const first = data.runs[0];
+  const baseline = data.runs.filter((r) => r.tree === first.tree);
+  const last = data.runs[data.runs.length - 1];
+  const final = last.tree === first.tree ? [] : data.runs.filter((r) => r.tree === last.tree);
+  return { baseline, final };
+}
+
+function tiles(data) {
+  if (!data.runs.length) return;
+  const { baseline, final } = split(data);
+  const tile = (label, a, b, sub) => {
+    const t = el("div", "card tile");
+    t.append(el("div", "label", label), el("div", "value", b === null ? fmt(a) : `${fmt(a)} → ${fmt(b)}`), el("div", "sub", sub));
+    return t;
+  };
+  const avg = (rs, k) => mean(rs.map((r) => r[k]).filter((v) => v !== null));
+  const sub = final.length ? `Mean of ${baseline.length} baseline and ${final.length} final runs` : `Mean of ${baseline.length} baseline runs`;
+  $("tiles").append(
+    tile("Held-out score", avg(baseline, "holdout"), final.length ? avg(final, "holdout") : null, sub),
+    tile("Train score (in-sample)", avg(baseline, "train"), final.length ? avg(final, "train") : null, sub),
+    tile("Tasks", data.tasks.length, null, `${data.tasks.filter((t) => t.holdout).length} held out, in repos improve never reads`),
+  );
+}
+
+function chart(data) {
+  const box = $("chart");
+  box.replaceChildren();
+  if (!data.runs.length) { box.append(el("p", "empty", "No counted runs yet.")); return; }
+  const series = [["holdout", "Held-out", "--series-1"], ["train", "Train (in-sample)", "--series-2"]];
+  const legend = el("div", "legend");
+  for (const [, name, color] of series) {
+    const item = el("span");
+    const key = el("span", "key");
+    key.style.background = `var(${color})`;
+    item.append(key, document.createTextNode(name));
+    legend.append(item);
+  }
+  const { baseline } = split(data);
+  const heldBase = baseline.map((r) => r.holdout).filter((v) => v !== null);
+  if (heldBase.length) {
+    const item = el("span");
+    const key = el("span", "key");
+    key.style.cssText = "height:10px;background:var(--band);border-radius:2px";
+    item.append(key, document.createTextNode(`Baseline held-out range: ${fmt(Math.min(...heldBase))} to ${fmt(Math.max(...heldBase))}`));
+    legend.append(item);
+  }
+  box.append(legend);
+
+  const W = Math.max(320, box.clientWidth - 34), H = 300;
+  const m = { t: 12, r: 108, b: 30, l: 36 };
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Held-out and train score for each run. The table below has every value." });
+  const n = data.runs.length;
+  const x = (i) => m.l + (n > 1 ? (i * (W - m.l - m.r)) / (n - 1) : (W - m.l - m.r) / 2);
+  const y = (v) => H - m.b - (v / 100) * (H - m.t - m.b);
+  const style = getComputedStyle(document.documentElement);
+  const color = (name) => style.getPropertyValue(name).trim();
+
+  for (const v of [0, 25, 50, 75, 100]) {
+    svg.append(svgEl("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: color(v === 0 ? "--axis" : "--grid"), "stroke-width": 1 }));
+    svg.append(svgEl("text", { x: m.l - 8, y: y(v) + 4, "text-anchor": "end" }, v));
+  }
+  if (heldBase.length) {
+    const top = Math.max(...heldBase), bottom = Math.min(...heldBase);
+    svg.append(svgEl("rect", { x: m.l, width: W - m.l - m.r, y: y(top), height: Math.max(1, y(bottom) - y(top)), fill: color("--band") }));
+  }
+  data.runs.forEach((r, i) => svg.append(svgEl("text", { x: x(i), y: H - 10, "text-anchor": i === 0 ? "start" : "middle" }, i === 0 ? `Run ${r.run}` : r.run)));
+
+  const ends = [];
+  for (const [key, name, c] of series) {
+    const pts = data.runs.map((r, i) => [x(i), r[key] === null ? null : y(r[key])]).filter((p) => p[1] !== null);
+    if (!pts.length) continue;
+    svg.append(svgEl("path", { d: pts.map((p, i) => `${i ? "L" : "M"}${p[0]} ${p[1]}`).join(""), fill: "none", stroke: color(c), "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+    for (const p of pts) svg.append(svgEl("circle", { cx: p[0], cy: p[1], r: 4, fill: color(c), stroke: color("--surface"), "stroke-width": 2 }));
+    const last = pts[pts.length - 1];
+    ends.push({ y: last[1], x: last[0], text: `${fmt(data.runs[data.runs.length - 1][key])} ${name.split(" ")[0]}` });
+  }
+  ends.sort((a, b) => a.y - b.y);
+  ends.forEach((e, i) => {
+    const yy = i && e.y - ends[i - 1].y < 16 ? ends[i - 1].y + 16 : e.y;
+    e.y = yy;
+    svg.append(svgEl("text", { class: "end", x: e.x + 10, y: yy + 4 }, e.text));
+  });
+
+  const hair = svgEl("line", { y1: m.t, y2: H - m.b, stroke: color("--axis"), "stroke-width": 1, visibility: "hidden" });
+  svg.append(hair);
+  const hit = svgEl("rect", { x: 0, y: 0, width: W, height: H, fill: "transparent", tabindex: 0 });
+  const at = (i, cx, cy) => {
+    const r = data.runs[i];
+    hair.setAttribute("x1", x(i)); hair.setAttribute("x2", x(i)); hair.setAttribute("visibility", "visible");
+    showTip(cx, cy, (t) => {
+      t.append(el("div", "dim", `Run ${nn(r.run)}`));
+      for (const [key, name, c] of series) {
+        const row = el("div", "row");
+        const k = el("span", "key"); k.style.background = `var(${c})`; k.style.marginRight = "0";
+        row.append(k, el("b", "", fmt(r[key])), el("span", "dim", name));
+        t.append(row);
+      }
+    });
+  };
+  const nearest = (px) => { let best = 0; data.runs.forEach((_, i) => { if (Math.abs(x(i) - px) < Math.abs(x(best) - px)) best = i; }); return best; };
+  hit.addEventListener("pointermove", (e) => { const b = svg.getBoundingClientRect(); at(nearest(((e.clientX - b.left) / b.width) * W), e.clientX, e.clientY); });
+  hit.addEventListener("pointerleave", () => { hair.setAttribute("visibility", "hidden"); hideTip(); });
+  let focused = n - 1;
+  const focusAt = () => { const b = svg.getBoundingClientRect(); at(focused, b.left + (x(focused) / W) * b.width, b.top + 20); };
+  hit.addEventListener("focus", focusAt);
+  hit.addEventListener("blur", () => { hair.setAttribute("visibility", "hidden"); hideTip(); });
+  hit.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") { focused = Math.max(0, focused - 1); focusAt(); e.preventDefault(); }
+    if (e.key === "ArrowRight") { focused = Math.min(n - 1, focused + 1); focusAt(); e.preventDefault(); }
+  });
+  svg.append(hit);
+  box.append(svg);
+}
+
+function runTable(data) {
+  const table = $("runs");
+  if (!data.runs.length) { table.closest(".card").style.display = "none"; return; }
+  const head = table.createTHead().insertRow();
+  for (const t of ["Run", "Held-out", "Train", "Blended", "Tokens", "Agent commit", "Files"]) { const th = el("th", "", t); th.scope = "col"; head.append(th); }
+  const body = table.createTBody();
+  for (const r of data.runs) {
+    const row = body.insertRow();
+    for (const v of [nn(r.run), fmt(r.holdout), fmt(r.train), fmt(r.score), r.tokens.toLocaleString("en")]) row.insertCell().textContent = v;
+    const commit = el("a", "", r.commit.slice(0, 7));
+    commit.href = `https://github.com/${data.repo}/tree/${r.commit}/agent`;
+    row.insertCell().append(commit);
+    const files = el("a", "", "run");
+    files.href = `https://github.com/${data.repo}/tree/main/runs/run-${nn(r.run)}`;
+    row.insertCell().append(files);
+  }
+}
+
+function matrix(data) {
+  const table = $("matrix");
+  if (!data.runs.length) { table.closest(".card").append(el("p", "empty", "No counted runs yet.")); return; }
+  const head = table.createTHead().insertRow();
+  const corner = el("th", "", "Task"); corner.scope = "col"; corner.style.textAlign = "left"; head.append(corner);
+  for (const r of data.runs) { const th = el("th", "", nn(r.run)); th.scope = "col"; head.append(th); }
+  const body = table.createTBody();
+  const groups = [["Held-out", data.tasks.filter((t) => t.holdout)], ["Train", data.tasks.filter((t) => !t.holdout)]];
+  for (const [name, tasks] of groups) {
+    const g = body.insertRow(); g.className = "group";
+    const th = el("th", "", name); th.colSpan = data.runs.length + 1; th.scope = "colgroup"; g.append(th);
+    for (const t of tasks) {
+      const row = body.insertRow();
+      const label = el("th"); label.scope = "row";
+      const link = el("a", "", t.id); link.href = t.links[0]; link.title = t.title;
+      label.append(link); row.append(label);
+      for (const r of data.runs) {
+        const cell = row.insertCell();
+        const entry = r.tasks[t.id];
+        const score = entry ? entry.score : 0;
+        const a = el("a", `cell q${Math.round(score * 4)}`, score === 1 ? "1" : score === 0 ? "0" : score.toFixed(2).replace(/^0/, ""));
+        a.href = `https://github.com/${data.repo}/tree/main/runs/run-${nn(r.run)}/patches`;
+        const describe = (tipBox) => {
+          tipBox.append(el("div", "dim", `${t.id}, run ${nn(r.run)}`));
+          for (const at of entry ? entry.attempts : []) {
+            const line = el("div", "row");
+            line.append(el("b", "", at.outcome.replace("_", " ")), el("span", "dim", `attempt ${at.attempt}, bug tests ${at.bug_tests}`));
+            tipBox.append(line);
+          }
+        };
+        a.setAttribute("aria-label", `${t.id}, run ${r.run}: score ${score}`);
+        a.addEventListener("pointermove", (e) => showTip(e.clientX, e.clientY, describe));
+        a.addEventListener("pointerleave", hideTip);
+        a.addEventListener("focus", () => { const b = a.getBoundingClientRect(); showTip(b.right, b.bottom, describe); });
+        a.addEventListener("blur", hideTip);
+        cell.append(a);
+      }
+    }
+  }
+  const scale = $("scale");
+  scale.append(document.createTextNode("0"));
+  for (let i = 0; i < 5; i++) scale.append(el("i", `q${i}`));
+  scale.append(document.createTextNode("1: all attempts passed"));
+}
+
+function diffBlock(text) {
+  const pre = el("pre");
+  for (const line of text.split("\n")) {
+    const cls = line.startsWith("+") && !line.startsWith("+++") ? "add" : line.startsWith("-") && !line.startsWith("---") ? "del" : "";
+    pre.append(el("span", cls, line + "\n"));
+  }
+  return pre;
+}
+
+function rounds(data) {
+  const box = $("rounds");
+  if (!data.rounds.length) { box.append(el("p", "empty", "No rounds yet.")); return; }
+  for (const r of data.rounds) {
+    const card = el("div", "card round");
+    const title = el("h3");
+    const state = r.kept ? "kept" : "dropped";
+    title.append(el("span", "", `Round ${r.round}`), el("span", `badge ${state}`, r.kept ? "✓ Kept" : "✕ Dropped"));
+    card.append(title);
+    const list = el("dl");
+    const item = (k, v) => { if (v === undefined || v === null || v === "") return; list.append(el("dt", "", k), el("dd", "", v)); };
+    const d = r.diagnosis || {};
+    item("Root cause", d.cause);
+    item("Rule it added", d.rule);
+    item("Predicted effect", d.predicted_effect);
+    item("Failures cited", (d.cited || []).join(", "));
+    item("Train screens", r.screens ? `${r.screens.join(", ")} against a bar of ${r.bar}` : r.reason);
+    card.append(list);
+    if (r.commit) {
+      const links = el("p", "note"); links.style.margin = "8px 0 0";
+      const a = el("a", "", `Commit ${r.commit.slice(0, 7)}`); a.href = `https://github.com/${data.repo}/commit/${r.commit}`;
+      links.append(a);
+      card.append(links);
+    }
+    if (r.diff) {
+      const more = el("details");
+      more.append(el("summary", "", "The change"), diffBlock(r.diff));
+      card.append(more);
+    }
+    box.append(card);
+  }
+}
+
+function evidence(data) {
+  const table = $("evidence");
+  if (!data.runs.length) { table.closest(".card").append(el("p", "empty", "No counted runs yet.")); return; }
+  const head = table.createTHead().insertRow();
+  for (const t of ["Run", "Sandboxes", "Exec calls", "Skill reads", "Subagent threads", "Likely 60 s timeouts", "Session"]) { const th = el("th", "", t); th.scope = "col"; head.append(th); }
+  const body = table.createTBody();
+  for (const r of data.runs) {
+    const u = r.usage;
+    const row = body.insertRow();
+    const reads = Object.values(u.skill_reads || {}).reduce((a, b) => a + b, 0);
+    for (const v of [nn(r.run), u.sandboxes, u.execs, reads, u.subagent_threads, u.suspected_timeouts]) row.insertCell().textContent = v;
+    const link = el("a", "", "session.json");
+    link.href = `https://github.com/${data.repo}/blob/main/runs/run-${nn(r.run)}/session.json`;
+    row.insertCell().append(link);
+  }
+}
+
+function footer(data) {
+  const f = $("footer");
+  const add = (text, href) => { const a = el("a", "", text); a.href = href; f.append(a, document.createTextNode("  ·  ")); };
+  const base = `https://github.com/${data.repo}/blob/main`;
+  add("Protocol", `${base}/docs/protocol.md`);
+  add("Tasks and licences", `${base}/docs/tasks.md`);
+  add("summary.csv", `${base}/runs/summary.csv`);
+  add("verdict.md", `${base}/runs/verdict.md`);
+  f.append(document.createTextNode(`Generated from ${data.generated_from.slice(0, 7)}`));
+}
+
+fetch("data/results.json")
+  .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .catch(() => ({ repo: "CG-5228/EvoPatch", generated_from: "pending", tasks: [], runs: [], rounds: [], verdict: null }))
+  .then((data) => {
+    verdictCard(data); tiles(data); chart(data); runTable(data); matrix(data); rounds(data); evidence(data); footer(data);
+    let timer;
+    addEventListener("resize", () => { clearTimeout(timer); timer = setTimeout(() => chart(data), 120); });
+    matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => chart(data));
+  });
+</script>
+</body>
+</html>

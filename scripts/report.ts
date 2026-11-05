@@ -16,8 +16,9 @@ interface Row {
   tree: string;
   tokens: number;
   classes: Record<string, number>;
+  session: string;
   usage: Record<string, unknown>;
-  tasks: Record<string, number>;
+  tasks: Record<string, { score: number; attempts: { attempt: number; outcome: string; bug_tests: string; similarity: number }[] }>;
 }
 
 function load(run: number): Row {
@@ -33,8 +34,11 @@ function load(run: number): Row {
     tree: s.agent_tree,
     tokens: s.tokens,
     classes: s.failure_classes,
+    session: s.session_id,
     usage: JSON.parse(readFileSync(join(dir, "feature-usage.json"), "utf8")),
-    tasks: Object.fromEntries(results.map((r) => [r.task_id, r.score])),
+    tasks: Object.fromEntries(
+      results.map((r) => [r.task_id, { score: r.score, attempts: r.attempts.map((a) => ({ attempt: a.attempt, outcome: a.failure_class, bug_tests: `${a.f2p_passed}/${a.f2p_total}`, similarity: a.similarity })) }]),
+    ),
   };
 }
 
@@ -44,8 +48,8 @@ if (process.argv[2] === "compare") {
   const [a, b] = process.argv.slice(3).map((n) => load(Number(n)));
   console.log(`${"".padEnd(30)} run ${String(a.run).padStart(2, "0")}   run ${String(b.run).padStart(2, "0")}`);
   for (const t of loadTasks()) {
-    const x = a.tasks[t.id] ?? 0;
-    const y = b.tasks[t.id] ?? 0;
+    const x = a.tasks[t.id]?.score ?? 0;
+    const y = b.tasks[t.id]?.score ?? 0;
     console.log(`${(t.holdout ? "* " : "  ") + t.id.padEnd(28)} ${x.toFixed(2).padStart(6)}   ${y.toFixed(2).padStart(6)}  ${y > x ? "better" : y < x ? "worse" : ""}`);
   }
   console.log(`\n${"held-out (*)".padEnd(30)} ${String(a.holdout).padStart(6)}   ${String(b.holdout).padStart(6)}`);
@@ -75,5 +79,30 @@ const lines = [
   "",
 ];
 writeFileSync(join(ROOT, "docs", "results.md"), lines.join("\n"));
-writeJson(join(ROOT, "docs", "data", "results.json"), { generated_from: git("rev-parse", "HEAD"), tasks: loadTasks().map(({ id, title, holdout, repo, bug_class, links, merged_at }) => ({ id, title, holdout, repo, bug_class, links, merged_at })), runs: rows, rounds });
+
+/** Each round with the diagnosis it was based on and the change it made. */
+function detail(round: Record<string, unknown>) {
+  const commit = round.commit as string | undefined;
+  if (!commit) return round;
+  const session = git("log", "-1", "--format=%B", commit).match(/^Agent-Session: (\S+)$/m)?.[1];
+  const file = runs.map((r) => join(runDir(r), `diagnosis-${session}.json`)).find((f) => existsSync(f));
+  return { ...round, session, diagnosis: file ? JSON.parse(readFileSync(file, "utf8")) : null, diff: git("show", "--format=", commit, "--", "agent") };
+}
+
+function verdict() {
+  const file = join(RUNS_DIR, "verdict.md");
+  if (!existsSync(file)) return null;
+  const text = readFileSync(file, "utf8");
+  const checks = [...text.matchAll(/^\| (\d [^|]+) \| (PASS|FAIL|MANUAL) \| (.*) \|$/gm)].map((m) => ({ name: m[1], result: m[2], detail: m[3].replaceAll("\\|", "|") }));
+  return { checks, line: text.match(/^Verdict: .*$/m)?.[0] ?? "", baseline: text.match(/^Baseline: ([^.]*)\./m)?.[1] ?? "", post: text.match(/Post-edit: ([^.]*)\./m)?.[1] ?? "" };
+}
+
+writeJson(join(ROOT, "docs", "data", "results.json"), {
+  repo: GITHUB_REPO,
+  generated_from: git("rev-parse", "HEAD"),
+  tasks: loadTasks().map(({ id, title, holdout, repo, bug_class, links, merged_at }) => ({ id, title, holdout, repo, bug_class, links, merged_at })),
+  runs: rows,
+  rounds: rounds.map(detail),
+  verdict: verdict(),
+});
 console.log(`✓ docs/results.md: ${rows.length} runs`);
