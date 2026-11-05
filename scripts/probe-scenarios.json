@@ -1,0 +1,23 @@
+{
+  "probe": [
+    {"exec": "pwd; ls -la; echo TMPDIR=$TMPDIR TEMP=$TEMP HOME=$HOME; env | cut -c1-110 | sort"},
+    {"exec": "cat > .tmp/h <<'EOF'\nhello-heredoc\nEOF\necho rc=$?; cat .tmp/h"},
+    {"exec": "python3 - <<'PY'\nprint('py-heredoc-ok')\nPY\necho rc=$?"},
+    {"exec": "cat <<<here-string; echo rc=$?"},
+    {"exec": "mkdir -p work/a && cd work/a && cat > h2 <<'EOF'\nsub-heredoc\nEOF\necho rc=$?; cat h2; command -v python python3 pip pip3; python3 --version"},
+    {"exec": "python3 -c \"import tempfile;print('py-tmp',tempfile.gettempdir())\"; node -e \"console.log('node-tmp',require('os').tmpdir())\"; mktemp; echo mktemp-rc=$?; TMPDIR=$TEMP mktemp; echo mktemp2-rc=$?"},
+    {"exec": "mkdir -p work out && tar -xzf uploads/probe.tar.gz -C work && find work -type f | head; echo hello-out > out/hello.txt; shasum -a 256 out/hello.txt"},
+    {"exec": "git --version; git init -q t && echo GIT_OK; diff --version 2>&1 | head -1; patch --version 2>&1 | head -1; rg --version | head -1; jq --version; timeout 1 true; echo timeout-rc=$?; sed --version 2>&1 | head -1; grep -P a /dev/null; echo grepP-rc=$?; bash --version | head -1"},
+    {"exec": "ls /opt/homebrew/lib/node_modules 2>&1 | head; ls /Users 2>&1 | head -3; ls /Users/cg_5228/Documents 2>&1 | head -3; cat /Users/cg_5228/.gitconfig 2>&1 | head -2"},
+    {"exec": "curl -sS -m 10 -o /dev/null -w 'pypi %{http_code}\\n' https://pypi.org/simple/pytest/; curl -sS -m 10 -o /dev/null -w 'github %{http_code}\\n' https://github.com; curl -sS -m 10 -o /dev/null -w 'example %{http_code}\\n' https://example.com; echo rc=$?"},
+    {"exec": "python3 -c \"import socket;s=socket.socket();s.bind(('127.0.0.1',0));print('bound',s.getsockname())\"; echo tcp-rc=$?"},
+    {"exec": ".venv/bin/python --version; .venv/bin/python -c 'import pydantic;print(pydantic.VERSION)'; .venv/bin/python -m pip --version"},
+    {"exec": "cat skills/probe-skill/SKILL.md | head -5; cat skills/.tfy-skill-downloader-state.json; ls -la skills"},
+    {"exec": "sleep 65; echo finished-sleep"},
+    {"text": "Probe finished."}
+  ],
+  "overlap": [
+    {"exec": "sleep 8; pwd"},
+    {"text": "Overlap finished."}
+  ]
+}

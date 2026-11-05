@@ -1,8 +1,8 @@
 {
-  "name": "trueforge-starter",
+  "name": "evopatch",
   "version": "0.1.0",
   "private": true,
-  "description": "Starter repo for the Stranger Builds TrueForge challenge: an agent that gets better every time it runs.",
+  "description": "A bug-fixing agent on TrueForge that tests its patches, studies its failures and rewrites its own skills.",
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -17,10 +17,12 @@
     "verdict": "tsx scripts/verdict.ts",
     "export-session": "tsx scripts/export-session.ts",
     "score": "tsx evals/score.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "mock-model": "tsx scripts/mock-model.ts",
+    "probe": "tsx scripts/probe-sandbox.ts"
   },
   "dependencies": {
-    "@truefoundry/trueforge-sdk": "^0.180.0"
+    "@truefoundry/trueforge-sdk": "0.182.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
