@@ -1,5 +1,5 @@
 // npm run run-evals [-- --kind counted|search|control|scratch] [--label name] [--at sha] [--train-only]
-//                      [--tasks a,b] [--k N] [--resume] [--no-commit]
+//                      [--tasks a,b] [--k N] [--concurrency N] [--resume] [--no-commit]
 //
 // One run = one TrueForge session. Each attempt at each task is one root turn, so it gets a fresh sandbox.
 //   counted   runs/run-NN + a row in runs/summary.csv: always every task, at the frozen settings
@@ -67,6 +67,7 @@ if (!imageId) die(`The scorer image isn't built: docker build -t ${IMAGE} evals`
 
 const sha = option("at") ?? headSha();
 const k = Number(option("k") ?? protocol.k);
+const concurrency = official ? protocol.concurrency : Number(option("concurrency") ?? protocol.concurrency);
 const wanted = option("tasks")?.split(",");
 const tasks = loadTasks().filter((t) => (!wanted || wanted.includes(t.id)) && (!flag("train-only") || !t.holdout));
 if (!tasks.length) die("No tasks selected.");
@@ -183,7 +184,7 @@ async function attemptOnce(task: Task, attempt: number): Promise<void> {
 }
 
 await Promise.all(
-  Array.from({ length: protocol.concurrency }, async () => {
+  Array.from({ length: concurrency }, async () => {
     for (let next = queue.shift(); next && !aborted; next = queue.shift()) await attemptOnce(next.task, next.attempt);
   }),
 );
@@ -221,7 +222,7 @@ writeJson(join(dir, "env.json"), {
   harness_commit: headSha(),
   model: at.agent.model,
   protocol,
-  concurrency: protocol.concurrency,
+  concurrency,
   node: process.version,
   scorer_image: IMAGE,
   scorer_image_id: imageId,
