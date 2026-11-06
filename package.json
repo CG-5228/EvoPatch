@@ -26,6 +26,7 @@
     "compare": "tsx scripts/report.ts compare",
     "verify-submission": "tsx scripts/verify-submission.ts",
     "rerun": "tsx scripts/run-evals.ts --kind scratch",
+    "fix": "tsx scripts/fix.ts",
     "guards-selftest": "tsx scripts/guards-selftest.ts",
     "check-shim": "tsx scripts/check-shim.ts"
   },
