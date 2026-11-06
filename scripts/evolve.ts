@@ -4,13 +4,13 @@
 // An edit is kept only if both screens beat the bar: the highest baseline train score, then the last kept edit's score.
 // Runs protocol.max_rounds rounds, and starts none after protocol.rounds_end, so the final runs keep their time.
 // Any failure stops the loop and waits for a person: fallbacks are Chris's call. Running this again picks up where it
-// stopped: it finishes a round whose edit was never screened, and keeps the screens that already ran.
+// stopped: it finishes a round whose edit was never screened, even past rounds_end, and keeps the screens that ran.
 // Then run the final counted runs and `npm run verdict`.
 
 import { execFileSync, spawnSync } from "node:child_process";
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { die, git, headSha, option, protocol, push, ROOT, RUNS_DIR, writeJson } from "./lib.ts";
+import { die, git, headSha, option, protocol, push, ROOT, RUNS_DIR, unscreenedEdit, writeJson } from "./lib.ts";
 import { parseRunList } from "./realgain.ts";
 
 const baseline = parseRunList(option("baseline"), "baseline runs");
@@ -58,19 +58,14 @@ function screen(round: number, tag: string): number {
   return read(dir).train_score ?? 0;
 }
 
-/** The newest edit, if no round has recorded it: a screen stopped, and this run finishes that round. */
-function unscreened(): string | null {
-  const [commit, subject] = git("log", "-1", "--format=%H%n%s", "--", "agent").split("\n");
-  return subject?.startsWith("agent: learn") && !rounds.some((r) => r.commit === commit) ? commit : null;
-}
-
 const first = rounds.length + 1;
 for (let round = first; round <= protocol.max_rounds; round++) {
-  if (Date.now() > Date.parse(protocol.rounds_end)) {
+  // A round that already made its edit always finishes: an unscreened edit must never reach the final runs.
+  const pending = round === first ? unscreenedEdit() : null;
+  if (!pending && Date.now() > Date.parse(protocol.rounds_end)) {
     console.log(`It's past ${protocol.rounds_end}: no more rounds, so the final runs keep their time.`);
     break;
   }
-  const pending = round === first ? unscreened() : null;
   const before = headSha();
   let ok = pending !== null;
   for (let tries = 1; tries <= 3 && !ok; tries++) {

@@ -38,6 +38,7 @@ import {
   syncAgent,
   responseStats,
   turnStats,
+  unscreenedEdit,
   writeJson,
   type TurnExport,
 } from "./lib.ts";
@@ -60,6 +61,7 @@ if (official) {
   if (!git("tag", "--list", FREEZE_TAG)) die(`No ${FREEZE_TAG} tag yet: freeze the evaluation before an official run.`);
   if (git("diff", "--name-only", FREEZE_TAG, "--", "evals", "agent/agent.json")) die(`evals/ or agent/agent.json changed since ${FREEZE_TAG}.`);
   if (kind === "counted" && (option("tasks") || option("k") || flag("train-only"))) die("Counted runs always use every task at the frozen k.");
+  if (kind === "counted" && unscreenedEdit()) die(`The agent's newest edit (${unscreenedEdit()!.slice(0, 7)}) was never screened. Run evolve again to finish that round.`);
 }
 
 // Anything that could fail after the run must fail now, before it spends anything.

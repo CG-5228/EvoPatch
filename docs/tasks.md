@@ -28,6 +28,13 @@ Bug reports are paraphrased: the originals belong to their authors, linked here.
 | `pysemver-497-token` | holdout | python-semver/python-semver | BSD-3-Clause | 2026-10-19 | prerelease ordering | Debasishhh | [PR](https://github.com/python-semver/python-semver/pull/498) [issue](https://github.com/python-semver/python-semver/issues/497) |
 | `pysemver-499-rollover` | holdout | python-semver/python-semver | BSD-3-Clause | 2026-10-21 | prerelease ordering | pabszero | [PR](https://github.com/python-semver/python-semver/pull/500) [issue](https://github.com/python-semver/python-semver/issues/499) |
 
+## Contamination
+
+Could the model simply remember a fix? MiMo v2.6 Flash is listed as released on 21 Sep 2026 by several model directories, and we found no published knowledge cutoff, so the release date is the only bound.
+
+- **Held-out:** all 9 fixes merged on or after 3 Sep 2026. 5 merged after the release, so they can't be in its training data. The other 4 merged in the 18 days before it, so they are unlikely to be.
+- **Train:** `boltons-348-lru` (2023), `node-semver-606-diff` and `node-semver-775-coerce` (2025) are old enough for the model to know, and the rest are from 2026. This affects only the train score, which is reported as in-sample.
+
 ## Notes
 
 - `pysemver-487-long`: one maintainer test pins eager errors on invalid digits, which a sound lazy fix would fail. The report's request for the same results and errors covers it, so the test stays, and we disclose it here.

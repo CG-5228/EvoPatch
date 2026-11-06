@@ -444,7 +444,7 @@ export function featureUsage(turns: TurnExport[]) {
   return usage;
 }
 
-/** Noise from its first token: fragments of mixed scripts rather than any language. MiMo does this about once in 160 calls. */
+/** Noise from its first token: fragments of mixed scripts rather than any language. MiMo did this in 9 of 1,563 pilot calls. */
 export function isNoise(text: string): boolean {
   if (text.length < 80) return false;
   const foreign = (text.match(/[\u3000-\u30ff\u3400-\u9fff\uff00-\uffef]/g)?.length ?? 0) / text.length;
@@ -476,6 +476,14 @@ export function howItEnded(turn: TurnExport) {
     turn_error: state.message ?? null,
     last_response: last ? { finish_reason: last.finishReason ?? null, output_tokens: last.usage?.outputTokens ?? null, called_a_tool: Boolean(last.toolCalls?.length), chars: text.length, opening: text.slice(0, 240), ending: text.slice(-160) } : null,
   };
+}
+
+/** The newest agent edit, if no round recorded it: it was never screened, so nothing may be measured on it yet. */
+export function unscreenedEdit(): string | null {
+  const file = join(RUNS_DIR, "rounds.json");
+  const rounds = (existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : []) as { commit?: string }[];
+  const [commit, subject] = git("log", "-1", "--format=%H%n%s", "--", "agent").split("\n");
+  return subject?.startsWith("agent: learn") && !rounds.some((r) => r.commit === commit) ? commit : null;
 }
 
 /** Tokens and tool calls across turns. */
