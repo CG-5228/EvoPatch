@@ -1,0 +1,2173 @@
+{
+  "repo": "CG-5228/EvoPatch",
+  "generated_from": "87a2e998706399bca3b36c7d8d139371aa793e5c",
+  "baseline_runs": [
+    1,
+    2,
+    3
+  ],
+  "spread": {
+    "score": {
+      "min": 33.33,
+      "max": 47.62,
+      "mean": 40.21
+    },
+    "holdout": {
+      "min": 40.74,
+      "max": 44.44,
+      "mean": 41.97
+    },
+    "train": {
+      "min": 27.78,
+      "max": 52.78,
+      "mean": 38.89
+    }
+  },
+  "tasks": [
+    {
+      "id": "boltons-348-lru",
+      "title": "LRU contents after overwriting a key",
+      "holdout": false,
+      "repo": "mahmoud/boltons",
+      "bug_class": "sibling code paths",
+      "links": [
+        "https://github.com/mahmoud/boltons/pull/349",
+        "https://github.com/mahmoud/boltons/issues/348"
+      ],
+      "merged_at": "2023-10-30T04:31:17Z"
+    },
+    {
+      "id": "boltons-404-omd-eq",
+      "title": "OrderedMultiDict equality with plain mappings",
+      "holdout": false,
+      "repo": "mahmoud/boltons",
+      "bug_class": "duplicated code",
+      "links": [
+        "https://github.com/mahmoud/boltons/pull/404"
+      ],
+      "merged_at": "2026-06-17T20:57:15Z"
+    },
+    {
+      "id": "boltons-423-indexedset",
+      "title": "IndexedSet indexing after removals",
+      "holdout": false,
+      "repo": "mahmoud/boltons",
+      "bug_class": "index boundaries",
+      "links": [
+        "https://github.com/mahmoud/boltons/pull/424",
+        "https://github.com/mahmoud/boltons/issues/423"
+      ],
+      "merged_at": "2026-07-17T06:36:33Z"
+    },
+    {
+      "id": "boltons-452-backoff",
+      "title": "backoff with factor 1.0",
+      "holdout": false,
+      "repo": "mahmoud/boltons",
+      "bug_class": "input edge cases",
+      "links": [
+        "https://github.com/mahmoud/boltons/pull/428",
+        "https://github.com/mahmoud/boltons/issues/452"
+      ],
+      "merged_at": "2026-07-18T00:43:23Z"
+    },
+    {
+      "id": "boltons-458-addlist",
+      "title": "addlist with a one-shot iterable",
+      "holdout": false,
+      "repo": "mahmoud/boltons",
+      "bug_class": "one-shot iterables",
+      "links": [
+        "https://github.com/mahmoud/boltons/pull/458"
+      ],
+      "merged_at": "2026-09-07T08:41:34Z"
+    },
+    {
+      "id": "humanize-329-naturalsize",
+      "title": "naturalsize at unit boundaries",
+      "holdout": false,
+      "repo": "python-humanize/humanize",
+      "bug_class": "rounding carry",
+      "links": [
+        "https://github.com/python-humanize/humanize/pull/329"
+      ],
+      "merged_at": "2026-06-30T15:36:42Z"
+    },
+    {
+      "id": "humanize-359-metric",
+      "title": "metric digits after a rounding carry",
+      "holdout": false,
+      "repo": "python-humanize/humanize",
+      "bug_class": "rounding carry",
+      "links": [
+        "https://github.com/python-humanize/humanize/pull/359"
+      ],
+      "merged_at": "2026-09-16T15:55:13Z"
+    },
+    {
+      "id": "mit-1250-value-chain",
+      "title": "value_chain and TypeError",
+      "holdout": true,
+      "repo": "more-itertools/more-itertools",
+      "bug_class": "exception scope",
+      "links": [
+        "https://github.com/more-itertools/more-itertools/pull/1251",
+        "https://github.com/more-itertools/more-itertools/issues/1250"
+      ],
+      "merged_at": "2026-09-03T15:34:38Z"
+    },
+    {
+      "id": "mit-1275-numeric-range",
+      "title": "reversed numeric_range",
+      "holdout": true,
+      "repo": "more-itertools/more-itertools",
+      "bug_class": "numeric edge cases",
+      "links": [
+        "https://github.com/more-itertools/more-itertools/pull/1276",
+        "https://github.com/more-itertools/more-itertools/issues/1275"
+      ],
+      "merged_at": "2026-09-17T14:28:12Z"
+    },
+    {
+      "id": "mit-1277-zip-broadcast",
+      "title": "zip_broadcast with single-use iterables",
+      "holdout": true,
+      "repo": "more-itertools/more-itertools",
+      "bug_class": "one-shot iterables",
+      "links": [
+        "https://github.com/more-itertools/more-itertools/pull/1278",
+        "https://github.com/more-itertools/more-itertools/issues/1277"
+      ],
+      "merged_at": "2026-09-14T14:27:49Z"
+    },
+    {
+      "id": "mit-1284-bucket",
+      "title": "bucket lookups",
+      "holdout": true,
+      "repo": "more-itertools/more-itertools",
+      "bug_class": "lookups must not mutate",
+      "links": [
+        "https://github.com/more-itertools/more-itertools/pull/1285",
+        "https://github.com/more-itertools/more-itertools/issues/1284"
+      ],
+      "merged_at": "2026-09-17T14:26:17Z"
+    },
+    {
+      "id": "mit-1308-validator",
+      "title": "bucket with a falsey validator",
+      "holdout": true,
+      "repo": "more-itertools/more-itertools",
+      "bug_class": "falsy vs None",
+      "links": [
+        "https://github.com/more-itertools/more-itertools/pull/1309",
+        "https://github.com/more-itertools/more-itertools/issues/1308"
+      ],
+      "merged_at": "2026-10-07T15:04:42Z"
+    },
+    {
+      "id": "node-semver-226-dotted-inc",
+      "title": "incrementing a dotted prerelease identifier",
+      "holdout": false,
+      "repo": "npm/node-semver",
+      "bug_class": "prerelease ordering",
+      "links": [
+        "https://github.com/npm/node-semver/pull/870",
+        "https://github.com/npm/node-semver/issues/226"
+      ],
+      "merged_at": "2026-06-04T14:43:32Z"
+    },
+    {
+      "id": "node-semver-512-tilde",
+      "title": "tilde ranges with includePrerelease",
+      "holdout": false,
+      "repo": "npm/node-semver",
+      "bug_class": "sibling code paths",
+      "links": [
+        "https://github.com/npm/node-semver/pull/878",
+        "https://github.com/npm/node-semver/issues/512"
+      ],
+      "merged_at": "2026-06-19T18:22:01Z"
+    },
+    {
+      "id": "node-semver-606-diff",
+      "title": "diff between a prerelease and a stable version",
+      "holdout": false,
+      "repo": "npm/node-semver",
+      "bug_class": "prerelease ordering",
+      "links": [
+        "https://github.com/npm/node-semver/pull/755",
+        "https://github.com/npm/node-semver/issues/606"
+      ],
+      "merged_at": "2025-01-29T16:22:06Z"
+    },
+    {
+      "id": "node-semver-757-subset",
+      "title": "subset with prerelease bounds",
+      "holdout": false,
+      "repo": "npm/node-semver",
+      "bug_class": "prerelease ordering",
+      "links": [
+        "https://github.com/npm/node-semver/pull/867",
+        "https://github.com/npm/node-semver/issues/757"
+      ],
+      "merged_at": "2026-05-21T16:09:18Z"
+    },
+    {
+      "id": "node-semver-775-coerce",
+      "title": "prerelease identifiers that start with digits",
+      "holdout": false,
+      "repo": "npm/node-semver",
+      "bug_class": "parsing edge cases",
+      "links": [
+        "https://github.com/npm/node-semver/pull/781",
+        "https://github.com/npm/node-semver/issues/775"
+      ],
+      "merged_at": "2025-05-08T16:09:48Z"
+    },
+    {
+      "id": "pysemver-484-rc",
+      "title": "bumping old-style prereleases",
+      "holdout": true,
+      "repo": "python-semver/python-semver",
+      "bug_class": "prerelease ordering",
+      "links": [
+        "https://github.com/python-semver/python-semver/pull/485",
+        "https://github.com/python-semver/python-semver/issues/484"
+      ],
+      "merged_at": "2026-09-24T15:40:10Z"
+    },
+    {
+      "id": "pysemver-487-long",
+      "title": "comparing very long numeric prereleases",
+      "holdout": true,
+      "repo": "python-semver/python-semver",
+      "bug_class": "unbounded input",
+      "links": [
+        "https://github.com/python-semver/python-semver/pull/488",
+        "https://github.com/python-semver/python-semver/issues/487"
+      ],
+      "merged_at": "2026-10-01T19:58:07Z"
+    },
+    {
+      "id": "pysemver-497-token",
+      "title": "switching prerelease tokens",
+      "holdout": true,
+      "repo": "python-semver/python-semver",
+      "bug_class": "prerelease ordering",
+      "links": [
+        "https://github.com/python-semver/python-semver/pull/498",
+        "https://github.com/python-semver/python-semver/issues/497"
+      ],
+      "merged_at": "2026-10-19T06:33:04Z"
+    },
+    {
+      "id": "pysemver-499-rollover",
+      "title": "legacy prerelease counter rollover",
+      "holdout": true,
+      "repo": "python-semver/python-semver",
+      "bug_class": "prerelease ordering",
+      "links": [
+        "https://github.com/python-semver/python-semver/pull/500",
+        "https://github.com/python-semver/python-semver/issues/499"
+      ],
+      "merged_at": "2026-10-21T07:53:56Z"
+    }
+  ],
+  "runs": [
+    {
+      "run": 1,
+      "score": 33.33,
+      "train": 27.78,
+      "holdout": 40.74,
+      "commit": "1cfa4a258c8eae31c29c107f6c666a3531aa5cec",
+      "tree": "996d40c3dafde82ca7741dbad4d84e1296b4a9fb",
+      "tokens": 98774750,
+      "classes": {
+        "resolved": 21,
+        "no_patch": 11,
+        "audit": 31
+      },
+      "responses": {
+        "model_calls": 3423,
+        "noise_responses": 0,
+        "cut_off_responses": 8
+      },
+      "tests_only": 79.37,
+      "cost_usd": 3.3872,
+      "tool_calls": 5741,
+      "session": "01m6qs8xxvzdsnj0aaywb7wqd1",
+      "usage": {
+        "turns": 63,
+        "execs": 5657,
+        "skill_reads": {
+          "fix-workflow": 145,
+          "patch-review": 144,
+          "sandbox-recipes": 93
+        },
+        "subagent_threads": 82,
+        "subagent_names": [
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer3",
+          "reviewer4",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer3",
+          "reviewer"
+        ],
+        "sandboxes": 63,
+        "init_failures": 0,
+        "suspected_timeouts": 82
+      },
+      "tasks": {
+        "boltons-348-lru": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "2/2",
+              "similarity": 0.25
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "2/2",
+              "similarity": 0.5
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "2/2",
+              "similarity": 0.5
+            }
+          ]
+        },
+        "boltons-404-omd-eq": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.333
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "2/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "2/2",
+              "similarity": 0.111
+            }
+          ]
+        },
+        "boltons-423-indexedset": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "2/2",
+              "similarity": 0.083
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.088
+            }
+          ]
+        },
+        "boltons-452-backoff": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "0/1",
+              "similarity": 0.038
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0.132
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0.357
+            }
+          ]
+        },
+        "boltons-458-addlist": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "no_patch",
+              "bug_tests": "0/1",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.036
+            }
+          ]
+        },
+        "humanize-329-naturalsize": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.038
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0.071
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.056
+            }
+          ]
+        },
+        "humanize-359-metric": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "5/5",
+              "similarity": 0.091
+            },
+            {
+              "attempt": 2,
+              "outcome": "no_patch",
+              "bug_tests": "0/5",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "no_patch",
+              "bug_tests": "0/5",
+              "similarity": 0
+            }
+          ]
+        },
+        "mit-1250-value-chain": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.2
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0.2
+            }
+          ]
+        },
+        "mit-1275-numeric-range": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "no_patch",
+              "bug_tests": "0/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "2/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.182
+            }
+          ]
+        },
+        "mit-1277-zip-broadcast": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.333
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0.083
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0.13
+            }
+          ]
+        },
+        "mit-1284-bucket": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "4/4",
+              "similarity": 0.133
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "4/4",
+              "similarity": 0.04
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "4/4",
+              "similarity": 0.067
+            }
+          ]
+        },
+        "mit-1308-validator": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.25
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0
+            }
+          ]
+        },
+        "node-semver-226-dotted-inc": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "28/28",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "28/28",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "28/28",
+              "similarity": 0
+            }
+          ]
+        },
+        "node-semver-512-tilde": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "35/35",
+              "similarity": 0.333
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "35/35",
+              "similarity": 0.3
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "35/35",
+              "similarity": 0.3
+            }
+          ]
+        },
+        "node-semver-606-diff": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.143
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.133
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "4/6",
+              "similarity": 0
+            }
+          ]
+        },
+        "node-semver-757-subset": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "no_patch",
+              "bug_tests": "0/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "no_patch",
+              "bug_tests": "0/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "no_patch",
+              "bug_tests": "0/2",
+              "similarity": 0
+            }
+          ]
+        },
+        "node-semver-775-coerce": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "5/5",
+              "similarity": 0.364
+            },
+            {
+              "attempt": 2,
+              "outcome": "no_patch",
+              "bug_tests": "0/5",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "5/5",
+              "similarity": 0.154
+            }
+          ]
+        },
+        "pysemver-484-rc": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "no_patch",
+              "bug_tests": "0/3",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "3/3",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "no_patch",
+              "bug_tests": "0/3",
+              "similarity": 0
+            }
+          ]
+        },
+        "pysemver-487-long": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0
+            }
+          ]
+        },
+        "pysemver-497-token": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0.132
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0.143
+            },
+            {
+              "attempt": 3,
+              "outcome": "no_patch",
+              "bug_tests": "0/6",
+              "similarity": 0
+            }
+          ]
+        },
+        "pysemver-499-rollover": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "9/9",
+              "similarity": 0.19
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "9/9",
+              "similarity": 0.267
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "9/9",
+              "similarity": 0.083
+            }
+          ]
+        }
+      },
+      "wall_s": 13897,
+      "stops": 0,
+      "no_patch_endings": {
+        "time_limit": 7,
+        "output_cap": 1,
+        "iteration_limit": 2,
+        "safety_filter": 0,
+        "other": 1
+      },
+      "reviewer": {
+        "attempts": 63,
+        "reviewed": 59,
+        "briefs": 82,
+        "briefs_with_network_rule": 0,
+        "reviewer_hit": 33,
+        "root_hit": 6,
+        "voided": 31,
+        "voided_reviewer_only": 27,
+        "voided_root_only": 1,
+        "voided_both": 3,
+        "voided_unmatched": 0,
+        "patches_submitted": 52,
+        "patches_passing": 50
+      }
+    },
+    {
+      "run": 2,
+      "score": 47.62,
+      "train": 52.78,
+      "holdout": 40.74,
+      "commit": "ce58651f65b57be5409a92df33f013e3ff5514ea",
+      "tree": "996d40c3dafde82ca7741dbad4d84e1296b4a9fb",
+      "tokens": 72224976,
+      "classes": {
+        "resolved": 30,
+        "audit": 23,
+        "no_patch": 8,
+        "f2p_failed": 1,
+        "p2p_regression": 1
+      },
+      "responses": {
+        "model_calls": 2920,
+        "noise_responses": 0,
+        "cut_off_responses": 8
+      },
+      "tests_only": 84.13,
+      "cost_usd": 2.6575,
+      "tool_calls": 4796,
+      "session": "01m6r6h9hqp99k1w9zkb94rytn",
+      "usage": {
+        "turns": 63,
+        "execs": 4711,
+        "skill_reads": {
+          "fix-workflow": 147,
+          "patch-review": 144,
+          "sandbox-recipes": 82,
+          "release": 2
+        },
+        "subagent_threads": 85,
+        "subagent_names": [
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer_final",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer3",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer"
+        ],
+        "sandboxes": 63,
+        "init_failures": 0,
+        "suspected_timeouts": 41
+      },
+      "tasks": {
+        "boltons-348-lru": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.5
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.5
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.1
+            }
+          ]
+        },
+        "boltons-404-omd-eq": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.25
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "2/2",
+              "similarity": 0.333
+            }
+          ]
+        },
+        "boltons-423-indexedset": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "2/2",
+              "similarity": 0.003
+            },
+            {
+              "attempt": 2,
+              "outcome": "no_patch",
+              "bug_tests": "0/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "2/2",
+              "similarity": 0.069
+            }
+          ]
+        },
+        "boltons-452-backoff": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.313
+            },
+            {
+              "attempt": 2,
+              "outcome": "f2p_failed",
+              "bug_tests": "0/1",
+              "similarity": 0.091
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.25
+            }
+          ]
+        },
+        "boltons-458-addlist": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0.023
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.125
+            }
+          ]
+        },
+        "humanize-329-naturalsize": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0.056
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.056
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.063
+            }
+          ]
+        },
+        "humanize-359-metric": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "5/5",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "5/5",
+              "similarity": 0.125
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "5/5",
+              "similarity": 0
+            }
+          ]
+        },
+        "mit-1250-value-chain": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.077
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0
+            }
+          ]
+        },
+        "mit-1275-numeric-range": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "no_patch",
+              "bug_tests": "0/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "2/2",
+              "similarity": 0.1
+            }
+          ]
+        },
+        "mit-1277-zip-broadcast": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0.026
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0.083
+            },
+            {
+              "attempt": 3,
+              "outcome": "no_patch",
+              "bug_tests": "0/1",
+              "similarity": 0
+            }
+          ]
+        },
+        "mit-1284-bucket": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "4/4",
+              "similarity": 0.063
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "4/4",
+              "similarity": 0.056
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "4/4",
+              "similarity": 0.053
+            }
+          ]
+        },
+        "mit-1308-validator": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0.25
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0
+            }
+          ]
+        },
+        "node-semver-226-dotted-inc": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "28/28",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "28/28",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "28/28",
+              "similarity": 0
+            }
+          ]
+        },
+        "node-semver-512-tilde": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "35/35",
+              "similarity": 0.375
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "35/35",
+              "similarity": 0.375
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "35/35",
+              "similarity": 0.333
+            }
+          ]
+        },
+        "node-semver-606-diff": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0.118
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.125
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0.118
+            }
+          ]
+        },
+        "node-semver-757-subset": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "no_patch",
+              "bug_tests": "0/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "no_patch",
+              "bug_tests": "0/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "no_patch",
+              "bug_tests": "0/2",
+              "similarity": 0
+            }
+          ]
+        },
+        "node-semver-775-coerce": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "5/5",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "5/5",
+              "similarity": 0.133
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "5/5",
+              "similarity": 0
+            }
+          ]
+        },
+        "pysemver-484-rc": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "no_patch",
+              "bug_tests": "0/3",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "no_patch",
+              "bug_tests": "0/3",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "3/3",
+              "similarity": 0
+            }
+          ]
+        },
+        "pysemver-487-long": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.019
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0
+            }
+          ]
+        },
+        "pysemver-497-token": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0.263
+            },
+            {
+              "attempt": 2,
+              "outcome": "p2p_regression",
+              "bug_tests": "6/6",
+              "similarity": 0.143
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0.261
+            }
+          ]
+        },
+        "pysemver-499-rollover": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "9/9",
+              "similarity": 0.061
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "9/9",
+              "similarity": 0.174
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "9/9",
+              "similarity": 0.19
+            }
+          ]
+        }
+      },
+      "wall_s": 19562,
+      "stops": 2,
+      "no_patch_endings": {
+        "time_limit": 7,
+        "output_cap": 1,
+        "iteration_limit": 0,
+        "safety_filter": 0,
+        "other": 0
+      },
+      "reviewer": {
+        "attempts": 63,
+        "reviewed": 62,
+        "briefs": 85,
+        "briefs_with_network_rule": 2,
+        "reviewer_hit": 26,
+        "root_hit": 2,
+        "voided": 23,
+        "voided_reviewer_only": 22,
+        "voided_root_only": 1,
+        "voided_both": 0,
+        "voided_unmatched": 0,
+        "patches_submitted": 55,
+        "patches_passing": 53
+      }
+    },
+    {
+      "run": 3,
+      "score": 39.68,
+      "train": 36.11,
+      "holdout": 44.44,
+      "commit": "1888a73f433349c0f19989fdd8481712a8ce80d0",
+      "tree": "996d40c3dafde82ca7741dbad4d84e1296b4a9fb",
+      "tokens": 65746162,
+      "classes": {
+        "resolved": 25,
+        "audit": 28,
+        "no_patch": 9,
+        "f2p_failed": 1
+      },
+      "responses": {
+        "model_calls": 2698,
+        "noise_responses": 0,
+        "cut_off_responses": 8
+      },
+      "tests_only": 84.13,
+      "cost_usd": 2.4375,
+      "tool_calls": 3843,
+      "session": "01m6rs6j9whtnb51b5jx2n18tf",
+      "usage": {
+        "turns": 63,
+        "execs": 3760,
+        "skill_reads": {
+          "fix-workflow": 141,
+          "patch-review": 144,
+          "sandbox-recipes": 82,
+          "release": 1
+        },
+        "subagent_threads": 79,
+        "subagent_names": [
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer3",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer"
+        ],
+        "sandboxes": 63,
+        "init_failures": 0,
+        "suspected_timeouts": 58
+      },
+      "tasks": {
+        "boltons-348-lru": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "2/2",
+              "similarity": 0.25
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.5
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.5
+            }
+          ]
+        },
+        "boltons-404-omd-eq": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "2/2",
+              "similarity": 0.667
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.667
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.125
+            }
+          ]
+        },
+        "boltons-423-indexedset": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.1
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.091
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "2/2",
+              "similarity": 0.067
+            }
+          ]
+        },
+        "boltons-452-backoff": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "no_patch",
+              "bug_tests": "0/1",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "f2p_failed",
+              "bug_tests": "0/1",
+              "similarity": 0.083
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.385
+            }
+          ]
+        },
+        "boltons-458-addlist": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0.022
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0
+            }
+          ]
+        },
+        "humanize-329-naturalsize": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0.056
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.056
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.05
+            }
+          ]
+        },
+        "humanize-359-metric": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "5/5",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "no_patch",
+              "bug_tests": "0/5",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "5/5",
+              "similarity": 0.063
+            }
+          ]
+        },
+        "mit-1250-value-chain": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.143
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.2
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0
+            }
+          ]
+        },
+        "mit-1275-numeric-range": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "2/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0
+            }
+          ]
+        },
+        "mit-1277-zip-broadcast": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0
+            }
+          ]
+        },
+        "mit-1284-bucket": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "4/4",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "4/4",
+              "similarity": 0.067
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "4/4",
+              "similarity": 0.04
+            }
+          ]
+        },
+        "mit-1308-validator": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.25
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0
+            }
+          ]
+        },
+        "node-semver-226-dotted-inc": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "28/28",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "28/28",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "28/28",
+              "similarity": 0
+            }
+          ]
+        },
+        "node-semver-512-tilde": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "35/35",
+              "similarity": 0.5
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "35/35",
+              "similarity": 0.375
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "35/35",
+              "similarity": 0.375
+            }
+          ]
+        },
+        "node-semver-606-diff": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0.143
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.133
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0.154
+            }
+          ]
+        },
+        "node-semver-757-subset": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "no_patch",
+              "bug_tests": "0/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "no_patch",
+              "bug_tests": "0/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "2/2",
+              "similarity": 0
+            }
+          ]
+        },
+        "node-semver-775-coerce": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "no_patch",
+              "bug_tests": "0/5",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "no_patch",
+              "bug_tests": "0/5",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "no_patch",
+              "bug_tests": "0/5",
+              "similarity": 0
+            }
+          ]
+        },
+        "pysemver-484-rc": {
+          "score": 0,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "no_patch",
+              "bug_tests": "0/3",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "3/3",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "3/3",
+              "similarity": 0
+            }
+          ]
+        },
+        "pysemver-487-long": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "no_patch",
+              "bug_tests": "0/6",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.012
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0
+            }
+          ]
+        },
+        "pysemver-497-token": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0.119
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.313
+            },
+            {
+              "attempt": 3,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0.172
+            }
+          ]
+        },
+        "pysemver-499-rollover": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "9/9",
+              "similarity": 0.174
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "9/9",
+              "similarity": 0.118
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "9/9",
+              "similarity": 0.121
+            }
+          ]
+        }
+      },
+      "wall_s": 15825,
+      "stops": 1,
+      "no_patch_endings": {
+        "time_limit": 5,
+        "output_cap": 3,
+        "iteration_limit": 0,
+        "safety_filter": 1,
+        "other": 0
+      },
+      "reviewer": {
+        "attempts": 63,
+        "reviewed": 62,
+        "briefs": 79,
+        "briefs_with_network_rule": 0,
+        "reviewer_hit": 27,
+        "root_hit": 3,
+        "voided": 28,
+        "voided_reviewer_only": 25,
+        "voided_root_only": 3,
+        "voided_both": 0,
+        "voided_unmatched": 0,
+        "patches_submitted": 54,
+        "patches_passing": 53
+      }
+    }
+  ],
+  "rounds": [],
+  "controls": [],
+  "verdict": null
+}

@@ -56,6 +56,7 @@ caffeinate -dims scripts/run-protocol.sh # or all of the above, unattended and r
 npm run verdict -- 1,2,3 6,7             # the five checks
 npm run compare -- 1 7                   # two runs side by side
 npm run rerun -- --at <sha> --tasks <id> --k 1   # a quick re-run of any agent commit, not counted
+npm run fix -- --repo <owner/name> --sha <commit> --bug report.md   # a live bug from outside the set, after every counted run, not counted
 ```
 
 `npm run curate` rebuilds the fixtures from upstream, and `npm run score -- --selftest --all` attacks the scorer.
