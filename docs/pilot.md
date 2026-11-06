@@ -58,7 +58,22 @@ All 21 tasks once more, with the turn limit at 3600 s, at concurrency 6. Session
 
 Xiaomi's docs say that with thinking on, which is this model's default, assistant messages with tool calls "must completely pass back the `reasoning_content` field", or "the model's context will be incomplete, which may result in decreased instruction following and increased hallucinations". TrueForge removes that field before every model call (`toContextAssistantMessage` in `AgentThread.js`, still present in 0.184.0). The documented 400 error never appeared in our runs.
 
-So every MiMo attempt above ran with its earlier reasoning missing. Whether that causes the noise is a hypothesis, and `scripts/replay-reasoning.ts` tests it.
+So every MiMo attempt above ran with its earlier reasoning missing. That looked like the cause of the noise, so we tested it. `scripts/replay-reasoning.ts` sent 40 real conversation states from the pilots to the model 15 times each, both as TrueForge sends them and with the reasoning put back.
+
+| | Calls | Noise | Mean prompt tokens |
+|---|---|---|---|
+| As TrueForge sends it | 600 | 11 | 14,017 |
+| Reasoning restored | 600 | 9 | 23,192 |
+
+**The theory was wrong:** Fisher's exact p = 0.82, so restoring the reasoning made no measurable difference to noise. The prompt tokens prove the reasoning reached the model. Noise wasn't tied to particular states either: the 4 states that gave noise in a pilot gave it in 3 of 120 calls, and the other 36 in 17 of 1,080.
+
+What this does and doesn't settle:
+
+- **The cause of the noise is still unknown.** In the replay it was always a run of `!`, half of it in the last sixth of the calls. In the pilots it was mixed tokens spread across each run. These may not be the same failure.
+- **The replay measures noise only.** It can't show whether missing reasoning weakens instruction following, the effect Xiaomi warns about, because that needs whole attempts and TrueForge always removes the field.
+- **Noise can change during a run,** which is one more reason to count it per run and to re-run the run 1 commit at the end.
+
+The data is in `docs/data/reasoning-replay.json`.
 
 ## 6 Nov: why uploads failed
 

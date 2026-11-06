@@ -1,0 +1,193 @@
+{
+ "model": "tfy-managed/mimo-v2.6-flash",
+ "date": "2026-11-06T02:21:09.787Z",
+ "contexts": 40,
+ "earlier_noise_contexts": 4,
+ "repeats": 15,
+ "stripped": {
+  "calls": 600,
+  "errors": 0,
+  "noise": 11,
+  "noise_on_earlier_noise_points": 2,
+  "mean_prompt_tokens": 14017
+ },
+ "kept": {
+  "calls": 600,
+  "errors": 0,
+  "noise": 9,
+  "noise_on_earlier_noise_points": 1,
+  "mean_prompt_tokens": 23192
+ },
+ "fisher_p": 0.82232,
+ "noise_samples": [
+  {
+   "context": "01m6q0qbx4dcjggck30x9g20kc#17",
+   "noise_before": true,
+   "arm": "stripped",
+   "noise": true,
+   "prompt_tokens": 9574,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6q3twjthsf4864vggvpexaf#64",
+   "noise_before": false,
+   "arm": "kept",
+   "noise": true,
+   "prompt_tokens": 59837,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6q3twjthsf4864vggvpexaf#32",
+   "noise_before": false,
+   "arm": "kept",
+   "noise": true,
+   "prompt_tokens": 30057,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6q0qbx4dcjggck30x9g20kc#17",
+   "noise_before": true,
+   "arm": "kept",
+   "noise": true,
+   "prompt_tokens": 11087,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6psy9w4eav2qxvfewsxk5f1#31",
+   "noise_before": false,
+   "arm": "kept",
+   "noise": true,
+   "prompt_tokens": 14985,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6q43sfb51kf9bxh5dwt3qdx#27",
+   "noise_before": false,
+   "arm": "stripped",
+   "noise": true,
+   "prompt_tokens": 13775,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6q43sfb51kf9bxh5dwt3qdx#27",
+   "noise_before": false,
+   "arm": "kept",
+   "noise": true,
+   "prompt_tokens": 23971,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6q3twjthsf4864vggvpexaf#28",
+   "noise_before": false,
+   "arm": "stripped",
+   "noise": true,
+   "prompt_tokens": 14550,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6q3twjthsf4864vggvpexaf#32",
+   "noise_before": false,
+   "arm": "stripped",
+   "noise": true,
+   "prompt_tokens": 19823,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6q0qbx4dcjggck30x9g20kc#17",
+   "noise_before": true,
+   "arm": "stripped",
+   "noise": true,
+   "prompt_tokens": 9574,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6pvcexp89t287qze0te9z3e#17",
+   "noise_before": false,
+   "arm": "stripped",
+   "noise": true,
+   "prompt_tokens": 8434,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6psy9w4eav2qxvfewsxk5f1#27",
+   "noise_before": false,
+   "arm": "stripped",
+   "noise": true,
+   "prompt_tokens": 10368,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6pxyt4nwc90t2pc7a2qbfja#28",
+   "noise_before": false,
+   "arm": "kept",
+   "noise": true,
+   "prompt_tokens": 16907,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6pxyt4nwc90t2pc7a2qbfja#28",
+   "noise_before": false,
+   "arm": "stripped",
+   "noise": true,
+   "prompt_tokens": 13022,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6q3twjthsf4864vggvpexaf#28",
+   "noise_before": false,
+   "arm": "kept",
+   "noise": true,
+   "prompt_tokens": 21725,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6pyp8wy3ae8zb5tqx2qc240#27",
+   "noise_before": false,
+   "arm": "kept",
+   "noise": true,
+   "prompt_tokens": 43196,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6q3twjthsf4864vggvpexaf#64",
+   "noise_before": false,
+   "arm": "stripped",
+   "noise": true,
+   "prompt_tokens": 36231,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6psy9w4eav2qxvfewsxk5f1#27",
+   "noise_before": false,
+   "arm": "stripped",
+   "noise": true,
+   "prompt_tokens": 10368,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6pvcexp89t287qze0te9z3e#17",
+   "noise_before": false,
+   "arm": "stripped",
+   "noise": true,
+   "prompt_tokens": 8434,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  },
+  {
+   "context": "01m6pvcexp89t287qze0te9z3e#17",
+   "noise_before": false,
+   "arm": "kept",
+   "noise": true,
+   "prompt_tokens": 14960,
+   "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  }
+ ],
+ "errors": [],
+ "windows_of_200_calls": [
+  1,
+  2,
+  1,
+  2,
+  4,
+  10
+ ]
+}
