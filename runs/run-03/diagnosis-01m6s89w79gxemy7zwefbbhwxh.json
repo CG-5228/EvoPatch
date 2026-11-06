@@ -1,0 +1,35 @@
+{
+  "cause": "Attempts ended without submitting a patch: once the fix appeared working, the agent opened new, unbounded rounds of optional verification or review (another reviewer, another sweep, another re-read) instead of completing the required review and running the terminal submit step, so it was cancelled or exhausted its output/iteration budget before submitting; a few attempts additionally declared success on stale or unresolving evidence. Passing attempts on the same tasks did the same checks but bounded them and always closed with a fresh green run followed immediately by the submit step.",
+  "rule": "Bound every optional check before starting it, and close the loop first: the moment a check executed against the current code comes back green, finish any required review and immediately run the terminal submit step — never defer submission behind one more optional round — and treat any unresolved failing or mismatching signal as blocking until it is fixed or shown out of scope; claims of success may only cite the most recent run.",
+  "cited": [
+    "run-01/node-semver-757-subset-2",
+    "run-01/boltons-458-addlist-1",
+    "run-01/humanize-359-metric-3",
+    "run-03/boltons-452-backoff-1",
+    "run-01/node-semver-775-coerce-2"
+  ],
+  "predicted_effect": "Attempts that reach a green state will capture their working fix by running the submit step right after the fresh green run instead of being cancelled during an extra verification round, converting empty-patch failures into submitted patches; attempts will also stop declaring done on evidence that is stale or still contains unresolved mismatches.",
+  "learned": "A working fix is worth nothing until it is captured: bound every optional verification round, and after a fresh green run against the current code go straight through the required review to the terminal submit step instead of opening one more check, while treating any unresolved failing signal as blocking.",
+  "session_id": "01m6s89w79gxemy7zwefbbhwxh",
+  "parent": "0dd46e84ae0cbbf3be1b00e0659bf468fee84037",
+  "usage": {
+    "turns": 1,
+    "execs": 99,
+    "skill_reads": {
+      "fix-workflow": 12,
+      "patch-review": 5,
+      "sandbox-recipes": 2
+    },
+    "subagent_threads": 5,
+    "subagent_names": [
+      "analyst-subset",
+      "analyst-run02",
+      "analyst-coerce",
+      "analyst-metric-backoff",
+      "skeptic"
+    ],
+    "sandboxes": 1,
+    "init_failures": 0,
+    "suspected_timeouts": 0
+  }
+}
