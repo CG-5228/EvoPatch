@@ -79,3 +79,14 @@ Every attempt in every counted run is scored again in the pinned image at the en
 - A failed scoring is tried again after 5, 30 and 120 seconds. Scoring is safe to repeat, because the turn is over and the patch is saved.
 - Every infrastructure event reaches `infra.json` as it happens, including events from attempts that are dropped.
 - `duration_s` now covers a whole run across resumes. Run 2's row says 9,883 s, which is only its last stretch. Rows already in `summary.csv` are left as they are.
+
+### 6 Nov: run 3 stopped once and finished on the fixed harness
+
+This note changes nothing: it records what happened. `agent_tree` and `evals_tree` are the same in all three baseline runs' `score.json` and `env.json`.
+
+Run 3 started at 15:56 UTC on the old code. At 17:38 five model streams were cut in a row, so it stopped under the frozen rule with 29 attempts saved. It resumed at 17:49 at commit `1888a73`, which includes the change above, and finished at 20:20. That was the first live use of the change. After the resume there were no scoring retries and no crashes, and three more stream cuts were retried and logged as they happened.
+
+Two records stay incomplete, and rows already written are left as they are.
+
+- **`duration_s`:** run 3's row says 9,044 s, which starts at the 17:49 resume. The run took 4 h 24 min from first start to finish. Run 2's row has the same gap: 9,883 s for 5 h 26 min. `runs/registry.csv` has the real times.
+- **`infra.json`:** it misses events the old code lost when a stop dropped their attempts. Run 3's lists 6 of the 9 events in the run log, and run 2's lists 5 of 8. The missing ones are `humanize-359-metric-2`, `node-semver-757-subset-1` and `mit-1275-numeric-range-2` in run 3, and `boltons-452-backoff-1`, `boltons-458-addlist-1` and `node-semver-757-subset-1` in run 2. All were model errors and each attempt ran again, so none of them changes a score.
