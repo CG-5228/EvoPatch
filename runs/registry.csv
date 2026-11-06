@@ -6,3 +6,4 @@ started_utc,kind,label,session_id,agent_commit,status
 2026-11-06T13:01:03.989Z,counted,run-02,01m6r6h9hqp99k1w9zkb94rytn,89604f1b6956e9f2251d9786f642f006f9306128,aborted: 3 infrastructure failures in a row  last: [Model Error] terminated
 2026-11-06T15:56:13Z,counted,run-02,01m6r6h9hqp99k1w9zkb94rytn,ce58651f65b57be5409a92df33f013e3ff5514ea,finished: 47.62
 2026-11-06T15:56:22.209Z,counted,run-03,01m6rs6j9whtnb51b5jx2n18tf,d6a32a56902d18313fe16f5656a4afb90048d59d,started
+2026-11-06T17:38:58.517Z,counted,run-03,01m6rs6j9whtnb51b5jx2n18tf,d6a32a56902d18313fe16f5656a4afb90048d59d,aborted: 5 infrastructure failures in a row  last: [Model Error] Request failed (200): Failed to process successful response: Failed to process successful response: terminated: other side closed
