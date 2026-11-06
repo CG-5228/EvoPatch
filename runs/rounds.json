@@ -1,0 +1,12 @@
+[
+  {
+    "round": 1,
+    "commit": "4151edddcb4838ca0f5ccaafc42004c5c6e91894",
+    "kept": false,
+    "bar": 52.78,
+    "screens": [
+      47.22
+    ],
+    "change": "A working fix is worth nothing until it is captured: bound every optional verification round, and after a fresh green run against the current code go straight through the required review to the terminal submit step instead of opening one more check, while treating any unresolved failing signal as blocking."
+  }
+]
