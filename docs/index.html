@@ -80,6 +80,8 @@ table { border-collapse: separate; border-spacing: 2px; font-size: 14px; }
 .plain { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
 .plain th, .plain td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
 .plain th { color: var(--ink-2); font-weight: 500; }
+.plain.wrap th { white-space: normal; vertical-align: bottom; min-width: 76px; }
+.plain.wrap th:first-child { min-width: 0; }
 .plain th:first-child, .plain td:first-child { text-align: left; }
 .matrix th { font-weight: 500; color: var(--ink-2); padding: 2px 6px; text-align: left; white-space: nowrap; }
 .matrix thead th { text-align: center; font-variant-numeric: tabular-nums; }
@@ -144,15 +146,15 @@ footer { margin-top: 48px; color: var(--ink-2); font-size: 14px; }
     <h2 id="h-why">Why attempts fail</h2>
     <p class="note">Every attempt ends one of four ways. An attempt is voided when the audit finds it fetched this project's code or its fix, or read another copy of the library. A voided attempt scores zero, even if its patch passes the maintainers' tests.</p>
     <div class="card" id="stack"></div>
-    <div class="card scroll" style="margin-top:12px"><table class="plain" id="classes"></table></div>
+    <div class="card scroll" style="margin-top:12px"><table class="plain wrap" id="classes"></table></div>
 
     <h3>The reviewer and the audit</h3>
     <p class="note" id="reviewer-line"></p>
-    <div class="card scroll"><table class="plain" id="reviewer"></table></div>
+    <div class="card scroll"><table class="plain wrap" id="reviewer"></table></div>
 
     <h3>Attempts with no patch</h3>
     <p class="note" id="nopatch-line"></p>
-    <div class="card scroll"><table class="plain" id="nopatch"></table></div>
+    <div class="card scroll"><table class="plain wrap" id="nopatch"></table></div>
   </section>
 
   <section aria-labelledby="h-rounds">
@@ -452,10 +454,13 @@ function stack(data) {
   const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "group", "aria-label": "How each run's attempts ended. The table below has every value." });
 
   const step = most > 40 ? 20 : most > 20 ? 10 : 5;
+  const ticks = [];
   for (let v = 0; v <= most; v += step) {
-    svg.append(svgEl("line", { x1: x(v), x2: x(v), y1: m.t, y2: H - m.b, style: `stroke:var(${v ? "--grid" : "--axis"})`, "stroke-width": 1 }));
+    ticks.push(v);
     svg.append(svgEl("text", { x: x(v), y: H - 8, "text-anchor": v ? "middle" : "start" }, v ? v : "0 attempts"));
   }
+  const grid = svgEl("g");
+  svg.append(grid);
 
   const describe = (r) => (t) => {
     t.append(el("div", "dim", `Run ${nn(r.run)}`));
@@ -470,6 +475,7 @@ function stack(data) {
   let y = m.t;
   for (const [title, runs] of groups) {
     if (title) { svg.append(svgEl("text", { class: "head", x: 0, y: y + 15 }, title)); y += HEAD; }
+    for (const v of ticks) grid.append(svgEl("line", { x1: x(v), x2: x(v), y1: y, y2: y + runs.length * STEP, style: `stroke:var(${v ? "--grid" : "--axis"})`, "stroke-width": 1 }));
     for (const r of runs) {
       const row = svgEl("g", { class: "row" });
       const top = y + (STEP - BAR) / 2;
