@@ -11,9 +11,10 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, 
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { TrueForge } from "@truefoundry/trueforge-sdk";
+import { auditCommands } from "../evals/audit.ts";
 import { EVALS_DIR } from "../evals/docker.ts";
 import { tarballName, taskPrompt, type Task } from "../evals/prompt.ts";
-import { client, die, downloadFile, env, exportTurn, featureUsage, git, isClean, option, ROOT, runDir, RUNS_DIR, runTurn, SUMMARY_CSV, syncAgent, traceOf, unscreenedEdit, writeJson } from "./lib.ts";
+import { client, commandsOf, die, downloadFile, env, exportTurn, featureUsage, git, isClean, option, ROOT, runDir, RUNS_DIR, runTurn, SUMMARY_CSV, syncAgent, traceOf, unscreenedEdit, writeJson } from "./lib.ts";
 
 const NOT_COUNTED = "NOT COUNTED. A live demo on a bug outside the eval set: it's in no score and no run.";
 
@@ -109,6 +110,12 @@ function lastTestRun(steps: ReturnType<typeof traceOf>) {
   return step ? { command: step.command, exit: step.exit, output: (step.tail || step.head).trim() } : null;
 }
 
+/** Nothing here is scored, but a demo only means something if the agent didn't fetch the fix, so it shows what could have. */
+export function networkUse(commands: string[], repo: string): string[] {
+  const named = commands.filter((c) => c.includes(repo)).map((c) => c.slice(0, 300));
+  return [...new Set([...named, ...auditCommands(commands).soft.map((h) => h.command)])];
+}
+
 /** Returns true when a patch came back. */
 export async function runFix(tf: TrueForge, final: FinalAgent, o: Options, work: string): Promise<boolean> {
   const { task, body, language } = buildUpload(o, work);
@@ -126,10 +133,11 @@ export async function runFix(tf: TrueForge, final: FinalAgent, o: Options, work:
   const patch = await downloadFile(tf, session.id, turn.turnId, "out/patch.diff");
   const report = await downloadFile(tf, session.id, turn.turnId, "out/report.json");
   const test = lastTestRun(traceOf(exported));
+  const network = networkUse(commandsOf(exported), o.repo);
 
   const label = `${task.id}-${new Date().toISOString().replace(/\W/g, "").slice(0, 15)}`;
   const dir = join(RUNS_DIR, "demos", label);
-  writeJson(join(dir, "result.json"), { counted: false, repo: o.repo, sha: o.sha, agent_commit: final.commit, session_id: session.id, turn_id: turn.turnId, status: turn.status, error: turn.error ?? null, patch_bytes: patch?.length ?? 0, last_test_run: test, usage: featureUsage([exported]) });
+  writeJson(join(dir, "result.json"), { counted: false, repo: o.repo, sha: o.sha, agent_commit: final.commit, session_id: session.id, turn_id: turn.turnId, status: turn.status, error: turn.error ?? null, patch_bytes: patch?.length ?? 0, last_test_run: test, network_commands: network, usage: featureUsage([exported]) });
   writeJson(join(dir, "session.json"), exported);
   if (patch?.length) writeFileSync(join(dir, "patch.diff"), patch);
 
@@ -139,6 +147,8 @@ export async function runFix(tf: TrueForge, final: FinalAgent, o: Options, work:
   if (report?.length) console.log(`--- What it said it did ---\n${(JSON.parse(report.toString()) as { summary: string }).summary}\n`);
   console.log("--- Its last test run, in its sandbox ---");
   console.log(test ? `$ ${test.command}\nexit ${test.exit}\n${test.output}` : "It didn't run the tests.");
+  console.log("\n--- Commands that used the network or named this repo ---");
+  console.log(network.length ? network.map((c) => c.replace(/\s+/g, " ").slice(0, 160)).join("\n") : "None.");
   console.log(`\n${NOT_COUNTED}`);
   console.log(`Saved to ${dir.replace(`${ROOT}/`, "")}`);
   return Boolean(patch?.length);
