@@ -19,6 +19,7 @@ import {
   die,
   downloadFile,
   env,
+  errorChain,
   exportTurn,
   featureUsage,
   flag,
@@ -39,6 +40,7 @@ import {
   responseStats,
   turnStats,
   unscreenedEdit,
+  withRetries,
   writeJson,
   type TurnExport,
 } from "./lib.ts";
@@ -133,7 +135,17 @@ for (let attempt = 1; attempt <= k; attempt++) for (const task of tasks) if (!do
 
 let infraStreak = 0;
 let aborted = "";
-const started = Date.now();
+
+// Kept across resumes, so duration_s covers the whole run.
+const startedPath = join(partial, "started-at");
+const started = resuming && existsSync(startedPath) ? Number(readFileSync(startedPath, "utf8")) : Date.now();
+writeFileSync(startedPath, String(started));
+
+// Written as it happens, so an event stays on record even if its attempt is dropped when the run stops.
+const infraPath = join(partial, "infra.jsonl");
+function logInfra(attempt: string, error: string): void {
+  appendFileSync(infraPath, JSON.stringify({ attempt, error: error.slice(0, 300) }) + "\n");
+}
 
 // Tarballs are byte-identical across builds, so each is built once.
 const tarballs = new Map<string, Buffer>();
@@ -142,16 +154,23 @@ function tarballOf(task: Task): Buffer {
   return tarballs.get(task.id)!;
 }
 
-// One scoring at a time, the way curation checked every test for stability.
+// One scoring at a time, the way curation checked every test for stability. Scoring is safe to repeat: the turn is
+// over and the patch is saved. In run 2 one failed fixture read cost every attempt in flight, so a failure waits and retries.
+const SCORE_RETRY_WAITS_MS = [5_000, 30_000, 120_000];
 let scoring: Promise<unknown> = Promise.resolve();
-function scoreNext(...args: Parameters<typeof scoreAttempt>): Promise<AttemptScore> {
-  const next = scoring.then(() => scoreAttempt(...args));
+function scoreNext(label: string, ...args: Parameters<typeof scoreAttempt>): Promise<AttemptScore> {
+  const next = scoring.then(() =>
+    withRetries(() => scoreAttempt(...args), SCORE_RETRY_WAITS_MS, (e, wait) => {
+      const error = `scoring failed, trying again in ${wait / 1000}s: ${errorChain(e)}`;
+      console.log(`  ${label.padEnd(34)} ${error.slice(0, 140)}`);
+      logInfra(label, error);
+    }),
+  );
   scoring = next.catch(() => undefined);
   return next;
 }
 
 async function attemptOnce(task: Task, attempt: number): Promise<void> {
-  const infra: Done["infra"] = [];
   for (let tries = 0; tries <= protocol.infra_retries; tries++) {
     if (aborted) return;
     const turn = await runTurn(tf, sessionId, taskPrompt(task), { files: [{ name: tarballName(task), body: tarballOf(task) }] });
@@ -160,7 +179,7 @@ async function attemptOnce(task: Task, attempt: number): Promise<void> {
       return;
     }
     if (turn.outcome === "infra") {
-      infra.push({ attempt: key(task, attempt), error: `${turn.status}: ${turn.error ?? ""}`.slice(0, 300) });
+      logInfra(key(task, attempt), `${turn.status}: ${turn.error ?? ""}`);
       console.log(`  ${key(task, attempt).padEnd(34)} infra (${turn.status}), retrying`);
       if (++infraStreak >= protocol.infra_abort_after) {
         aborted = `${infraStreak} infrastructure failures in a row, last: ${turn.error}`;
@@ -171,7 +190,7 @@ async function attemptOnce(task: Task, attempt: number): Promise<void> {
     const { turn: exported } = await exportTurn(tf, sessionId, turn.turnId);
     const usage = featureUsage([exported]);
     if (usage.init_failures) {
-      infra.push({ attempt: key(task, attempt), error: "sandbox init failed during the turn" });
+      logInfra(key(task, attempt), "sandbox init failed during the turn");
       if (++infraStreak >= protocol.infra_abort_after) {
         aborted = "the sandbox failed to start repeatedly";
         return;
@@ -191,8 +210,8 @@ async function attemptOnce(task: Task, attempt: number): Promise<void> {
     mkdirSync(dirname(patchFile), { recursive: true });
     if (patch?.length) writeFileSync(patchFile, patch);
     const commands = commandsOf(exported);
-    const score: AttemptScore = { ...(await scoreNext(task, patch, commands, attempt)), commands };
-    const entry: Done = { score: { ...score, turn_id: turn.turnId, report: report?.toString().slice(0, 1000) }, turn: exported, infra };
+    const score: AttemptScore = { ...(await scoreNext(key(task, attempt), task, patch, commands, attempt)), commands };
+    const entry: Done = { score: { ...score, turn_id: turn.turnId, report: report?.toString().slice(0, 1000) }, turn: exported, infra: [] };
     done.set(key(task, attempt), entry);
     appendFileSync(donePath, JSON.stringify(entry) + "\n");
     console.log(`  ${key(task, attempt).padEnd(34)} ${score.failure_class}${score.f2p_total ? ` (${score.f2p_passed}/${score.f2p_total})` : ""}`);
@@ -203,7 +222,14 @@ async function attemptOnce(task: Task, attempt: number): Promise<void> {
 
 await Promise.all(
   Array.from({ length: concurrency }, async () => {
-    for (let next = queue.shift(); next && !aborted; next = queue.shift()) await attemptOnce(next.task, next.attempt);
+    for (let next = queue.shift(); next && !aborted; next = queue.shift()) {
+      const { task, attempt } = next;
+      // One attempt's crash mustn't take the others with it: they finish and are saved, and the run stops cleanly.
+      await attemptOnce(task, attempt).catch((e: unknown) => {
+        logInfra(key(task, attempt), `stopped the run: ${errorChain(e)}`);
+        aborted ||= `${key(task, attempt)} stopped the run: ${errorChain(e)}`;
+      });
+    }
   }),
 );
 
@@ -234,7 +260,8 @@ writeJson(join(dir, "results.json"), results);
 writeJson(join(dir, "score.json"), { run: kind === "counted" ? run : label, kind, session_id: sessionId, agent_commit: sha, agent_tree: agentTree, k, ...total, tests_only_score: testsOnly.score, failure_classes: classes, ...stats, responses: responseStats(turns), duration_s: durationS });
 writeJson(join(dir, "session.json"), { exported_at: new Date().toISOString(), base_url: env.baseUrl, redactions: { note: "Uploaded tarballs are replaced by their sha256 and size. evals/prompt.ts rebuilds them." }, session, turns });
 writeJson(join(dir, "feature-usage.json"), featureUsage(turns));
-writeJson(join(dir, "infra.json"), entries.flatMap((e) => e.infra));
+const logged = existsSync(infraPath) ? readFileSync(infraPath, "utf8").split("\n").filter(Boolean).map((line) => JSON.parse(line) as Done["infra"][number]) : [];
+writeJson(join(dir, "infra.json"), [...entries.flatMap((e) => e.infra), ...logged]);
 writeJson(join(dir, "env.json"), {
   evals_tree: git("rev-parse", "HEAD:evals"),
   harness_commit: headSha(),

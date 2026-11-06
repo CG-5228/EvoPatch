@@ -241,6 +241,19 @@ export function errorChain(e: unknown): string {
   return [...new Set(parts)].join(" <- ");
 }
 
+/** Runs `fn`, and after each failure waits and tries again. Only for work that is safe to repeat. The last failure is thrown. */
+export async function withRetries<T>(fn: () => Promise<T>, waitsMs: number[], onFailure: (e: unknown, waitMs: number) => void): Promise<T> {
+  for (const wait of waitsMs) {
+    try {
+      return await fn();
+    } catch (e) {
+      onFailure(e, wait);
+      await new Promise((resolve) => setTimeout(resolve, wait));
+    }
+  }
+  return fn();
+}
+
 /** Decide whose fault a finished turn was. Written into docs/protocol.md before run 1. */
 export function classifyTurn(state: { status: string; message?: string; reason?: string; requiredActions?: unknown[] }): Pick<TurnResult, "outcome" | "fatal"> {
   if (state.status === "done") return { outcome: state.requiredActions?.length ? "infra" : "ok", fatal: false };

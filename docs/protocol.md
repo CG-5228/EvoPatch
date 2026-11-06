@@ -51,4 +51,31 @@ Nobody but the agent edits `agent/instructions.md` or `agent/skills/**` after ru
 
 ## Changes after the freeze
 
-None yet.
+### 6 Nov: one failed attempt can no longer stop the others
+
+Harness only: `scripts/run-evals.ts` and `scripts/lib.ts`. `agent/` and `evals/` didn't change, and nothing the agent sees changed. It applies from the first run started after this commit, so run 3 finishes on the old code unless it has to resume.
+
+**What happened in run 2.** Run 2 took from 10:30 to 15:56 UTC and stopped three times, resuming by itself after each stop.
+
+- At 10:40 and 12:21, model streams were cut in bursts: 4 ended `[Model Error] terminated`, and 3 more ended `terminated` or a gateway 500. Each burst stopped the run under the frozen rule, and the attempts in flight finished and were saved first. That worked as designed.
+- At 11:50 the scorer couldn't read `evals/fixtures/boltons-452-backoff/f2p.json`. That was a bug in the runner: the exception killed the process. One finished attempt lost its score and seven were cut off, and all eight started again on resume at 12:00. Two of the old turns were still running then, so up to ten turns ran at once until 12:48, against the frozen eight.
+
+Run 2 started 78 turns for 63 attempts: 63 scored, 7 lost to infrastructure and 8 lost to the crash. Those 8 restarts aren't in its `infra.json`, which also lists only 5 of the 8 infrastructure events in the log, because events from attempts dropped by a stop weren't saved.
+
+**The likely cause.** This repo sits in `~/Documents`, which iCloud Drive syncs. iCloud left 20 empty duplicate folders under `evals/fixtures/` (`repo 2`, `hidden 2`) and rewrote metadata on 531 frozen entries that day, and its link to `Documents` was rewritten within a minute of the crash. The system log for that minute has expired, so this is the best explanation and not a proven one.
+
+**Why run 2 stands.**
+
+- No file in `evals/` changed. `git diff eval-v1 -- evals` is empty, it was checked again at every resume, and no file was modified after the freeze.
+- Each task's upload was byte-identical across all 126 attempts in runs 1 and 2, by the sha256 in `session.json`.
+- Run 2's two test failures are real failures of the patches, not missing files.
+- A restart can only help a baseline, and a higher baseline raises the bar for every later run.
+
+Every attempt in every counted run is scored again in the pinned image at the end, which would show any score that came out wrong.
+
+**What changed.**
+
+- An exception in one attempt now stops the run cleanly: the others finish and are saved, and the stop is in the registry.
+- A failed scoring is tried again after 5, 30 and 120 seconds. Scoring is safe to repeat, because the turn is over and the patch is saved.
+- Every infrastructure event reaches `infra.json` as it happens, including events from attempts that are dropped.
+- `duration_s` now covers a whole run across resumes. Run 2's row says 9,883 s, which is only its last stretch. Rows already in `summary.csv` are left as they are.
