@@ -84,6 +84,28 @@ Every pilot lost 3-8 uploads to `fetch failed`. Retries recovered them, but at k
 
 Both had one root cause in our harness: synchronous Docker scoring froze its event loop for seconds at a time. **Fix:** score without blocking, one attempt at a time as in curation, and connect to `[::1]`. Afterwards: 63 attempts at concurrency 8 with no failures.
 
+## 6 Nov: two final pilots on the final harness
+
+Before freezing, MiMo ran all 21 tasks twice more on the finished harness: once at its default settings, and once with `reasoning_effort: none`, the only switch that really turned thinking off. The rule was set beforehand: pick the variant in the 35-65 band with the most failures coming from the agent's own work, and on a tie keep the default. They ran side by side, with a scorer selftest running too, so the machine was under about twice the load of a real run.
+
+| Variant | Score | Train | Held-out | Tests only | Resolved | Audit | No patch | Noise | Cut off | Cost | Time |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Default | 23.81 | 25 | 22.22 | 66.67 | 5 | 9 | 7 | 0 of 1,127 | 5 | $0.92 | 114 min |
+| Thinking off | 14.29 | 8.33 | 22.22 | 66.67 | 3 | 12 | 6 | 0 of 1,834 | 0 | $0.69 | 100 min |
+
+Sessions `01m6qgxqz6e4xvp60w262j0r9q` and `01m6qgxqz8rvrgtn6b7qaaxrbg`. Neither reached the band, so the tie rule applied: **the default stays.** Its three pilots average 38. This one is the lowest of the three, and it ran under the heaviest load: suspected command timeouts rose from 0.5% of commands at concurrency 3 to 1.4% at 6 and 2.1% here. Nothing else ran alongside the counted runs.
+
+- **Thinking off is worse.** Without reasoning, 12 of 21 attempts went after the upstream code, and 6 others ended in loops at the iteration or time limit.
+- **Most failures happen before the patch is saved.** 5 of the default's 7 no-patch attempts ran out the 60-minute limit in the review stage, before calling `finish`. Reviewers took a median of 10 minutes, some 25-50, and 14 of 34 ended in an error, mostly the output limit.
+- **We nearly got the noise wrong twice.** The first two pilots had noise and this thinking-off pilot didn't, which looked like proof that noise comes from thinking mode, at p = 0.0009. But the default pilot, with thinking on, ran at the same time and had none either. Noise changes with time: 9 in 1,563 calls in the first two pilots, 20 in 1,200 in the replay, 0 in 2,961 here. Comparing across time periods proves nothing, so the same trap applies to baseline and final runs. That's why noise is counted per run, and why the run 1 commit is re-run at the end.
+- **The gateway had a bad 16 minutes.** Between 05:36 and 05:52, 25 model calls failed (`terminated`, `LLM stream aborted`, `ECONNRESET`). On a root turn that's an infrastructure retry. On a subagent, the root sees an error and has to deal with it.
+
+## 6 Nov: `improve` on real failures
+
+`improve` had only run on the mock model, so it ran once for real before the freeze, on the training failures from the three MiMo pilots, with `--no-commit`. It took 9 minutes and $0.03: 3 analysts and a skeptic, then a diagnosis citing 5 attempts on 4 tasks, and an 8-line edit that passed every guard. Its rule was to bound optional work so it can't stand between a patch and `work/tools/finish`.
+
+**That edit was thrown away.** `agent/` was restored straight after, so the seed skills are unchanged, and only the real loop can make such a change. The real rounds will see much of the same evidence, so they may reach a similar rule. A pilot failure is not a counted run, and no held-out task was involved.
+
 ## 6 Nov: audit changes
 
 All 5,555 pilot commands went through the audit. It found real cheating: one attempt downloaded `boltons-26.2.0` from PyPI and diffed it against its own fix, and another fetched upstream's `zip_broadcast` "for comparison". Two changes came out of reading those hits:
@@ -98,3 +120,7 @@ All 5,555 pilot commands went through the audit. It found real cheating: one att
 - **`evolve` can restart.** Run again, it finishes a round whose edit was never screened, and keeps screens that already ran.
 - **Rounds are fixed at 5,** with no early stop, and none starts after Saturday 7 Nov, 18:00 Dublin. A fixed count is less adaptive, and it gives a real edit more chances against a noisy screen.
 - **k=3 and concurrency 8.** Latency didn't change between concurrency 3 and 6 (median 8.6 s and 9.8 s per model call), so the gateway isn't the limit. A third attempt per task cuts noise in every score.
+
+## 6 Nov: frozen settings
+
+MiMo v2.6 Flash at its default settings, with thinking on, k=3, concurrency 8. The pilots cost about $22 in total. The baseline may land near the bottom of the 35-65 target or under it, since the three pilots gave 42.86, 47.62 and 23.81 on single attempts per task.

@@ -8,10 +8,12 @@ Written before run 1 and frozen by the tag `eval-v1`. It follows TrueFoundry's f
 
 | Setting | Value |
 |---|---|
-| Model | set at the freeze, recorded in `agent/agent.json` |
-| Attempts per task (k) | `evals/protocol.json` |
-| Concurrency | `evals/protocol.json` |
-| Temperature | the model's default, so run-to-run spread is real |
+| Model | MiMo v2.6 Flash through the TrueFoundry gateway, chosen by the pilots (`docs/pilot.md`) |
+| Model settings | its defaults, with thinking on. Its docs say temperature is fixed at 1.0 in thinking mode, so run-to-run spread is real |
+| Attempts per task (k) | 3 |
+| Concurrency | 8, with nothing else running on the machine |
+| Output limit | 16,000 tokens per response |
+| Turn limit | 3,600 s, and 120 iterations |
 
 ## The sequence
 

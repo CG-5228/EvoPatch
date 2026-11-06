@@ -19,8 +19,8 @@ EvoPatch is a bug-fixing agent on [TrueForge](https://trueforge.dev). It attempt
 
 ```
 freeze ─► 3 baseline runs ─► spread.md ─► ROUND: improve ─► train screen ─► keep, or git revert
-                                            ▲______________________________________│ (at most 5 rounds)
-                 final agent ─► 2+ counted runs (all tasks) ─► verdict.md
+                                            ▲______________________________________│ (5 rounds)
+                 final agent ─► 2+ counted runs (all tasks) ─► drift check ─► verdict.md
 ```
 
 - **A run** is one TrueForge session. Each attempt is one root turn with a fresh sandbox: the agent reads its skills, unpacks the project, reproduces the bug, fixes it, runs the tests, gets a review from a subagent, and writes a patch.
@@ -52,6 +52,7 @@ npm run run-evals                        # one counted run
 npm run score -- runs/run-01             # re-score a saved run from its patches
 npm run spread -- 1,2,3                  # the baseline range
 npm run evolve -- --baseline 1,2,3       # rounds of improve, screen, keep or revert
+caffeinate -dims scripts/run-protocol.sh # or all of the above, unattended and resumable
 npm run verdict -- 1,2,3 6,7             # the five checks
 npm run compare -- 1 7                   # two runs side by side
 npm run rerun -- --at <sha> --tasks <id> --k 1   # a quick re-run of any agent commit, not counted
