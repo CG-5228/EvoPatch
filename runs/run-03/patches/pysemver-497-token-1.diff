@@ -1,0 +1,91 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 16:45:39
+@@ -507,6 +507,12 @@
+         """
+         Determines next version, preserving natural order.
+ 
++        The returned version is always greater than the version this is
++        called on. When a ``prerelease_token`` is given and restarting that
++        token on the same release would not yield a newer version (because
++        the token sorts before the current prerelease), the patch level is
++        raised and the token is started there.
++
+         .. versionadded:: 2.10.0
+ 
+         This function is taking prereleases into account.
+@@ -540,30 +546,53 @@
+         # Only check the main parts:
+         if part in cls.NAMES[:3]:
+             return getattr(version, "bump_" + part)()
++        if not version.prerelease:
++            # Nothing to continue: start the token on the next patch level.
++            return version.bump_prerelease(prerelease_token, bump_when_empty=True)
++
++        if prerelease_token:
++            prerelease_token = str(prerelease_token)
++            cls._validate_identifiers(
++                prerelease_token,
++                cls._PRERELEASE_IDENTIFIER,
++                "prerelease token",
++            )
+         else:
+-            if version.prerelease and prerelease_token:
+-                prerelease_token = str(prerelease_token)
+-                cls._validate_identifiers(
+-                    prerelease_token,
+-                    cls._PRERELEASE_IDENTIFIER,
+-                    "prerelease token",
++            # No token given: keep bumping the existing prerelease identifiers.
++            prerelease_token = ""
++
++        if prerelease_token:
++            # Handle old-style prereleases like "rc3" (no dot separator)
++            match = re.fullmatch(
++                rf"{re.escape(prerelease_token)}(\d+)", version.prerelease
++            )
++            if match:
++                num = int(match.group(1))
++                return version.replace(
++                    prerelease=f"{prerelease_token}{num + 1}", build=None
+                 )
+-                # Handle old-style prereleases like "rc3" (no dot separator)
+-                match = re.fullmatch(
+-                    rf"{re.escape(prerelease_token)}(\d+)", version.prerelease
+-                )
+-                if match:
+-                    num = int(match.group(1))
+-                    return version.replace(
+-                        prerelease=f"{prerelease_token}{num + 1}", build=None
+-                    )
+ 
+-                if not (
+-                    version.prerelease == prerelease_token
+-                    or version.prerelease.startswith(prerelease_token + ".")
+-                ):
+-                    return version.replace(prerelease=f"{prerelease_token}.1", build=None)
+-            return version.bump_prerelease(prerelease_token, bump_when_empty=True)
++            same_family = version.prerelease == prerelease_token or (
++                version.prerelease.startswith(prerelease_token + ".")
++            )
++            if same_family:
++                # Continue this token's prerelease family on the same release.
++                return version.bump_prerelease(prerelease_token, bump_when_empty=True)
++
++            # Switching to a different token: restart it at ".1" on this
++            # release. If that is not a newer version (the new token sorts
++            # before the current prerelease, e.g. rc -> beta), raise the
++            # patch level and start the token there instead.
++            candidate = version.replace(
++                prerelease=f"{prerelease_token}.1", build=None
++            )
++            if candidate > version:
++                return candidate
++            return version.bump_patch().replace(
++                prerelease=f"{prerelease_token}.1", build=None
++            )
++
++        return version.bump_prerelease(prerelease_token, bump_when_empty=True)
+ 
+     @_comparator
+     def __eq__(self, other: Comparable) -> bool:  # type: ignore

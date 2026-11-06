@@ -1,0 +1,66 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-06 19:14:45
+@@ -1181,7 +1181,9 @@
+     def __init__(self, iterable, key, validator=None):
+         self._it = iter(iterable)
+         self._key = key
+-        self._cache = defaultdict(deque)
++        self._cache = {}
++        self._seen = set()
++        self._missing = deque
+         self._validator = validator or (lambda x: True)
+ 
+     def __contains__(self, value):
+@@ -1193,7 +1195,7 @@
+         except StopIteration:
+             return False
+         else:
+-            self._cache[value].appendleft(item)
++            self._cache.setdefault(value, self._missing()).appendleft(item)
+ 
+         return True
+ 
+@@ -1206,8 +1208,9 @@
+         while True:
+             # If we've cached some items that match the target value, emit
+             # the first one and evict it from the cache.
+-            if self._cache[value]:
+-                yield self._cache[value].popleft()
++            cached = self._cache.get(value)
++            if cached:
++                yield cached.popleft()
+             # Otherwise we need to advance the parent iterator to search for
+             # a matching item, caching the rest.
+             else:
+@@ -1218,18 +1221,27 @@
+                         return
+                     item_value = self._key(item)
+                     if item_value == value:
++                        self._seen.add(value)
+                         yield item
+                         break
+                     elif self._validator(item_value):
+-                        self._cache[item_value].append(item)
++                        self._cache.setdefault(item_value, self._missing()).append(item)
++                        self._seen.add(item_value)
+ 
+     def __iter__(self):
++        # Exhaust the source, caching each item under its key (unless the
++        # key is invalid).  Use the same path as bucket lookups so items
++        # that were passed over earlier while searching for another key
++        # still contribute their keys here.
+         for item in self._it:
+             item_value = self._key(item)
+             if self._validator(item_value):
+-                self._cache[item_value].append(item)
++                self._cache.setdefault(item_value, self._missing()).append(item)
++                self._seen.add(item_value)
+ 
+-        return iter(self._cache)
++        # A key exists only if some item in the input actually produced it,
++        # even if its bucket has since been drained or never cached anything.
++        return iter(self._seen)
+ 
+     def __getitem__(self, value):
+         if not self._validator(value):

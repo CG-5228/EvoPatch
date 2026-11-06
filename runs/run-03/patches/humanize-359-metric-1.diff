@@ -1,0 +1,16 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/number.py b/src/humanize/number.py
+--- a/src/humanize/number.py	1970-01-01 00:00:00
++++ b/src/humanize/number.py	2026-11-06 16:03:38
+@@ -563,6 +563,12 @@
+     else:
+         ordinal_ = ""
+     value_ = format(value, f".{digits}f")
++    # Rounding can push the value up past a power of ten, e.g. 9.996 formatted
++    # with 2 decimals becomes "10.00", which has one digit more than `precision`.
++    # Drop decimals until the output has at most `precision` significant digits.
++    while digits > 0 and len(value_.replace("-", "").replace(".", "")) > precision:
++        digits -= 1
++        value_ = format(value, f".{digits}f")
+     if not (unit or ordinal_) or unit in ("°", "′", "″"):
+         space = ""
+     else:

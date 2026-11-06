@@ -1,0 +1,77 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/ranges/subset.js b/ranges/subset.js
+--- a/ranges/subset.js	1970-01-01 00:00:00
++++ b/ranges/subset.js	2026-11-06 19:58:31
+@@ -26,13 +26,12 @@
+ // - If GT and LT, and GT.semver > LT.semver, return true (null set)
+ // - If any C is a = range, and GT or LT are set, return false
+ // - If EQ
+-//   - If GT, and EQ does not satisfy GT, return true (null set)
+-//   - If LT, and EQ does not satisfy LT, return true (null set)
+-//   - If EQ satisfies every C, return true
++//   - If EQ does not satisfy the range, return true (null set)
++//   - If EQ satisfies the C range, return true
+ //   - Else return false
+ // - If GT
+ //   - If GT.semver is lower than any > or >= comp in C, return false
+-//   - If GT is >=, and GT.semver does not satisfy every C, return false
++//   - If GT is >=, and GT.semver does not satisfy the C range, return false
+ //   - If GT.semver has a prerelease, and not in prerelease mode
+ //     - If no C has a prerelease and the GT.semver tuple, return false
+ // - If LT
+@@ -96,6 +95,12 @@
+     }
+   }
+ 
++  // Prerelease eligibility of a version is determined by the range as a
++  // whole, not by an individual comparator, so membership checks below
++  // evaluate against the full simple range on each side.
++  const subStr = sub.map(String).join(' ')
++  const domStr = dom.map(String).join(' ')
++
+   const eqSet = new Set()
+   let gt, lt
+   for (const c of sub) {
+@@ -124,20 +129,16 @@
+ 
+   // will iterate one or zero times
+   for (const eq of eqSet) {
+-    if (gt && !satisfies(eq, String(gt), options)) {
++    // if EQ violates any comparator of sub, the range is a null set
++    if (!satisfies(eq, subStr, options)) {
+       return null
+     }
+ 
+-    if (lt && !satisfies(eq, String(lt), options)) {
+-      return null
++    // EQ is a member of sub, so it must be a member of dom
++    if (!satisfies(eq, domStr, options)) {
++      return false
+     }
+ 
+-    for (const c of dom) {
+-      if (!satisfies(eq, String(c), options)) {
+-        return false
+-      }
+-    }
+-
+     return true
+   }
+ 
+@@ -174,7 +175,7 @@
+         if (higher === c && higher !== gt) {
+           return false
+         }
+-      } else if (gt.operator === '>=' && !satisfies(gt.semver, String(c), options)) {
++      } else if (gt.operator === '>=' && !satisfies(gt.semver, domStr, options)) {
+         return false
+       }
+     }
+@@ -192,7 +193,7 @@
+         if (lower === c && lower !== lt) {
+           return false
+         }
+-      } else if (lt.operator === '<=' && !satisfies(lt.semver, String(c), options)) {
++      } else if (lt.operator === '<=' && !satisfies(lt.semver, domStr, options)) {
+         return false
+       }
+     }

@@ -1,0 +1,58 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 19:47:56
+@@ -518,6 +518,15 @@
+         >>> str(semver.Version.parse("0.1.4").next_version("prerelease"))
+         '0.1.5-rc.1'
+ 
++        Switching to a prerelease token that sorts *before* the current
++        prerelease would give a lower version.  In that case the next patch
++        version is started with the requested token instead, so that the
++        result is always greater than ``self``:
++
++        >>> str(semver.Version.parse("4.5.6-rc.2").next_version(
++        ...     "prerelease", prerelease_token="beta"))
++        '4.5.7-beta.1'
++
+         :param part: One of "major", "minor", "patch", or "prerelease"
+         :param prerelease_token: prefix string of prerelease, defaults to 'rc'
+         :return: new object with the appropriate part raised
+@@ -553,6 +562,8 @@
+                     rf"{re.escape(prerelease_token)}(\d+)", version.prerelease
+                 )
+                 if match:
++                    # Literal continuation of the very same token: the number
++                    # is raised, so this can never move the version backwards.
+                     num = int(match.group(1))
+                     return version.replace(
+                         prerelease=f"{prerelease_token}{num + 1}", build=None
+@@ -562,8 +573,27 @@
+                     version.prerelease == prerelease_token
+                     or version.prerelease.startswith(prerelease_token + ".")
+                 ):
+-                    return version.replace(prerelease=f"{prerelease_token}.1", build=None)
+-            return version.bump_prerelease(prerelease_token, bump_when_empty=True)
++                    candidate = version.replace(
++                        prerelease=f"{prerelease_token}.1", build=None
++                    )
++                    if candidate > version:
++                        return candidate
++                    # The new token sorts before (or equal to) the current
++                    # prerelease, so restart it on the next patch version.
++                    return version.bump_patch().replace(
++                        prerelease=f"{prerelease_token}.1", build=None
++                    )
++            candidate = version.bump_prerelease(prerelease_token, bump_when_empty=True)
++            if candidate > version:
++                return candidate
++            # Token does not sort after the current prerelease: start it on
++            # the next patch version instead of going backwards.
++            return version.bump_patch().replace(
++                prerelease=(
++                    prerelease_token + ".1" if prerelease_token else "1"
++                ),
++                build=None,
++            )
+ 
+     @_comparator
+     def __eq__(self, other: Comparable) -> bool:  # type: ignore

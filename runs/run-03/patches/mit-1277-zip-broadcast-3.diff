@@ -1,0 +1,72 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-06 19:08:58
+@@ -4649,6 +4649,26 @@
+             yield buffer[i : i + partial_size]
+ 
+ 
++class _guard_iterator:
++    """An iterator that shields its source from being opened again.
++
++    `zip` calls `iter` on each of its arguments. Wrapping a source
++    iterator in this class keeps that call away from the source, whose
++    `__iter__` must run only once.
++    """
++
++    __slots__ = ('iterator',)
++
++    def __init__(self, iterator):
++        self.iterator = iterator
++
++    def __iter__(self):
++        return self
++
++    def __next__(self):
++        return next(self.iterator)
++
++
+ def zip_broadcast(*objects, scalar_types=(str, bytes), strict=False):
+     """A version of :func:`zip` that "broadcasts" any scalar
+     (i.e., non-iterable) items into output tuples.
+@@ -4669,18 +4689,11 @@
+     If the *strict* keyword argument is ``True``, then
+     ``ValueError`` will be raised if any of the iterables have
+     different lengths.
++
++    Each argument is opened exactly once, so iterables that can only
++    be opened a single time behave as they do with :func:`zip`.
+     """
+ 
+-    def is_scalar(obj):
+-        if scalar_types and isinstance(obj, scalar_types):
+-            return True
+-        try:
+-            iter(obj)
+-        except TypeError:
+-            return True
+-        else:
+-            return False
+-
+     size = len(objects)
+     if not size:
+         return
+@@ -4688,10 +4701,17 @@
+     new_item = [None] * size
+     iterables, iterable_positions = [], []
+     for i, obj in enumerate(objects):
+-        if is_scalar(obj):
++        # Scalar objects are never opened. Any other object is opened
++        # exactly once, so one-shot iterables work as they do with `zip`.
++        if scalar_types and isinstance(obj, scalar_types):
+             new_item[i] = obj
++            continue
++        try:
++            iterator = iter(obj)
++        except TypeError:
++            new_item[i] = obj
+         else:
+-            iterables.append(iter(obj))
++            iterables.append(_guard_iterator(iterator))
+             iterable_positions.append(i)
+ 
+     if not iterables:

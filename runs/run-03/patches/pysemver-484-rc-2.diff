@@ -1,0 +1,47 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 18:12:15
+@@ -516,6 +516,13 @@
+         >>> str(semver.Version.parse("0.1.4").next_version("prerelease"))
+         '0.1.5-rc.1'
+ 
++        An existing prerelease token keeps its style: if the counter is glued
++        directly to the token (as in older tags like ``"rc7"``), it is raised
++        in place instead of restarting with a dotted counter:
++
++        >>> str(semver.Version.parse("2.4.0-rc7").next_version("prerelease"))
++        '2.4.0-rc8'
++
+         :param part: One of "major", "minor", "patch", or "prerelease"
+         :param prerelease_token: prefix string of prerelease, defaults to 'rc'
+         :return: new object with the appropriate part raised
+@@ -541,8 +548,27 @@
+         else:
+             if version.prerelease is not None and prerelease_token:
+                 current_token = version.prerelease.split(".")[0]
+-                if current_token != prerelease_token:
+-                    return version.replace(prerelease=f"{prerelease_token}.1", build=None)
++                # Older style tags glue the counter directly to the token
++                # without a dot, for example "rc7" instead of "rc.7".  Such a
++                # counter belongs to `prerelease_token` as well, so it has to
++                # keep counting up (never restart at 1) and stay in the very
++                # same style (see gh-484).
++                attached_counter = re.fullmatch(
++                    re.escape(prerelease_token) + r"(\d+)", current_token
++                )
++                if attached_counter is not None and current_token == version.prerelease:
++                    # A single identifier such as "rc7": raise it in place to
++                    # "rc8".  bump_prerelease() would turn it into "rc7.0",
++                    # dropping the candidate number.
++                    counter = str(int(attached_counter.group(1)) + 1)
++                    return version.replace(
++                        prerelease=f"{prerelease_token}{counter}", build=None
++                    )
++                if current_token != prerelease_token and attached_counter is None:
++                    # A different token: start over with it
++                    return version.replace(
++                        prerelease=f"{prerelease_token}.1", build=None
++                    )
+             return version.bump_prerelease(prerelease_token, bump_when_empty=True)
+ 
+     @_comparator

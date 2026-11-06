@@ -1,0 +1,21 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 18:07:51
+@@ -560,8 +560,15 @@
+                 )
+                 if match:
+                     num = int(match.group(1))
+-                    return version.replace(
+-                        prerelease=f"{prerelease_token}{num + 1}", build=None
++                    prerelease = f"{prerelease_token}{num + 1}"
++                    candidate = version.replace(prerelease=prerelease, build=None)
++                    if candidate > version:
++                        return candidate
++                    # The raised counter alone sorts below the original
++                    # (e.g. "rc10" < "rc9" in SemVer order), so keep the
++                    # old no-dot style but advance the patch version.
++                    return version.bump_patch().replace(
++                        prerelease=prerelease, build=None
+                     )
+ 
+                 if not (

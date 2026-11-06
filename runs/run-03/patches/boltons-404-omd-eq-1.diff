@@ -1,0 +1,44 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-06 16:10:39
+@@ -346,7 +346,7 @@
+         if isinstance(other, OrderedMultiDict):
+             selfi = self.iteritems(multi=True)
+             otheri = other.iteritems(multi=True)
+-            zipped_items = zip_longest(selfi, otheri, fillvalue=(None, None))
++            zipped_items = zip_longest(selfi, otheri, fillvalue=(_MISSING, _MISSING))
+             for (selfk, selfv), (otherk, otherv) in zipped_items:
+                 if selfk != otherk or selfv != otherv:
+                     return False
+@@ -358,7 +358,8 @@
+         elif hasattr(other, 'keys'):
+             for selfk in self:
+                 try:
+-                    other[selfk] == self[selfk]
++                    if other[selfk] != self[selfk]:
++                        return False
+                 except KeyError:
+                     return False
+             return True
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-06 16:10:39
+@@ -1252,7 +1252,7 @@
+         if isinstance(other, OrderedMultiDict):
+             selfi = self.iteritems(multi=True)
+             otheri = other.iteritems(multi=True)
+-            zipped_items = zip_longest(selfi, otheri, fillvalue=(None, None))
++            zipped_items = zip_longest(selfi, otheri, fillvalue=(_MISSING, _MISSING))
+             for (selfk, selfv), (otherk, otherv) in zipped_items:
+                 if selfk != otherk or selfv != otherv:
+                     return False
+@@ -1264,7 +1264,8 @@
+         elif hasattr(other, 'keys'):
+             for selfk in self:
+                 try:
+-                    other[selfk] == self[selfk]
++                    if other[selfk] != self[selfk]:
++                        return False
+                 except KeyError:
+                     return False
+             return True

@@ -1,0 +1,62 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-06 16:26:53
+@@ -1206,22 +1206,33 @@
+         while True:
+             # If we've cached some items that match the target value, emit
+             # the first one and evict it from the cache.
+-            if self._cache[value]:
+-                yield self._cache[value].popleft()
+-            # Otherwise we need to advance the parent iterator to search for
+-            # a matching item, caching the rest.
+-            else:
+-                while True:
+-                    try:
+-                        item = next(self._it)
+-                    except StopIteration:
+-                        return
+-                    item_value = self._key(item)
+-                    if item_value == value:
+-                        yield item
+-                        break
+-                    elif self._validator(item_value):
+-                        self._cache[item_value].append(item)
++            # ``get`` avoids materializing an entry for a key that was never
++            # seen; iterating the bucket must not be polluted by such probes.
++            values = self._cache.get(value)
++            if values:
++                yield values.popleft()
++                continue
++            # Advance the parent iterator until a match is found, caching
++            # every non-matching item as we go.
++            found = False
++            while True:
++                try:
++                    item = next(self._it)
++                except StopIteration:
++                    return
++                item_value = self._key(item)
++                if item_value == value:
++                    found = True
++                    break
++                elif self._validator(item_value):
++                    self._cache[item_value].append(item)
++            if not found:
++                return
++            # The key is now known to be a real bucket: materialize it (if it
++            # isn't already) so it shows up when iterating the bucket, even
++            # after this value is consumed.
++            self._cache.setdefault(value, deque()).append(item)
++            yield self._cache[value].popleft()
+ 
+     def __iter__(self):
+         for item in self._it:
+@@ -1229,6 +1240,8 @@
+             if self._validator(item_value):
+                 self._cache[item_value].append(item)
+ 
++        # ``_cache`` only contains keys that were actually materialized by
++        # real matches or a full scan, so it is safe to expose directly.
+         return iter(self._cache)
+ 
+     def __getitem__(self, value):

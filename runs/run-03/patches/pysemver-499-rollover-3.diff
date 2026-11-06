@@ -1,0 +1,65 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 19:37:16
+@@ -524,6 +524,14 @@
+         >>> str(semver.Version.parse("1.2.3-rc.1").next_version("prerelease", "alpha"))
+         '1.2.4-alpha.1'
+ 
++        Old-style prereleases without a dot (e.g. ``rc9``) compare
++        lexically, so raising the counter alone can sort below the original
++        version (``rc10`` < ``rc9``).  In that case the patch is advanced
++        as well, keeping the result greater than the original version:
++
++        >>> str(semver.Version.parse("7.1.0-rc9").next_version("prerelease"))
++        '7.1.1-rc10'
++
+         :param part: One of "major", "minor", "patch", or "prerelease"
+         :param prerelease_token: prefix string of prerelease, defaults to 'rc'
+         :return: new object with the appropriate part raised
+@@ -559,9 +567,22 @@
+                     rf"{re.escape(prerelease_token)}(\d+)", version.prerelease
+                 )
+                 if match:
+-                    num = int(match.group(1))
+-                    return version.replace(
+-                        prerelease=f"{prerelease_token}{num + 1}", build=None
++                    # Keep the old no-dot style ("rc9" -> "rc10"). Such an
++                    # identifier is alphanumeric and compares lexically, so
++                    # the raised counter alone can sort below the original
++                    # ("rc10" < "rc9"). When that happens, keep the raised
++                    # counter in its no-dot form and advance the patch, so
++                    # the result still sorts above the original version.
++                    prerelease = (
++                        f"{prerelease_token}{int(match.group(1)) + 1}"
++                    )
++                    candidate = version.replace(
++                        prerelease=prerelease, build=None
++                    )
++                    if candidate > version:
++                        return candidate
++                    return version.bump_patch().replace(
++                        prerelease=prerelease, build=None
+                     )
+ 
+                 if not (
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/tests/test_issue484.py b/tests/test_issue484.py
+--- a/tests/test_issue484.py	1970-01-01 00:00:00
++++ b/tests/test_issue484.py	2026-11-06 19:56:18
+@@ -31,9 +31,15 @@
+ 
+ 
+ def test_issue_484_rc9_to_rc10():
+-    """Ensure numeric bumping works across digit boundaries."""
++    """Ensure numeric bumping works across digit boundaries.
++
++    "rc10" sorts below "rc9" lexically, so the patch must advance too for
++    the result to stay greater than the original version.
++    """
+     v = Version.parse("1.2.3-rc9")
+-    assert str(v.next_version("prerelease")) == "1.2.3-rc10"
++    result = v.next_version("prerelease")
++    assert str(result) == "1.2.4-rc10"
++    assert result > v
+ 
+ 
+ def test_issue_484_dot_style_unchanged():

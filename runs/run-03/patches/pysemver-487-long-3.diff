@@ -1,0 +1,104 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/.ruff_cache/.gitignore b/.ruff_cache/.gitignore
+--- a/.ruff_cache/.gitignore	1970-01-01 00:00:00
++++ b/.ruff_cache/.gitignore	2026-11-06 20:03:25
+@@ -0,0 +1,2 @@
++# Automatically created by ruff.
++*
+Binary files a/.ruff_cache/0.15.9/319631155836582452 and b/.ruff_cache/0.15.9/319631155836582452 differ
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/.ruff_cache/CACHEDIR.TAG b/.ruff_cache/CACHEDIR.TAG
+--- a/.ruff_cache/CACHEDIR.TAG	1970-01-01 00:00:00
++++ b/.ruff_cache/CACHEDIR.TAG	2026-11-06 20:03:25
+@@ -0,0 +1 @@
++Signature: 8a477f597d28d172789f06886806bc55
+\ No newline at end of file
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 19:35:21
+@@ -1,6 +1,7 @@
+ """Version handling by a semver compatible version class."""
+ 
+ import re
++import sys
+ from functools import wraps
+ from typing import (
+     Any,
+@@ -73,6 +74,35 @@
+     return (a > b) - (a < b)
+ 
+ 
++class _LongNumber:
++    """An all-digit prerelease identifier too long for ``int()``.
++
++    Since Python 3.11, converting a string with more than
++    ``sys.get_int_max_str_digits()`` digits to an :class:`int` raises a
++    ``ValueError`` ("Exceeds the limit ... for integer string
++    conversion").  Such identifiers are nevertheless valid SemVer
++    prereleases, so their canonical decimal form (the digits without
++    leading zeroes, i.e. exactly what ``str(int(...))`` would produce)
++    is kept instead, which is enough to compare them numerically.
++    """
++
++    __slots__ = ("digits",)
++
++    def __init__(self, digits: str) -> None:
++        self.digits = digits.lstrip("0") or "0"
++
++
++def _numeric_sort_key(value: Union[int, _LongNumber]) -> Tuple[int, str]:
++    """Return a key ordering non-negative decimal numbers like ``int`` does.
++
++    Two canonical decimal forms compare numerically when compared first
++    by length and then lexicographically, so no (possibly refused)
++    integer conversion is needed.
++    """
++    digits = value.digits if isinstance(value, _LongNumber) else str(value)
++    return (len(digits), digits)
++
++
+ class Version:
+     """
+     A semver compatible version class.
+@@ -185,18 +215,38 @@
+ 
+     @classmethod
+     def _nat_cmp(cls, a: Optional[str], b: Optional[str]) -> int:
++        def as_comparable_part(tag):
++            # Mirror the historical ``int(x) if x.isdigit() else x``
++            # conversion, except for ASCII digit strings that int()
++            # would refuse because they exceed the integer string
++            # conversion limit: those are compared numerically without
++            # being converted, so everything is_valid() accepts stays
++            # sortable.  Every other tag follows the old code path,
++            # including its errors.
++            if not tag.isdigit():
++                return tag
++            get_limit = getattr(sys, "get_int_max_str_digits", None)
++            limit = get_limit() if get_limit is not None else 0
++            if limit and len(tag) > limit and tag.isascii():
++                return _LongNumber(tag)
++            return int(tag)
++
+         def cmp_prerelease_tag(a, b):
+-            if isinstance(a, int) and isinstance(b, int):
++            a_is_number = isinstance(a, (int, _LongNumber))
++            b_is_number = isinstance(b, (int, _LongNumber))
++            if a_is_number and b_is_number:
++                if isinstance(a, _LongNumber) or isinstance(b, _LongNumber):
++                    return _cmp(_numeric_sort_key(a), _numeric_sort_key(b))
+                 return _cmp(a, b)
+-            elif isinstance(a, int):
++            elif a_is_number:
+                 return -1
+-            elif isinstance(b, int):
++            elif b_is_number:
+                 return 1
+             else:
+                 return _cmp(a, b)
+ 
+-        a_parts = [int(x) if x.isdigit() else x for x in (a or "").split(".")]
+-        b_parts = [int(x) if x.isdigit() else x for x in (b or "").split(".")]
++        a_parts = [as_comparable_part(x) for x in (a or "").split(".")]
++        b_parts = [as_comparable_part(x) for x in (b or "").split(".")]
+ 
+         for sub_a, sub_b in zip(a_parts, b_parts):
+             cmp_result = cmp_prerelease_tag(sub_a, sub_b)

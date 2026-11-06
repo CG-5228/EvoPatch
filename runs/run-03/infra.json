@@ -1,0 +1,26 @@
+[
+  {
+    "attempt": "boltons-348-lru-1",
+    "error": "rejected: createTurn rejected after 6.4s: fetch failed <- ECONNRESET read ECONNRESET"
+  },
+  {
+    "attempt": "mit-1277-zip-broadcast-2",
+    "error": "error: [Model Error] Request failed (200): Failed to process successful response: Failed to process successful response: terminated: other side closed"
+  },
+  {
+    "attempt": "boltons-458-addlist-2",
+    "error": "error: [Model Error] Request failed (200): Failed to process successful response: Failed to process successful response: terminated: other side closed"
+  },
+  {
+    "attempt": "pysemver-487-long-3",
+    "error": "error: [Model Error] Request failed (200): Failed to process successful response: Failed to process successful response: terminated: other side closed"
+  },
+  {
+    "attempt": "node-semver-757-subset-3",
+    "error": "error: [Model Error] Request failed (200): Failed to process successful response: Failed to process successful response: terminated: other side closed"
+  },
+  {
+    "attempt": "pysemver-497-token-3",
+    "error": "error: [Model Error] terminated"
+  }
+]

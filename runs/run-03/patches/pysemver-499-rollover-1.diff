@@ -1,0 +1,37 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 16:44:46
+@@ -524,6 +524,15 @@
+         >>> str(semver.Version.parse("1.2.3-rc.1").next_version("prerelease", "alpha"))
+         '1.2.4-alpha.1'
+ 
++        Old-style prereleases without a dot keep their form; when the raised
++        counter alone would sort below the original version, the patch version
++        is advanced as well:
++
++        >>> str(semver.Version.parse("7.1.0-rc9").next_version("prerelease"))
++        '7.1.1-rc10'
++        >>> str(semver.Version.parse("7.1.0-rc4").next_version("prerelease"))
++        '7.1.0-rc5'
++
+         :param part: One of "major", "minor", "patch", or "prerelease"
+         :param prerelease_token: prefix string of prerelease, defaults to 'rc'
+         :return: new object with the appropriate part raised
+@@ -560,7 +569,16 @@
+                 )
+                 if match:
+                     num = int(match.group(1))
+-                    return version.replace(
++                    candidate = version.replace(
++                        prerelease=f"{prerelease_token}{num + 1}", build=None
++                    )
++                    if candidate > version:
++                        return candidate
++                    # The raised counter alone sorts below the original
++                    # (e.g. "rc10" < "rc9" because plain identifiers are
++                    # compared as strings). Keep the no-dot form and advance
++                    # the patch, so the result remains the greater version.
++                    return version.bump_patch().replace(
+                         prerelease=f"{prerelease_token}{num + 1}", build=None
+                     )
+ 

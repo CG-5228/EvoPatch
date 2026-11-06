@@ -1,0 +1,134 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 18:44:10
+@@ -7,6 +7,7 @@
+     ClassVar,
+     Dict,
+     Iterable,
++    List,
+     Optional,
+     Pattern,
+     SupportsInt,
+@@ -73,6 +74,35 @@
+     return (a > b) - (a < b)
+ 
+ 
++class _HugeNumber:
++    """
++    A numeric prerelease identifier too long to convert to :class:`int`.
++
++    Python limits decimal string to integer conversion (see
++    :func:`sys.get_int_max_str_digits`).  Identifiers exceeding that limit
++    cannot be converted, but they still have to take part in the natural
++    (numeric) ordering of prerelease identifiers.  Keeping their digits in
++    normalized form (no leading zeros) allows comparing them as integers:
++    first by number of digits, then lexicographically.
++    """
++
++    __slots__ = ("digits",)
++
++    def __init__(self, value: str) -> None:
++        stripped = value.lstrip("0")
++        self.digits = stripped or "0"
++
++    @property
++    def key(self) -> Tuple[int, str]:
++        return (len(self.digits), self.digits)
++
++
++def _int_sort_key(value: int) -> Tuple[int, str]:
++    """Sort key with the same ordering as ``value`` for non-negative ints."""
++    digits = str(value)
++    return (len(digits), digits)
++
++
+ class Version:
+     """
+     A semver compatible version class.
+@@ -103,6 +133,12 @@
+     _BUILD_IDENTIFIER: ClassVar[Pattern[str]] = re.compile(
+         r"[0-9a-zA-Z-]+", re.ASCII
+     )
++    #: Regex for a complete valid prerelease (without the leading dash)
++    _FULL_PRERELEASE: ClassVar[Pattern[str]] = re.compile(
++        rf"(?:{_PRERELEASE_IDENTIFIER.pattern})"
++        rf"(?:\.(?:{_PRERELEASE_IDENTIFIER.pattern}))*",
++        re.ASCII,
++    )
+     #: Regex template for a semver version
+     _REGEX_TEMPLATE: ClassVar[
+         str
+@@ -186,7 +222,19 @@
+     @classmethod
+     def _nat_cmp(cls, a: Optional[str], b: Optional[str]) -> int:
+         def cmp_prerelease_tag(a, b):
+-            if isinstance(a, int) and isinstance(b, int):
++            if isinstance(a, _HugeNumber) or isinstance(b, _HugeNumber):
++                if isinstance(a, _HugeNumber) and isinstance(b, _HugeNumber):
++                    return _cmp(a.key, b.key)
++                elif isinstance(a, _HugeNumber):
++                    # numeric identifiers sort before alphanumeric ones
++                    if isinstance(b, int):
++                        return _cmp(a.key, _int_sort_key(b))
++                    return -1
++                else:  # b is a _HugeNumber, a is an int or a string
++                    if isinstance(a, int):
++                        return _cmp(_int_sort_key(a), b.key)
++                    return 1
++            elif isinstance(a, int) and isinstance(b, int):
+                 return _cmp(a, b)
+             elif isinstance(a, int):
+                 return -1
+@@ -195,8 +243,8 @@
+             else:
+                 return _cmp(a, b)
+ 
+-        a_parts = [int(x) if x.isdigit() else x for x in (a or "").split(".")]
+-        b_parts = [int(x) if x.isdigit() else x for x in (b or "").split(".")]
++        a_parts = cls._prerelease_parts(a)
++        b_parts = cls._prerelease_parts(b)
+ 
+         for sub_a, sub_b in zip(a_parts, b_parts):
+             cmp_result = cmp_prerelease_tag(sub_a, sub_b)
+@@ -204,6 +252,41 @@
+                 return cmp_result
+ 
+         return _cmp(len(a_parts), len(b_parts))
++
++    @classmethod
++    def _prerelease_parts(
++        cls, value: Optional[str]
++    ) -> List[Union[int, str, _HugeNumber]]:
++        """
++        Split a prerelease into its dot-separated identifiers and turn each
++        numeric identifier into an int, so that :meth:`_nat_cmp` can compare
++        them.
++
++        Identifiers exceeding Python's limit for integer string conversion
++        are represented by a :class:`_HugeNumber` -- but only when the whole
++        prerelease is a valid semver prerelease.  Anything :meth:`parse`
++        rejects behaves exactly as before (the ``ValueError`` from ``int``
++        propagates), so comparing such values keeps raising as it used to.
++        """
++        value = value or ""
++        limit_free = cls._FULL_PRERELEASE.fullmatch(value) is not None
++        parts: List[Union[int, str, _HugeNumber]] = []
++        for identifier in value.split("."):
++            if not identifier.isdigit():
++                parts.append(identifier)
++                continue
++            try:
++                parts.append(int(identifier))
++            except ValueError:
++                # For an all-digit ASCII string, int() can only fail because
++                # the identifier exceeds the integer string conversion limit.
++                # A valid semver prerelease identifier of that size is still
++                # a legal numeric identifier, so keep it comparable.
++                if limit_free and identifier.isascii():
++                    parts.append(_HugeNumber(identifier))
++                else:
++                    raise
++        return parts
+ 
+     @property
+     def major(self) -> int:

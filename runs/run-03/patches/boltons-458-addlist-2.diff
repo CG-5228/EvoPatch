@@ -1,0 +1,119 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-06 17:37:37
+@@ -67,7 +67,7 @@
+ 
+ """
+ 
+-from collections.abc import KeysView, ValuesView, ItemsView
++from collections.abc import Iterable, KeysView, ValuesView, ItemsView
+ from itertools import zip_longest
+ 
+ try:
+@@ -225,6 +225,16 @@
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+         tuples and other sequences and iterables work.
+         """
++        # Gate on iterability rather than plain truthiness: one-shot
++        # iterators (e.g., generators) are always truthy even when
++        # empty, and other iterables may not support truthiness at all.
++        # A falsy non-iterable (e.g., None) still has nothing to add.
++        if not isinstance(v, Iterable) and not v:
++            return
++        # Materialize the iterable up front so it is consumed exactly
++        # once, storing every value consistently, and so that an empty
++        # iterable does not create an empty entry.
++        v = list(v)
+         if not v:
+             return
+         self_insert = self._insert
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-06 17:37:37
+@@ -976,7 +976,7 @@
+ # 20161021, used for the QueryParamDict, toward the bottom.
+ """
+ 
+-from collections.abc import KeysView, ValuesView, ItemsView
++from collections.abc import Iterable, KeysView, ValuesView, ItemsView
+ from itertools import zip_longest
+ 
+ try:
+@@ -1123,6 +1123,16 @@
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+         tuples and other sequences and iterables work.
+         """
++        # Gate on iterability rather than plain truthiness: one-shot
++        # iterators (e.g., generators) are always truthy even when
++        # empty, and other iterables may not support truthiness at all.
++        # A falsy non-iterable (e.g., None) still has nothing to add.
++        if not isinstance(v, Iterable) and not v:
++            return
++        # Materialize the iterable up front so it is consumed exactly
++        # once, storing every value consistently, and so that an empty
++        # iterable does not create an empty entry.
++        v = list(v)
+         if not v:
+             return
+         self_insert = self._insert
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/tests/test_dictutils.py b/tests/test_dictutils.py
+--- a/tests/test_dictutils.py	1970-01-01 00:00:00
++++ b/tests/test_dictutils.py	2026-11-06 17:37:58
+@@ -270,6 +270,33 @@
+     assert len(list(e_omd.iteritems(multi=True))) == 0
+ 
+ 
++def test_addlist_iter():
++    "one-shot iterators must behave exactly like the equivalent list"
++    omd = OMD()
++    omd.addlist('k', (n * 2 for n in range(3)))
++    assert omd.getlist('k') == [0, 2, 4]
++    assert omd.get('k') == 4
++    assert omd.keys() == ['k']
++    assert len(omd) == 1
++    assert list(omd.iteritems(multi=True)) == [('k', 0), ('k', 2), ('k', 4)]
++
++    eq_omd = OMD()
++    eq_omd.addlist('k', [0, 2, 4])
++    assert omd == eq_omd
++
++    # an empty iterator adds nothing
++    e_omd = OMD()
++    e_omd.addlist('k', iter([]))
++    assert len(e_omd) == 0
++    assert e_omd.keys() == []
++    assert 'k' not in e_omd
++
++    # existing values under the key are preserved
++    p_omd = OMD([('a', -1)])
++    p_omd.addlist('a', iter(range(3)))
++    assert p_omd.getlist('a') == [-1, 0, 1, 2]
++
++
+ def test_pop_all():
+     omd = OMD()
+     omd.add('even', 0)
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/tests/test_urlutils.py b/tests/test_urlutils.py
+--- a/tests/test_urlutils.py	1970-01-01 00:00:00
++++ b/tests/test_urlutils.py	2026-11-06 17:37:58
+@@ -105,6 +105,20 @@
+     assert urlutils.parse_qsl('%E9=v', encoding='latin-1') == [('\xe9', 'v')]
+ 
+ 
++def test_query_param_dict_addlist_iter():
++    "one-shot iterators must behave exactly like the equivalent list"
++    qpd = QueryParamDict()
++    qpd.addlist('k', (str(n) for n in range(3)))
++    assert qpd.getlist('k') == ['0', '1', '2']
++    assert qpd.get('k') == '2'
++    assert qpd == QueryParamDict([('k', '0'), ('k', '1'), ('k', '2')])
++
++    e_qpd = QueryParamDict()
++    e_qpd.addlist('k', iter([]))
++    assert len(e_qpd) == 0
++    assert 'k' not in e_qpd
++
++
+ def test_query_param_dict_eq_with_dict():
+     qpd = QueryParamDict([('a', '1'), ('b', '2')])
+     assert qpd == {'a': '1', 'b': '2'}

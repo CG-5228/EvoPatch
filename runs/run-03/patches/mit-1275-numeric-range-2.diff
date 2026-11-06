@@ -1,0 +1,27 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-06 18:44:22
+@@ -2458,14 +2458,15 @@
+         )
+ 
+     def __reversed__(self):
+-        # Empty iterator
+-        try:
+-            start = self._get_by_index(-1)
+-        except IndexError:
+-            return iter([])
+-
+-        return iter(
+-            numeric_range(start, self._start - self._step, -self._step)
++        # Yield the items in reverse index order, computing each one with the
++        # same expression `__iter__` and `__getitem__` use:
++        # `self._start + i * self._step`. Building a descending range instead
++        # would re-derive every item from its neighbor (`last + i * -step`),
++        # which lands on other values when the step is inexact (floats), and
++        # would need `self._start - self._step`, which can be outside the
++        # representable range (`datetime.min`, `datetime.max`).
++        return (
++            self._start + i * self._step for i in reversed(range(self._len))
+         )
+ 
+     def count(self, value):

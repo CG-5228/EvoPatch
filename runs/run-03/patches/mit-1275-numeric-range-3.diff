@@ -1,0 +1,27 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-06 18:57:06
+@@ -2458,14 +2458,15 @@
+         )
+ 
+     def __reversed__(self):
+-        # Empty iterator
+-        try:
+-            start = self._get_by_index(-1)
+-        except IndexError:
+-            return iter([])
+-
+-        return iter(
+-            numeric_range(start, self._start - self._step, -self._step)
++        # Yield the forward items backwards rather than building a reversed
++        # `numeric_range`. Such a range would need a stop value one step past
++        # the first item, but `self._start - self._step` can overflow the item
++        # type (e.g. `datetime.min - step`) and, with inexact steps, lands
++        # off the grid and admits an extra item. The items themselves are
++        # exactly `self._start + n * self._step`, so walking the indices
++        # backwards reproduces the forward values in reverse, exactly.
++        return (
++            self._get_by_index(i) for i in range(self._len - 1, -1, -1)
+         )
+ 
+     def count(self, value):

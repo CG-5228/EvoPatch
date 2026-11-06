@@ -1,0 +1,68 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-06 18:51:56
+@@ -221,17 +221,27 @@
+         >>> omd.addlist('a', range(3))
+         >>> omd
+         OrderedMultiDict([('a', -1), ('a', 0), ('a', 1), ('a', 2)])
++        >>> omd.addlist('b', (i * 2 for i in range(3)))
++        >>> omd.getlist('b')
++        [0, 2, 4]
+ 
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+         tuples and other sequences and iterables work.
+         """
+-        if not v:
++        if not hasattr(v, '__iter__') and not v:
++            # non-iterables (e.g., None) count as empty, and add nothing
+             return
++        # Materialize up front: a one-shot iterable (e.g., a generator)
++        # cannot be walked twice, and an empty one must not create the
++        # key at all.
++        items = list(v)
++        if not items:
++            return
+         self_insert = self._insert
+         values = super().setdefault(k, [])
+-        for subv in v:
++        for subv in items:
+             self_insert(k, subv)
+-        values.extend(v)
++        values.extend(items)
+ 
+     def get(self, k, default=None):
+         """Return the value for key *k* if present in the dictionary, else
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-06 18:51:56
+@@ -1119,17 +1119,27 @@
+         >>> omd.addlist('a', range(3))
+         >>> omd
+         OrderedMultiDict([('a', -1), ('a', 0), ('a', 1), ('a', 2)])
++        >>> omd.addlist('b', (i * 2 for i in range(3)))
++        >>> omd.getlist('b')
++        [0, 2, 4]
+ 
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+         tuples and other sequences and iterables work.
+         """
+-        if not v:
++        if not hasattr(v, '__iter__') and not v:
++            # non-iterables (e.g., None) count as empty, and add nothing
+             return
++        # Materialize up front: a one-shot iterable (e.g., a generator)
++        # cannot be walked twice, and an empty one must not create the
++        # key at all.
++        items = list(v)
++        if not items:
++            return
+         self_insert = self._insert
+         values = super().setdefault(k, [])
+-        for subv in v:
++        for subv in items:
+             self_insert(k, subv)
+-        values.extend(v)
++        values.extend(items)
+ 
+     def get(self, k, default=None):
+         """Return the value for key *k* if present in the dictionary, else

@@ -1,0 +1,28 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/functions/diff.js b/functions/diff.js
+--- a/functions/diff.js	1970-01-01 00:00:00
++++ b/functions/diff.js	2026-11-06 16:32:07
+@@ -27,7 +27,23 @@
+       return 'major'
+     }
+ 
+-    // Otherwise it can be determined by checking the high version
++    // Otherwise it can be determined by comparing the two versions,
++    // from the highest level down.
++
++    if (highVersion.major !== lowVersion.major) {
++      return 'major'
++    }
++
++    if (highVersion.minor !== lowVersion.minor) {
++      return 'minor'
++    }
++
++    if (highVersion.patch !== lowVersion.patch) {
++      return 'patch'
++    }
++
++    // The numbers are identical, only the prerelease differs. Classify by
++    // which component was last bumped to produce this version.
+ 
+     if (highVersion.patch) {
+       // anything higher than a patch bump would result in the wrong version

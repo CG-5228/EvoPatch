@@ -1,0 +1,49 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 19:44:09
+@@ -516,6 +516,13 @@
+         >>> str(semver.Version.parse("0.1.4").next_version("prerelease"))
+         '0.1.5-rc.1'
+ 
++        A compact prerelease counter (no dot before the number) is kept in
++        that same style and continues counting, so a candidate number never
++        decreases:
++
++        >>> str(semver.Version.parse("2.4.0-rc7").next_version("prerelease"))
++        '2.4.0-rc8'
++
+         :param part: One of "major", "minor", "patch", or "prerelease"
+         :param prerelease_token: prefix string of prerelease, defaults to 'rc'
+         :return: new object with the appropriate part raised
+@@ -542,7 +549,30 @@
+             if version.prerelease is not None and prerelease_token:
+                 current_token = version.prerelease.split(".")[0]
+                 if current_token != prerelease_token:
+-                    return version.replace(prerelease=f"{prerelease_token}.1", build=None)
++                    # Older releases used the compact style where the counter
++                    # is attached directly to the token without a dot, for
++                    # example "rc7".  Such a prerelease still belongs to the
++                    # requested token, so continue counting in the very same
++                    # style instead of restarting the counter: the candidate
++                    # number must never go backwards.
++                    compact = re.match(
++                        re.escape(str(prerelease_token)) + r"(\d+)", current_token
++                    )
++                    if compact is None:
++                        # A different token starts a new series.
++                        return version.replace(
++                            prerelease=f"{prerelease_token}.1", build=None
++                        )
++                    next_counter = str(int(compact.group(1)) + 1)
++                    # Keep anything after the counter inside the first
++                    # segment ("rc7x" -> "rc8x") and any further segments
++                    # ("rc7.1" -> "rc8.1").
++                    tail = current_token[compact.end(1) :]
++                    tail += version.prerelease[len(current_token) :]
++                    return version.replace(
++                        prerelease=f"{prerelease_token}{next_counter}{tail}",
++                        build=None,
++                    )
+             return version.bump_prerelease(prerelease_token, bump_when_empty=True)
+ 
+     @_comparator
