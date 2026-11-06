@@ -11,7 +11,7 @@
   color-scheme: light;
   --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #6f6d68;
   --grid: #e1e0d9; --axis: #c3c2b7; --ring: rgba(11,11,11,.10);
-  --series-1: #2a78d6; --series-2: #eb6834; --band: rgba(42,120,214,.10);
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --band: rgba(42,120,214,.10);
   --seq-0: #cde2fb; --seq-1: #9ec5f4; --seq-2: #6da7ec; --seq-3: #3987e5; --seq-4: #1c5cab;
   --seq-ink-0: #0b0b0b; --seq-ink-1: #0b0b0b; --seq-ink-2: #0b0b0b; --seq-ink-3: #0b0b0b; --seq-ink-4: #ffffff;
   --good: #006300; --critical: #b02a2a; --warning: #7a5200;
@@ -22,7 +22,7 @@
     color-scheme: dark;
     --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #a09e96;
     --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,.10);
-    --series-1: #3987e5; --series-2: #d95926; --band: rgba(57,135,229,.16);
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --band: rgba(57,135,229,.16);
     --seq-0: #0d366b; --seq-1: #184f95; --seq-2: #256abf; --seq-3: #5598e7; --seq-4: #9ec5f4;
     --seq-ink-0: #f0efec; --seq-ink-1: #ffffff; --seq-ink-2: #ffffff; --seq-ink-3: #0b0b0b; --seq-ink-4: #0b0b0b;
     --good: #0ca30c; --critical: #e66767; --warning: #fab219;
@@ -33,7 +33,7 @@
   color-scheme: dark;
   --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #a09e96;
   --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,.10);
-  --series-1: #3987e5; --series-2: #d95926; --band: rgba(57,135,229,.16);
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --band: rgba(57,135,229,.16);
   --seq-0: #0d366b; --seq-1: #184f95; --seq-2: #256abf; --seq-3: #5598e7; --seq-4: #9ec5f4;
   --seq-ink-0: #f0efec; --seq-ink-1: #ffffff; --seq-ink-2: #ffffff; --seq-ink-3: #0b0b0b; --seq-ink-4: #0b0b0b;
   --good: #0ca30c; --critical: #e66767; --warning: #fab219;
@@ -44,6 +44,7 @@ body { margin: 0; background: var(--page); color: var(--ink); font: 16px/1.55 sy
 main { max-width: 1040px; margin: 0 auto; padding: 40px 16px 72px; }
 h1 { font-size: 30px; line-height: 1.2; margin: 0 0 8px; }
 h2 { font-size: 20px; margin: 44px 0 4px; }
+section > h3 { font-size: 16px; margin: 28px 0 4px; }
 .lede, .note { color: var(--ink-2); margin: 0 0 16px; max-width: 68ch; }
 .note { font-size: 14px; }
 a { color: var(--series-1); }
@@ -64,9 +65,16 @@ code, pre { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .tile .sub { color: var(--ink-2); font-size: 13px; }
 .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 14px; color: var(--ink-2); margin: 0 0 8px; }
 .key { display: inline-block; width: 16px; height: 2px; border-radius: 1px; margin-right: 6px; vertical-align: middle; }
-#chart svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
-#chart text { font: 12px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.key.box { width: 12px; height: 12px; border-radius: 2px; }
+#chart svg, #stack svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+#chart text, #stack text { font: 12px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--muted); font-variant-numeric: tabular-nums; }
 #chart text.end { fill: var(--ink); font-weight: 600; }
+#stack text.head { fill: var(--ink-2); font-weight: 600; }
+#stack text.inbar { fill: #fff; font-weight: 600; pointer-events: none; }
+#stack .row { transition: opacity .12s; }
+#stack svg.hovering .row:not(.on) { opacity: .55; }
+#stack .hit { fill: transparent; outline: none; }
+#stack .hit:focus-visible { stroke: var(--ink); stroke-width: 1; }
 .scroll { overflow-x: auto; }
 table { border-collapse: separate; border-spacing: 2px; font-size: 14px; }
 .plain { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
@@ -132,6 +140,21 @@ footer { margin-top: 48px; color: var(--ink-2); font-size: 14px; }
     <div class="card scroll"><table class="matrix" id="matrix"></table><div class="scale" id="scale"></div></div>
   </section>
 
+  <section aria-labelledby="h-why">
+    <h2 id="h-why">Why attempts fail</h2>
+    <p class="note">Every attempt ends one of four ways. An attempt is voided when the audit finds it fetched this project's code or its fix, or read another copy of the library. A voided attempt scores zero, even if its patch passes the maintainers' tests.</p>
+    <div class="card" id="stack"></div>
+    <div class="card scroll" style="margin-top:12px"><table class="plain" id="classes"></table></div>
+
+    <h3>The reviewer and the audit</h3>
+    <p class="note" id="reviewer-line"></p>
+    <div class="card scroll"><table class="plain" id="reviewer"></table></div>
+
+    <h3>Attempts with no patch</h3>
+    <p class="note" id="nopatch-line"></p>
+    <div class="card scroll"><table class="plain" id="nopatch"></table></div>
+  </section>
+
   <section aria-labelledby="h-rounds">
     <h2 id="h-rounds">What the agent changed</h2>
     <p class="note">One small change per round. The agent wrote each cause and edit; a change stays only if it beats the bar on two screens of the training tasks, and it is otherwise reverted.</p>
@@ -142,6 +165,15 @@ footer { margin-top: 48px; color: var(--ink-2); font-size: 14px; }
     <h2 id="h-tf">TrueForge in each run</h2>
     <p class="note">Counted from each session's own events.</p>
     <div class="card scroll"><table class="plain" id="evidence"></table></div>
+  </section>
+
+  <section aria-labelledby="h-service">
+    <h2 id="h-service">Did the model's service change?</h2>
+    <p class="note">None of this is scored. The agent runs on a hosted model, so a change in that service could look like a change in the agent. Noise means a response of random tokens from its first token. Cut off means it hit the 16,000-token output limit.</p>
+    <div class="card scroll"><table class="plain" id="responses"></table></div>
+    <h3>Drift check</h3>
+    <p class="note">A late re-run of the run 1 agent, after the final runs. It's never counted as a result.</p>
+    <div class="card scroll" id="drift"></div>
   </section>
 
   <footer id="footer"></footer>
@@ -156,6 +188,8 @@ const svgEl = (tag, attrs, text) => { const n = document.createElementNS(NS, tag
 const nn = (r) => String(r).padStart(2, "0");
 const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
 const fmt = (x) => (x === null || x === undefined || Number.isNaN(x) ? "-" : (Math.round(x * 10) / 10).toString());
+const money = (x) => (x === null || x === undefined ? "-" : `$${x.toFixed(2)}`);
+const total = (xs) => xs.reduce((a, b) => a + (b || 0), 0);
 const ICON = { PASS: "✓ Pass", FAIL: "✕ Fail", MANUAL: "◔ Read it" };
 
 const tip = $("tip");
@@ -171,7 +205,16 @@ const hideTip = () => { tip.style.display = "none"; };
 
 function verdictCard(data) {
   const box = $("verdict");
-  if (!data.verdict) { box.append(el("p", "empty", data.runs.length ? "The verdict comes after the final runs." : "No counted runs yet.")); return; }
+  if (!data.verdict) {
+    box.append(el("p", "empty", data.runs.length ? "The verdict comes after the final runs." : "No counted runs yet."));
+    const s = data.spread;
+    if (s && s.score && s.holdout) {
+      const bar = el("p", "note", `The bar: every final run must score above ${s.score.max} overall and above ${s.holdout.max} on held-out tasks.`);
+      bar.style.margin = "8px 0 0";
+      box.append(bar);
+    }
+    return;
+  }
   box.append(el("p", "line", data.verdict.line));
   const list = el("ul", "checks");
   for (const c of data.verdict.checks) {
@@ -187,9 +230,10 @@ function verdictCard(data) {
 
 function split(data) {
   const first = data.runs[0];
-  const baseline = data.runs.filter((r) => r.tree === first.tree);
+  const named = data.baseline_runs || [];
+  const baseline = data.runs.filter((r) => (named.length ? named.includes(r.run) : r.tree === first.tree));
   const last = data.runs[data.runs.length - 1];
-  const final = last.tree === first.tree ? [] : data.runs.filter((r) => r.tree === last.tree);
+  const final = baseline.includes(last) ? [] : data.runs.filter((r) => !baseline.includes(r) && r.tree === last.tree);
   return { baseline, final };
 }
 
@@ -304,11 +348,11 @@ function runTable(data) {
   const table = $("runs");
   if (!data.runs.length) { table.closest(".card").style.display = "none"; return; }
   const head = table.createTHead().insertRow();
-  for (const t of ["Run", "Held-out", "Train", "Blended", "Tokens", "Agent commit", "Files"]) { const th = el("th", "", t); th.scope = "col"; head.append(th); }
+  for (const t of ["Run", "Held-out", "Train", "Blended", "Tokens", "Cost", "Agent commit", "Files"]) { const th = el("th", "", t); th.scope = "col"; head.append(th); }
   const body = table.createTBody();
   for (const r of data.runs) {
     const row = body.insertRow();
-    for (const v of [nn(r.run), fmt(r.holdout), fmt(r.train), fmt(r.score), r.tokens.toLocaleString("en")]) row.insertCell().textContent = v;
+    for (const v of [nn(r.run), fmt(r.holdout), fmt(r.train), fmt(r.score), r.tokens.toLocaleString("en"), money(r.cost_usd)]) row.insertCell().textContent = v;
     const commit = el("a", "", r.commit.slice(0, 7));
     commit.href = `https://github.com/${data.repo}/tree/${r.commit}/agent`;
     row.insertCell().append(commit);
@@ -361,6 +405,177 @@ function matrix(data) {
   scale.append(document.createTextNode("0"));
   for (let i = 0; i < 5; i++) scale.append(el("i", `q${i}`));
   scale.append(document.createTextNode("1: all attempts passed"));
+}
+
+const CLASSES = [
+  ["Resolved", "--series-1", (c) => c.resolved || 0],
+  ["Voided by the audit", "--series-2", (c) => c.audit || 0],
+  ["No patch", "--series-3", (c) => c.no_patch || 0],
+  ["Patch failed", "--series-4", (c) => total([c.f2p_failed, c.p2p_regression, c.timeout, c.patch_rejected])],
+];
+
+function headRow(table, names) {
+  const head = table.createTHead().insertRow();
+  for (const t of names) { const th = el("th", "", t); th.scope = "col"; head.append(th); }
+}
+
+/** Rounded at the far end only, so each row still reads as growing from one baseline. */
+function endPath(x, y, w, h, r) {
+  const c = Math.min(r, w, h / 2);
+  return `M${x} ${y}H${x + w - c}Q${x + w} ${y} ${x + w} ${y + c}V${y + h - c}Q${x + w} ${y + h} ${x + w - c} ${y + h}H${x}Z`;
+}
+
+function stack(data) {
+  const box = $("stack");
+  box.replaceChildren();
+  if (!data.runs.length) { box.append(el("p", "empty", "No counted runs yet.")); return; }
+  const legend = el("div", "legend");
+  for (const [name, color] of CLASSES) {
+    const item = el("span");
+    const key = el("span", "key box");
+    key.style.background = `var(${color})`;
+    item.append(key, document.createTextNode(name));
+    legend.append(item);
+  }
+  box.append(legend);
+
+  const { baseline } = split(data);
+  const later = data.runs.filter((r) => !baseline.includes(r));
+  const groups = later.length ? [["Baseline", baseline], ["After the change", later]] : [["", baseline]];
+  const BAR = 22, STEP = 32, HEAD = 22, GAP = 2;
+  const W = Math.max(300, box.clientWidth - 34);
+  const m = { t: 4, r: 6, b: 24, l: 52 };
+  const H = m.t + m.b + data.runs.length * STEP + groups.filter((g) => g[0]).length * HEAD;
+  const parts = (r) => CLASSES.map(([name, color, count]) => ({ name, color, n: count(r.classes) }));
+  const most = Math.max(...data.runs.map((r) => total(parts(r).map((p) => p.n))));
+  const x = (v) => m.l + (v / most) * (W - m.l - m.r);
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "group", "aria-label": "How each run's attempts ended. The table below has every value." });
+
+  const step = most > 40 ? 20 : most > 20 ? 10 : 5;
+  for (let v = 0; v <= most; v += step) {
+    svg.append(svgEl("line", { x1: x(v), x2: x(v), y1: m.t, y2: H - m.b, style: `stroke:var(${v ? "--grid" : "--axis"})`, "stroke-width": 1 }));
+    svg.append(svgEl("text", { x: x(v), y: H - 8, "text-anchor": v ? "middle" : "start" }, v ? v : "0 attempts"));
+  }
+
+  const describe = (r) => (t) => {
+    t.append(el("div", "dim", `Run ${nn(r.run)}`));
+    for (const p of parts(r)) {
+      const row = el("div", "row");
+      const k = el("span", "key"); k.style.background = `var(${p.color})`; k.style.marginRight = "0";
+      row.append(k, el("b", "", p.n), el("span", "dim", p.name));
+      t.append(row);
+    }
+  };
+
+  let y = m.t;
+  for (const [title, runs] of groups) {
+    if (title) { svg.append(svgEl("text", { class: "head", x: 0, y: y + 15 }, title)); y += HEAD; }
+    for (const r of runs) {
+      const row = svgEl("g", { class: "row" });
+      const top = y + (STEP - BAR) / 2;
+      row.append(svgEl("text", { x: m.l - 8, y: top + BAR / 2 + 4, "text-anchor": "end" }, `Run ${r.run}`));
+      const shown = parts(r).filter((p) => p.n > 0);
+      let at = 0;
+      shown.forEach((p, i) => {
+        const left = x(at), last = i === shown.length - 1;
+        const width = x(at + p.n) - left - (last ? 0 : GAP);
+        const shape = last
+          ? svgEl("path", { d: endPath(left, top, width, BAR, 4), style: `fill:var(${p.color})` })
+          : svgEl("rect", { x: left, y: top, width, height: BAR, style: `fill:var(${p.color})` });
+        row.append(shape);
+        if (i < 2 && width >= 26) row.append(svgEl("text", { class: "inbar", x: left + width / 2, y: top + BAR / 2 + 4, "text-anchor": "middle" }, p.n));
+        at += p.n;
+      });
+      const hit = svgEl("rect", { class: "hit", x: 0, y, width: W, height: STEP, tabindex: 0, role: "img", "aria-label": `Run ${r.run}: ${parts(r).map((p) => `${p.n} ${p.name.toLowerCase()}`).join(", ")}` });
+      const on = (cx, cy) => { svg.classList.add("hovering"); row.classList.add("on"); showTip(cx, cy, describe(r)); };
+      const off = () => { svg.classList.remove("hovering"); row.classList.remove("on"); hideTip(); };
+      hit.addEventListener("pointermove", (e) => on(e.clientX, e.clientY));
+      hit.addEventListener("pointerleave", off);
+      hit.addEventListener("focus", () => { const b = hit.getBoundingClientRect(); on(b.left + 60, b.bottom); });
+      hit.addEventListener("blur", off);
+      row.append(hit);
+      svg.append(row);
+      y += STEP;
+    }
+  }
+  box.append(svg);
+}
+
+function classTable(data) {
+  const table = $("classes");
+  if (!data.runs.length) { table.closest(".card").style.display = "none"; return; }
+  headRow(table, ["Run", ...CLASSES.map((c) => c[0]), "Score without the audit"]);
+  const body = table.createTBody();
+  for (const r of data.runs) {
+    const row = body.insertRow();
+    for (const v of [nn(r.run), ...CLASSES.map((c) => c[2](r.classes)), fmt(r.tests_only)]) row.insertCell().textContent = v;
+  }
+}
+
+function reviewerBlock(data) {
+  const table = $("reviewer");
+  const runs = data.runs.filter((r) => r.reviewer);
+  if (!runs.length) { $("reviewer-line").textContent = "No counted runs yet."; table.closest(".card").style.display = "none"; return; }
+  const sum = (k) => total(runs.map((r) => r.reviewer[k]));
+  const involved = sum("voided_reviewer_only") + sum("voided_both");
+  $("reviewer-line").textContent = `After fixing a bug the agent starts a reviewer subagent to check the patch. ${involved} of ${sum("voided")} voided attempts involve that reviewer. A subagent sees only the brief the agent writes for it, and ${sum("briefs_with_network_rule")} of ${sum("briefs")} briefs carried a rule against using the network. ${sum("patches_passing")} of ${sum("patches_submitted")} submitted patches passed the maintainers' tests.`;
+  headRow(table, ["Run", "Reviewed attempts", "Reviewer tripped the audit", "Main agent tripped it", "Voided", "Reviewer involved", "Briefs with the rule", "Patches passing"]);
+  const body = table.createTBody();
+  for (const r of runs) {
+    const v = r.reviewer;
+    const row = body.insertRow();
+    for (const c of [nn(r.run), v.reviewed, v.reviewer_hit, v.root_hit, v.voided, v.voided_reviewer_only + v.voided_both, `${v.briefs_with_network_rule} of ${v.briefs}`, `${v.patches_passing} of ${v.patches_submitted}`]) row.insertCell().textContent = c;
+  }
+}
+
+const ENDINGS = [["time_limit", "60-minute limit"], ["output_cap", "16k output limit"], ["iteration_limit", "120-iteration limit"], ["safety_filter", "Safety filter"], ["other", "Other"]];
+
+function noPatchBlock(data) {
+  const table = $("nopatch");
+  const runs = data.runs.filter((r) => r.no_patch_endings);
+  if (!runs.length) { $("nopatch-line").textContent = "No counted runs yet."; table.closest(".card").style.display = "none"; return; }
+  const all = total(runs.flatMap((r) => ENDINGS.map((e) => r.no_patch_endings[e[0]])));
+  $("nopatch-line").textContent = `${total(runs.map((r) => r.no_patch_endings.time_limit))} of ${all} attempts with no patch ran out their 60 minutes. The rest stopped at another limit, or ended without submitting.`;
+  headRow(table, ["Run", ...ENDINGS.map((e) => e[1]), "Total"]);
+  const body = table.createTBody();
+  for (const r of runs) {
+    const row = body.insertRow();
+    const counts = ENDINGS.map((e) => r.no_patch_endings[e[0]]);
+    for (const v of [nn(r.run), ...counts, total(counts)]) row.insertCell().textContent = v;
+  }
+}
+
+function responseTable(data) {
+  const table = $("responses");
+  if (!data.runs.length) { table.closest(".card").append(el("p", "empty", "No counted runs yet.")); return; }
+  headRow(table, ["Run", "Model calls", "Noise", "Cut off"]);
+  const body = table.createTBody();
+  for (const r of data.runs) {
+    const row = body.insertRow();
+    const v = r.responses || {};
+    for (const c of [nn(r.run), (v.model_calls ?? "-").toLocaleString("en"), v.noise_responses ?? "-", v.cut_off_responses ?? "-"]) row.insertCell().textContent = c;
+  }
+}
+
+function driftCheck(data) {
+  const box = $("drift");
+  const controls = data.controls || [];
+  if (!controls.length) { box.append(el("p", "empty", "The drift check comes after the final runs.")); return; }
+  const table = el("table", "plain");
+  headRow(table, ["Control", "Agent commit", "Score", "Baseline range", "Held-out", "Baseline range"]);
+  const body = table.createTBody();
+  const s = data.spread || {};
+  const range = (v) => (v ? `${fmt(v.min)} to ${fmt(v.max)}` : "-");
+  const where = (flag) => (flag === null || flag === undefined ? "" : flag ? ", inside" : ", outside");
+  for (const c of controls) {
+    const row = body.insertRow();
+    row.insertCell().textContent = c.label;
+    const commit = el("a", "", c.commit.slice(0, 7));
+    commit.href = `https://github.com/${data.repo}/tree/${c.commit}/agent`;
+    row.insertCell().append(commit);
+    for (const v of [fmt(c.score), range(s.score) + where(c.score_in_baseline_range), fmt(c.holdout), range(s.holdout) + where(c.holdout_in_baseline_range)]) row.insertCell().textContent = v;
+  }
+  box.append(table);
 }
 
 function diffBlock(text) {
@@ -428,6 +643,8 @@ function footer(data) {
   const base = `https://github.com/${data.repo}/blob/main`;
   add("Protocol", `${base}/docs/protocol.md`);
   add("Tasks and licences", `${base}/docs/tasks.md`);
+  add("All the tables", `${base}/docs/results.md`);
+  add("Friction log", `${base}/docs/friction-log.md`);
   add("summary.csv", `${base}/runs/summary.csv`);
   add("verdict.md", `${base}/runs/verdict.md`);
   f.append(document.createTextNode(`Generated from ${data.generated_from.slice(0, 7)}`));
@@ -435,11 +652,11 @@ function footer(data) {
 
 fetch("data/results.json")
   .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
-  .catch(() => ({ repo: "CG-5228/EvoPatch", generated_from: "pending", tasks: [], runs: [], rounds: [], verdict: null }))
+  .catch(() => ({ repo: "CG-5228/EvoPatch", generated_from: "pending", tasks: [], runs: [], rounds: [], controls: [], verdict: null }))
   .then((data) => {
-    verdictCard(data); tiles(data); chart(data); runTable(data); matrix(data); rounds(data); evidence(data); footer(data);
+    verdictCard(data); tiles(data); chart(data); runTable(data); matrix(data); stack(data); classTable(data); reviewerBlock(data); noPatchBlock(data); rounds(data); evidence(data); responseTable(data); driftCheck(data); footer(data);
     let timer;
-    addEventListener("resize", () => { clearTimeout(timer); timer = setTimeout(() => chart(data), 120); });
+    addEventListener("resize", () => { clearTimeout(timer); timer = setTimeout(() => { chart(data); stack(data); }, 120); });
     matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => chart(data));
   });
 </script>
