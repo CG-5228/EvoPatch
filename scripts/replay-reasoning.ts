@@ -48,10 +48,18 @@ const { messages: _messages, model: _model, ...settings } = captured;
 let seed = 20261106;
 const random = () => (seed = (seed * 1664525 + 1013904223) % 2 ** 32) / 2 ** 32;
 
-function conversation(turn: TurnExport, upTo: number, keep: boolean): Message[] {
-  const input = turn.input as unknown as { content: { type: string; text?: string }[] }[];
+/** The user message as TrueForge builds it: a note about the upload, then the prompt. */
+function userMessage(turn: TurnExport): Message {
+  const input = turn.input as unknown as { content: { type: string; text?: string; name?: string; data?: string }[] }[];
   const text = input[0].content.filter((p) => p.type === "text").map((p) => p.text).join("\n");
-  const messages: Message[] = [...system, { role: "user", content: text }];
+  const file = input[0].content.find((p) => p.type === "file");
+  const size = file?.data?.match(/(\d+) bytes/)?.[1] ?? "0";
+  const note = `<tfy-internal>Uploaded files (1):\n[file_1]\n  filename: ${file?.name}\n  path: uploads/${file?.name}\n  mime: application/gzip\n  size: ${size} bytes</tfy-internal>`;
+  return { role: "user", content: [{ type: "text", text: note }, { type: "text", text }] };
+}
+
+function conversation(turn: TurnExport, upTo: number, keep: boolean): Message[] {
+  const messages: Message[] = [...system, userMessage(turn)];
   (turn.events as unknown as Event[]).slice(0, upTo).forEach((e) => {
     if ((e.threadId ?? "main") !== "main") return;
     if (e.type === "model.message") {
