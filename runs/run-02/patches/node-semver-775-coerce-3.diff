@@ -1,0 +1,26 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/internal/re.js b/internal/re.js
+--- a/internal/re.js	1970-01-01 00:00:00
++++ b/internal/re.js	2026-11-06 15:25:56
+@@ -161,8 +161,21 @@
+               `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` +
+               `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?`)
+ createToken('COERCE', `${src[t.COERCEPLAIN]}(?:$|[^\\d])`)
++// Coercion pre-release.
++// Same as PRERELEASE, but with the non-numeric identifier alternative tried
++// first.  JS alternation is leftmost-first rather than longest-first, so
++// with the numeric alternative first, an identifier such as `7f3c` would
++// match only `7` and the trailing `(?:$|[^\d])` guard of COERCEFULL would
++// happily consume the following `f`, truncating the identifier.  Trying the
++// non-numeric alternative first consumes the whole identifier instead, while
++// all-digit identifiers (e.g. `4821`) still fall through to the numeric
++// alternative unchanged.
++createToken('COERCEPRERELEASEIDENTIFIER', `(?:${src[t.NONNUMERICIDENTIFIER]}|${src[t.NUMERICIDENTIFIER]})`)
++
++createToken('COERCEPRERELEASE', `(?:-(${src[t.COERCEPRERELEASEIDENTIFIER]}(?:\\.${src[t.COERCEPRERELEASEIDENTIFIER]})*))`)
++
+ createToken('COERCEFULL', src[t.COERCEPLAIN] +
+-              `(?:${src[t.PRERELEASE]})?` +
++              `(?:${src[t.COERCEPRERELEASE]})?` +
+               `(?:${src[t.BUILD]})?` +
+               `(?:$|[^\\d])`)
+ createToken('COERCERTL', src[t.COERCE], true)

@@ -1,0 +1,84 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 14:44:02
+@@ -32,6 +32,10 @@
+ except ImportError:  # optional backend is deliberately absent on the default path
+     _native_parse_parts = None
+ 
++# An identifier made of a text prefix followed by a number, like the
++# old-style prereleases "rc9" or "rc10".
++_NATURAL_NUMBER_RE = re.compile(r"([^0-9]+)([0-9]+)")
++
+ # These types are required here because of circular imports
+ Comparable = Union["Version", Dict[str, VersionPart], Collection[VersionPart], str]
+ Comparator = Callable[["Version", Comparable], bool]
+@@ -185,18 +189,32 @@
+ 
+     @classmethod
+     def _nat_cmp(cls, a: Optional[str], b: Optional[str]) -> int:
+-        def prerelease_key(identifier: str) -> tuple[int, int, str]:
+-            if not identifier.isdigit():
+-                return (1, 0, identifier)
+-
+-            if not identifier.isascii():
+-                identifier = str(int(identifier))
+-
++        def numeric_key(identifier: str) -> tuple[int, int, str]:
+             # Compare decimal values without converting arbitrarily long
+             # ASCII identifiers to integers. Keep constructor leading zeros.
+             normalized = identifier.lstrip("0") or "0"
+             return (0, len(normalized), normalized)
+ 
++        def prerelease_key(identifier: str) -> tuple[int, ...]:
++            if identifier.isdigit():
++                if not identifier.isascii():
++                    identifier = str(int(identifier))
++                return (0, *numeric_key(identifier))
++
++            # An identifier made of a text prefix and a trailing number - an
++            # old-style prerelease such as "rc9" or "rc10" - is ordered by
++            # that text first and by the number second, so that the number is
++            # not read as text ("rc10" must not sort before "rc9") and so that
++            # the prefix of such an identifier still compares as its plain
++            # text ("rc").  Every other identifier keeps its ASCII ranking.
++            match = _NATURAL_NUMBER_RE.fullmatch(identifier)
++            if match:
++                prefix, number = match.groups()
++                return (1, prefix, *numeric_key(number))
++
++            # Non-numeric identifiers always sort after numeric ones.
++            return (1, identifier)
++
+         a_parts = [prerelease_key(x) for x in (a or "").split(".")]
+         b_parts = [prerelease_key(x) for x in (b or "").split(".")]
+ 
+@@ -554,15 +572,27 @@
+                 )
+                 if match:
+                     num = int(match.group(1))
+-                    return version.replace(
++                    candidate = version.replace(
+                         prerelease=f"{prerelease_token}{num + 1}", build=None
+                     )
++                    if candidate > version:
++                        return candidate
+ 
+                 if not (
+                     version.prerelease == prerelease_token
+                     or version.prerelease.startswith(prerelease_token + ".")
+                 ):
+-                    return version.replace(prerelease=f"{prerelease_token}.1", build=None)
++                    # Switching to a token that sorts before the current
++                    # prerelease would move the version backwards, so restart
++                    # the token on the next patch release instead.
++                    candidate = version.replace(
++                        prerelease=f"{prerelease_token}.1", build=None
++                    )
++                    if candidate > version:
++                        return candidate
++                    return version.bump_patch().replace(
++                        prerelease=f"{prerelease_token}.1", build=None
++                    )
+             return version.bump_prerelease(prerelease_token, bump_when_empty=True)
+ 
+     @_comparator

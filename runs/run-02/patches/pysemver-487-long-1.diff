@@ -1,0 +1,101 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 12:06:35
+@@ -73,6 +73,35 @@
+     return (a > b) - (a < b)
+ 
+ 
++class _LongNumber:
++    """
++    An all-digit identifier too long for Python's integer string conversion.
++
++    SemVer allows prerelease identifiers of unlimited length, so such
++    identifiers are compared numerically as decimal digit strings instead
++    of being converted to :class:`int`.
++    """
++
++    __slots__ = ("digits",)
++
++    def __init__(self, digits: str):
++        #: The decimal digits of the number (kept verbatim)
++        self.digits = digits
++
++    @staticmethod
++    def _cmp_number(a: "Union[int, _LongNumber]", b: "Union[int, _LongNumber]") -> int:
++        """Compare two numeric identifiers without hitting the digit limit."""
++        a_digits = str(a) if isinstance(a, int) else a.digits
++        b_digits = str(b) if isinstance(b, int) else b.digits
++        # Normalize away leading zeros so equal values compare equal
++        a_digits = a_digits.lstrip("0") or "0"
++        b_digits = b_digits.lstrip("0") or "0"
++        # Equal-length decimal digit strings compare by their digits alone
++        return _cmp(a_digits, b_digits) if len(a_digits) == len(b_digits) else _cmp(
++            len(a_digits), len(b_digits)
++        )
++
++
+ class Version:
+     """
+     A semver compatible version class.
+@@ -183,20 +212,55 @@
+                     "hyphens."
+                 )
+ 
++    @staticmethod
++    def _identifier_as_int(value: str) -> "Union[int, _LongNumber]":
++        """
++        Convert a numeric prerelease identifier to an int.
++
++        All-digit identifiers longer than Python's integer string conversion
++        limit (4300 digits by default since Python 3.11) are legal SemVer and
++        must stay comparable, so they are wrapped in a _LongNumber instead of
++        raising ValueError.
++
++        :param value: the identifier to convert
++        :raises ValueError: if the identifier is not a valid integer literal
++        """
++        try:
++            return int(value)
++        except ValueError:
++            if value.isdecimal():
++                # int() only rejects a decimal-only string when it exceeds
++                # the integer string conversion limit (invalid digits such as
++                # "²" are rejected above, before any limit is consulted).
++                return _LongNumber(value)
++            raise
++
+     @classmethod
+     def _nat_cmp(cls, a: Optional[str], b: Optional[str]) -> int:
+         def cmp_prerelease_tag(a, b):
+-            if isinstance(a, int) and isinstance(b, int):
+-                return _cmp(a, b)
+-            elif isinstance(a, int):
++            if isinstance(a, (int, _LongNumber)) and isinstance(
++                b, (int, _LongNumber)
++            ):
++                if isinstance(a, int) and isinstance(b, int):
++                    return _cmp(a, b)
++                return _LongNumber._cmp_number(a, b)
++            elif isinstance(a, (int, _LongNumber)):
+                 return -1
+-            elif isinstance(b, int):
++            elif isinstance(b, (int, _LongNumber)):
+                 return 1
+             else:
+                 return _cmp(a, b)
+ 
+-        a_parts = [int(x) if x.isdigit() else x for x in (a or "").split(".")]
+-        b_parts = [int(x) if x.isdigit() else x for x in (b or "").split(".")]
++        # Convert eagerly, even for identifiers that are never reached by
++        # the zip below, so that invalid input fails exactly as before.
++        a_parts = [
++            cls._identifier_as_int(x) if x.isdigit() else x
++            for x in (a or "").split(".")
++        ]
++        b_parts = [
++            cls._identifier_as_int(x) if x.isdigit() else x
++            for x in (b or "").split(".")
++        ]
+ 
+         for sub_a, sub_b in zip(a_parts, b_parts):
+             cmp_result = cmp_prerelease_tag(sub_a, sub_b)

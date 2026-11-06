@@ -1,0 +1,30 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/functions/diff.js b/functions/diff.js
+--- a/functions/diff.js	1970-01-01 00:00:00
++++ b/functions/diff.js	2026-11-06 12:17:35
+@@ -27,7 +27,25 @@
+       return 'major'
+     }
+ 
+-    // Otherwise it can be determined by checking the high version
++    // Otherwise compare the two versions to find the highest level that
++    // changed. Some examples:
++    // 3.4.6-2 -> 3.5.2 is a minor change, since the minor went from 4 to 5
++    // 1.2.3-1 -> 2.0.1 is a major change, since the major went from 1 to 2
++    // 1.2.3-1 -> 1.2.4 is a patch change, since only the patch changed
++    if (lowVersion.major !== highVersion.major) {
++      return 'major'
++    }
++
++    if (lowVersion.minor !== highVersion.minor) {
++      return 'minor'
++    }
++
++    if (lowVersion.patch !== highVersion.patch) {
++      return 'patch'
++    }
++
++    // The numbers are identical: this is the prerelease being released as-is,
++    // so it can be determined by checking the high version
+ 
+     if (highVersion.patch) {
+       // anything higher than a patch bump would result in the wrong version

@@ -1,0 +1,30 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/cacheutils.py b/boltons/cacheutils.py
+--- a/boltons/cacheutils.py	1970-01-01 00:00:00
++++ b/boltons/cacheutils.py	2026-11-06 14:38:37
+@@ -238,6 +238,7 @@
+                 super(LRI, self).__setitem__(key, value)
+             else:
+                 link[VALUE] = value
++                super(LRI, self).__setitem__(key, value)
+ 
+     def __getitem__(self, key):
+         with self._lock:
+@@ -321,10 +322,16 @@
+         with self._lock:
+             if self is other:
+                 return True
++            if not isinstance(other, dict):
++                # be dict-like: non-dict operands compare unequal
++                # rather than raising (or recursing, which is what
++                # delegating to ``other == self`` did, due to Python's
++                # reflected-operation rule for dict subclasses).
++                return NotImplemented
+             if len(other) != len(self):
+                 return False
+-            if not isinstance(other, LRI):
+-                return other == self
++            # NB: compare via dict.__eq__ directly so the values just
++            # written are what gets compared.
+             return super(LRI, self).__eq__(other)
+ 
+     def __ne__(self, other):

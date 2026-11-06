@@ -1,0 +1,24 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/internal/re.js b/internal/re.js
+--- a/internal/re.js	1970-01-01 00:00:00
++++ b/internal/re.js	2026-11-06 11:35:19
+@@ -161,8 +161,19 @@
+               `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` +
+               `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?`)
+ createToken('COERCE', `${src[t.COERCEPLAIN]}(?:$|[^\\d])`)
++
++// A prerelease as used by coercion.  Unlike a full parse, coercion is not
++// anchored by `$`, so the numeric alternative of an identifier can win the
++// alternation and still let the whole match succeed: in 'nightly.7f3c' the
++// identifier would match as the numeric '7', leaving 'f3c' to be swallowed by
++// the lenient terminator and truncating the prerelease to 'nightly.7'.  A
++// numeric identifier is only valid when it is not followed by the rest of an
++// identifier, which makes the alternation fall through to the non-numeric
++// alternative and keeps the identifier whole.
++const COERCEPRERELEASEIDENTIFIER = `(?:${src[t.NUMERICIDENTIFIER]}(?!${LETTERDASHNUMBER})|${src[t.NONNUMERICIDENTIFIER]})`
++const COERCEPRERELEASE = `(?:-(${COERCEPRERELEASEIDENTIFIER}(?:\\.${COERCEPRERELEASEIDENTIFIER})*))`
+ createToken('COERCEFULL', src[t.COERCEPLAIN] +
+-              `(?:${src[t.PRERELEASE]})?` +
++              `${COERCEPRERELEASE}?` +
+               `(?:${src[t.BUILD]})?` +
+               `(?:$|[^\\d])`)
+ createToken('COERCERTL', src[t.COERCE], true)

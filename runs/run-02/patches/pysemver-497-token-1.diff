@@ -1,0 +1,26 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 12:05:22
+@@ -562,7 +562,21 @@
+                     version.prerelease == prerelease_token
+                     or version.prerelease.startswith(prerelease_token + ".")
+                 ):
+-                    return version.replace(prerelease=f"{prerelease_token}.1", build=None)
++                    # Switching to a token that sorts before the current
++                    # prerelease would go backwards if we restart it on this
++                    # release; move to the next patch release instead.
++                    candidate = version.replace(
++                        prerelease=f"{prerelease_token}.1", build=None
++                    )
++                    if candidate > version:
++                        return candidate
++                    return version.replace(
++                        major=version.major,
++                        minor=version.minor,
++                        patch=version.patch + 1,
++                        prerelease=f"{prerelease_token}.1",
++                        build=None,
++                    )
+             return version.bump_prerelease(prerelease_token, bump_when_empty=True)
+ 
+     @_comparator

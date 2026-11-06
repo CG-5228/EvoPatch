@@ -1,0 +1,48 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-06 11:46:25
+@@ -225,13 +225,17 @@
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+         tuples and other sequences and iterables work.
+         """
+-        if not v:
++        if v is None:
+             return
++        hash(k)  # fail fast on unhashable keys before consuming v
++        vals = list(v)
++        if not vals:
++            return
+         self_insert = self._insert
+         values = super().setdefault(k, [])
+-        for subv in v:
++        for subv in vals:
+             self_insert(k, subv)
+-        values.extend(v)
++        values.extend(vals)
+ 
+     def get(self, k, default=None):
+         """Return the value for key *k* if present in the dictionary, else
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-06 11:46:25
+@@ -1123,13 +1123,17 @@
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+         tuples and other sequences and iterables work.
+         """
+-        if not v:
++        if v is None:
+             return
++        hash(k)  # fail fast on unhashable keys before consuming v
++        vals = list(v)
++        if not vals:
++            return
+         self_insert = self._insert
+         values = super().setdefault(k, [])
+-        for subv in v:
++        for subv in vals:
+             self_insert(k, subv)
+-        values.extend(v)
++        values.extend(vals)
+ 
+     def get(self, k, default=None):
+         """Return the value for key *k* if present in the dictionary, else

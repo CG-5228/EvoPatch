@@ -1,0 +1,37 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 15:42:31
+@@ -538,12 +538,28 @@
+         # Only check the main parts:
+         if part in cls.NAMES[:3]:
+             return getattr(version, "bump_" + part)()
+-        else:
+-            if version.prerelease is not None and prerelease_token:
+-                current_token = version.prerelease.split(".")[0]
+-                if current_token != prerelease_token:
+-                    return version.replace(prerelease=f"{prerelease_token}.1", build=None)
++        if version.prerelease is None or not prerelease_token:
+             return version.bump_prerelease(prerelease_token, bump_when_empty=True)
++
++        current_token = version.prerelease.split(".")[0]
++        if current_token == prerelease_token:
++            return version.bump_prerelease(prerelease_token, bump_when_empty=True)
++
++        if current_token.startswith(prerelease_token):
++            # Older releases glued the counter directly to the token, for
++            # example "rc7" instead of "rc.7".  Keep that style and
++            # continue the existing counter instead of restarting it,
++            # otherwise the prerelease would go backwards (e.g. from rc7
++            # down to rc.1).
++            next_prerelease = cls._increment_string(version.prerelease)
++            if next_prerelease == version.prerelease:
++                # No number to raise: append ".0" so the result is still
++                # considered newer than the current version.
++                next_prerelease = cls._increment_prerelease(version.prerelease)
++            return version.replace(prerelease=next_prerelease, build=None)
++
++        # A different token starts a fresh sequence
++        return version.replace(prerelease=f"{prerelease_token}.1", build=None)
+ 
+     @_comparator
+     def __eq__(self, other: Comparable) -> bool:  # type: ignore

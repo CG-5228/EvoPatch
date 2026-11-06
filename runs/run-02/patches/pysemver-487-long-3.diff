@@ -1,0 +1,83 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 15:24:52
+@@ -183,20 +183,74 @@
+                     "hyphens."
+                 )
+ 
++    @staticmethod
++    def _cmp_numeric_str(a: str, b: str) -> int:
++        """
++        Compare two all-digit strings as non-negative integers, without
++        converting them to :class:`int`.
++
++        Equivalent to ``_cmp(int(a), int(b))``, but safe for identifiers
++        longer than :func:`sys.get_int_max_str_digits` digits, where the
++        int() conversion itself would raise :exc:`ValueError`.
++
++        Leading zeros are handled the way integer conversion would handle
++        them, so the result always matches ``_cmp(int(a), int(b))``.
++        """
++        a_digits = a.lstrip("0")
++        b_digits = b.lstrip("0")
++        if len(a_digits) != len(b_digits):
++            # Fewer significant digits means a smaller magnitude.
++            return _cmp(len(a_digits), len(b_digits))
++        # Equal length: lexicographic order equals numeric order for equal-
++        # length digit strings without leading zeros.  Equal significant
++        # digits means equal value, even if the number of leading zeros
++        # differs (e.g. "007" == "7").
++        return _cmp(a_digits, b_digits)
++
+     @classmethod
+     def _nat_cmp(cls, a: Optional[str], b: Optional[str]) -> int:
+         def cmp_prerelease_tag(a, b):
+-            if isinstance(a, int) and isinstance(b, int):
++            # A value that stayed a str after to_tag() is an all-digit
++            # identifier too long for int() to convert; treat it as the
++            # number its digits represent when the other side is numeric.
++            a_is_num = isinstance(a, int) or (
++                isinstance(a, str) and a.isascii() and a.isdigit()
++            )
++            b_is_num = isinstance(b, int) or (
++                isinstance(b, str) and b.isascii() and b.isdigit()
++            )
++            if a_is_num and b_is_num:
++                if isinstance(a, str) and isinstance(b, str):
++                    return cls._cmp_numeric_str(a, b)
++                if isinstance(a, str):
++                    return cls._cmp_numeric_str(a, str(b))
++                if isinstance(b, str):
++                    return cls._cmp_numeric_str(str(a), b)
+                 return _cmp(a, b)
+-            elif isinstance(a, int):
++            elif a_is_num:
+                 return -1
+-            elif isinstance(b, int):
++            elif b_is_num:
+                 return 1
+             else:
+                 return _cmp(a, b)
+ 
+-        a_parts = [int(x) if x.isdigit() else x for x in (a or "").split(".")]
+-        b_parts = [int(x) if x.isdigit() else x for x in (b or "").split(".")]
++        def to_tag(x):
++            # All-digit identifiers are turned into ints, so that numeric
++            # identifiers sort before alphanumeric ones, per SemVer.
++            # str.isdigit() also matches non-ASCII Unicode digits; those keep
++            # exactly the old behaviour (convert or raise).  For ASCII digits
++            # the only possible int() failure is the int-string-conversion
++            # limit: keep such an identifier as a string and let
++            # cmp_prerelease_tag compare it numerically instead of raising.
++            if x.isascii() and x.isdigit():
++                try:
++                    return int(x)
++                except ValueError:
++                    return x
++            return int(x) if x.isdigit() else x
++
++        a_parts = [to_tag(x) for x in (a or "").split(".")]
++        b_parts = [to_tag(x) for x in (b or "").split(".")]
+ 
+         for sub_a, sub_b in zip(a_parts, b_parts):
+             cmp_result = cmp_prerelease_tag(sub_a, sub_b)

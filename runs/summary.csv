@@ -1,2 +1,3 @@
 run,session_id,agent_commit,score,date_utc,tasks_passed,tasks_total,tokens,tool_calls,duration_s,holdout_score,train_score
 1,01m6qs8xxvzdsnj0aaywb7wqd1,1cfa4a258c8eae31c29c107f6c666a3531aa5cec,33.33,2026-11-06T10:30:02Z,2,21,98774750,5741,13884,40.74,27.78
+2,01m6r6h9hqp99k1w9zkb94rytn,ce58651f65b57be5409a92df33f013e3ff5514ea,47.62,2026-11-06T15:56:13Z,2,21,72224976,4796,9883,40.74,52.78

@@ -1,0 +1,22 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/internal/re.js b/internal/re.js
+--- a/internal/re.js	1970-01-01 00:00:00
++++ b/internal/re.js	2026-11-06 13:47:29
+@@ -76,9 +76,16 @@
+ 
+ // ## Pre-release Version Identifier
+ // A numeric identifier, or a non-numeric identifier.
++// The non-numeric form is tried first.  Both alternatives accept a
++// disjoint set of identifiers, so this only changes which one is
++// reached when the numeric form could match a proper prefix of the
++// identifier (eg the `7` of `7f3c`).  Anchored consumers backtrack to
++// the same result either way, but unanchored ones (COERCEFULL) would
++// otherwise stop at that prefix whenever the terminus check, which
++// only rejects digits, let a following letter through.
+ 
+-createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NUMERICIDENTIFIER]
+-}|${src[t.NONNUMERICIDENTIFIER]})`)
++createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NONNUMERICIDENTIFIER]
++}|${src[t.NUMERICIDENTIFIER]})`)
+ 
+ createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NUMERICIDENTIFIERLOOSE]
+ }|${src[t.NONNUMERICIDENTIFIER]})`)

@@ -1,0 +1,34 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-06 13:43:03
+@@ -1169,6 +1169,21 @@
+         >>> list(s[2])
+         []
+ 
++    A falsey *validator* (such as an empty allow-list) is still consulted:
++    no items are selected, and the original iterable is left untouched.
++
++        >>> class Allowed(set):
++        ...     def __call__(self, key):
++        ...         return key in self
++        >>> source = iter('abc')
++        >>> s = bucket(source, key=str.upper, validator=Allowed())
++        >>> list(s['A'])
++        []
++        >>> 'A' in s
++        False
++        >>> next(source)
++        'a'
++
+     .. seealso:: :func:`map_reduce`, :func:`groupby_transform`
+ 
+     If storage is not a concern, :func:`map_reduce` returns a Python
+@@ -1182,7 +1197,7 @@
+         self._it = iter(iterable)
+         self._key = key
+         self._cache = defaultdict(deque)
+-        self._validator = validator or (lambda x: True)
++        self._validator = validator if validator is not None else (lambda x: True)
+ 
+     def __contains__(self, value):
+         if not self._validator(value):

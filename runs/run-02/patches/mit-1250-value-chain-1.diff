@@ -1,0 +1,38 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-06 10:31:11
+@@ -4414,9 +4414,11 @@
+             yield value
+             continue
+         try:
+-            yield from value
++            iterator = iter(value)
+         except TypeError:
+             yield value
++        else:
++            yield from iterator
+ 
+ 
+ def product_index(element, *iterables, repeat=1):
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/tests/test_more.py b/tests/test_more.py
+--- a/tests/test_more.py	1970-01-01 00:00:00
++++ b/tests/test_more.py	2026-11-06 10:53:06
+@@ -5074,6 +5074,18 @@
+         expected = [1, (2, (3,)), 'foo', ['bar', ['baz']], 'tic', 'key', obj]
+         self.assertEqual(actual, expected)
+ 
++    def test_type_error_during_iteration_propagates(self):
++        with self.assertRaises(TypeError):
++            list(mi.value_chain(map(abs, [-1, 2, 'x'])))
++
++        def gen():
++            yield 1
++            yield 2
++            raise TypeError('boom')
++
++        with self.assertRaises(TypeError):
++            list(mi.value_chain(gen()))
++
+ 
+ class ProductIndexTests(TestCase):
+     def test_basic(self):

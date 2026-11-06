@@ -1,0 +1,75 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-06 10:34:57
+@@ -4671,16 +4671,6 @@
+     different lengths.
+     """
+ 
+-    def is_scalar(obj):
+-        if scalar_types and isinstance(obj, scalar_types):
+-            return True
+-        try:
+-            iter(obj)
+-        except TypeError:
+-            return True
+-        else:
+-            return False
+-
+     size = len(objects)
+     if not size:
+         return
+@@ -4688,14 +4678,24 @@
+     new_item = [None] * size
+     iterables, iterable_positions = [], []
+     for i, obj in enumerate(objects):
+-        if is_scalar(obj):
++        # Call ``iter`` exactly once per object: objects that can only be
++        # opened a single time must still work, as they do with ``zip``.
++        try:
++            iterator = iter(obj)
++        except TypeError:
++            # Not iterable, so it's a scalar to broadcast.
+             new_item[i] = obj
+         else:
+-            iterables.append(iter(obj))
+-            iterable_positions.append(i)
++            if scalar_types and isinstance(obj, scalar_types):
++                # Strings and byte strings are scalar by default, and they
++                # are reusable, so discard the throwaway iterator.
++                new_item[i] = obj
++            else:
++                iterables.append(iterator)
++                iterable_positions.append(i)
+ 
+     if not iterables:
+-        yield tuple(objects)
++        yield tuple(new_item)
+         return
+ 
+     for item in zip(*iterables, strict=strict):
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/out/repro.py b/out/repro.py
+--- a/out/repro.py	1970-01-01 00:00:00
++++ b/out/repro.py	2026-11-06 10:34:46
+@@ -0,0 +1,22 @@
++from more_itertools import zip_broadcast
++
++class OneShot:
++    def __init__(self, items):
++        self.items = items
++        self.used = False
++    def __iter__(self):
++        if self.used:
++            raise ValueError('opened twice')
++        self.used = True
++        return iter(self.items)
++
++print(list(zip(OneShot('xy'), [0, 0])))
++for label, call in [
++    ("basic", lambda: list(zip_broadcast(OneShot('xy'), 0))),
++    ("empty", lambda: list(zip_broadcast(OneShot(''), 0))),
++    ("strict", lambda: list(zip_broadcast(OneShot('xy'), OneShot('AB'), 0, strict=True))),
++]:
++    try:
++        print(label, call())
++    except Exception as e:
++        print(label, 'ERR', type(e).__name__, e)

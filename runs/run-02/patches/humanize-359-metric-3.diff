@@ -1,0 +1,32 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/number.py b/src/humanize/number.py
+--- a/src/humanize/number.py	1970-01-01 00:00:00
++++ b/src/humanize/number.py	2026-11-06 15:07:46
+@@ -547,14 +547,27 @@
+     if exponent >= 33 or exponent < -30:
+         return scientific(value, precision - 1) + unit
+ 
++    original = value
+     old_bucket = exponent // 3 * 3
+     value /= 10**old_bucket
+     digits = int(max(0, precision - exponent % 3 - 1))
+-    if exponent < 30 and round(abs(value), digits) >= 1000:
++    if round(abs(value), digits) >= 1000:
++        if exponent >= 30:
++            # Rounding carries past the largest prefix (Q); there is no
++            # bucket to shift into, so fall back to scientific notation
++            # like values with an exponent of 33 or more.
++            return scientific(original, precision - 1) + unit
+         exponent += 3 - exponent % 3
+         new_bucket = exponent // 3 * 3
+         value /= 10 ** (new_bucket - old_bucket)
+         digits = int(max(0, precision - exponent % 3 - 1))
++
++    # Rounding can carry the scaled value over the next power of ten without
++    # crossing into a new prefix (e.g. 9.996 rounds to 10.0). Formatting at
++    # the current precision would then print one digit more than requested,
++    # so drop one decimal place to keep the result at `precision` digits.
++    if round(abs(value), digits) >= 10 ** (exponent % 3 + 1):
++        digits = max(digits - 1, 0)
+ 
+     if exponent >= 3:
+         ordinal_ = "kMGTPEZYRQ"[exponent // 3 - 1]

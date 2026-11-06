@@ -1,0 +1,23 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/filesize.py b/src/humanize/filesize.py
+--- a/src/humanize/filesize.py	1970-01-01 00:00:00
++++ b/src/humanize/filesize.py	2026-11-06 14:41:56
+@@ -98,5 +98,19 @@
+ 
+     exp = int(min(log(abs_bytes, base), len(suffix)))
+     space = "" if gnu else " "
++
++    # Rounding at the chosen precision can push the displayed number up to the
++    # base (e.g. 999.96 kB renders as "1000.0 kB"). When that happens, move to
++    # the next unit so the number and the suffix stay in sync. Stop at the
++    # largest suffix: there is no bigger unit to carry into.
++    while exp < len(suffix):
++        try:
++            shown = abs(float(format % (bytes_ / (base**exp))))
++        except (TypeError, ValueError):
++            break
++        if shown < base:
++            break
++        exp += 1
++
+     ret: str = format % (bytes_ / (base**exp)) + space + _(suffix[exp - 1])
+     return ret

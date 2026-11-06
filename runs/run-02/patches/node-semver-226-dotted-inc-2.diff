@@ -1,0 +1,27 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/classes/semver.js b/classes/semver.js
+--- a/classes/semver.js	1970-01-01 00:00:00
++++ b/classes/semver.js	2026-11-06 13:41:23
+@@ -305,12 +305,19 @@
+         if (identifier) {
+           // 1.2.0-beta.1 bumps to 1.2.0-beta.2,
+           // 1.2.0-beta.fooblz or 1.2.0-beta bumps to 1.2.0-beta.0
+-          let prerelease = [identifier, base]
++          // the identifier can be dot separated, in which case every one of
++          // its parts has to line up with the leading prerelease parts, e.g.
++          // 1.2.0-rc.next.3 with identifier 'rc.next' bumps to
++          // 1.2.0-rc.next.4 rather than restarting at 'rc.next.0'
++          const idParts = identifier.split('.')
++          let prerelease = [...idParts, base]
+           if (identifierBase === false) {
+-            prerelease = [identifier]
++            prerelease = [...idParts]
+           }
+-          if (compareIdentifiers(this.prerelease[0], identifier) === 0) {
+-            if (isNaN(this.prerelease[1])) {
++          const matches = this.prerelease.length >= idParts.length &&
++            idParts.every((part, i) => compareIdentifiers(this.prerelease[i], part) === 0)
++          if (matches) {
++            if (isNaN(this.prerelease[idParts.length])) {
+               this.prerelease = prerelease
+             }
+           } else {

@@ -1,0 +1,22 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/classes/range.js b/classes/range.js
+--- a/classes/range.js	1970-01-01 00:00:00
++++ b/classes/range.js	2026-11-06 13:43:25
+@@ -303,13 +303,16 @@
+     debug('tilde', comp, _, M, m, p, pr)
+     let ret
+ 
++    // with includePrerelease, allow prereleases of the first version in
++    // the range, matching the equivalent x-range (`~1` == `1.x`, etc.)
++    const z = options.includePrerelease ? '-0' : ''
+     if (isX(M)) {
+       ret = ''
+     } else if (isX(m)) {
+-      ret = `>=${M}.0.0 <${+M + 1}.0.0-0`
++      ret = `>=${M}.0.0${z} <${+M + 1}.0.0-0`
+     } else if (isX(p)) {
+       // ~1.2 == >=1.2.0 <1.3.0-0
+-      ret = `>=${M}.${m}.0 <${M}.${+m + 1}.0-0`
++      ret = `>=${M}.${m}.0${z} <${M}.${+m + 1}.0-0`
+     } else if (pr) {
+       debug('replaceTilde pr', pr)
+       ret = `>=${M}.${m}.${p}-${pr

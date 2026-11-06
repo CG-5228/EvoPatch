@@ -1,0 +1,16 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/number.py b/src/humanize/number.py
+--- a/src/humanize/number.py	1970-01-01 00:00:00
++++ b/src/humanize/number.py	2026-11-06 13:39:40
+@@ -555,6 +555,12 @@
+         new_bucket = exponent // 3 * 3
+         value /= 10 ** (new_bucket - old_bucket)
+         digits = int(max(0, precision - exponent % 3 - 1))
++    elif exponent < 30 and round(abs(value), digits) >= 10 ** (exponent % 3 + 1):
++        # Rounding crossed a power of ten (e.g. 9.996 -> 10.0) within the
++        # same prefix bucket, so the value now needs one fewer decimal
++        # place to keep exactly `precision` significant figures.
++        exponent += 1
++        digits = int(max(0, precision - exponent % 3 - 1))
+ 
+     if exponent >= 3:
+         ordinal_ = "kMGTPEZYRQ"[exponent // 3 - 1]

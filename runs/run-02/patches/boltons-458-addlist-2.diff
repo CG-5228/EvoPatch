@@ -1,0 +1,95 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-06 13:13:36
+@@ -227,6 +227,12 @@
+         """
+         if not v:
+             return
++        # Materialize up front: a one-shot iterable (e.g., a generator)
++        # can only be walked once, and the values are needed both by the
++        # linked list (_insert) and the dict-side list (values).
++        v = list(v)
++        if not v:
++            return
+         self_insert = self._insert
+         values = super().setdefault(k, [])
+         for subv in v:
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-06 13:13:36
+@@ -1125,6 +1125,12 @@
+         """
+         if not v:
+             return
++        # Materialize up front: a one-shot iterable (e.g., a generator)
++        # can only be walked once, and the values are needed both by the
++        # linked list (_insert) and the dict-side list (values).
++        v = list(v)
++        if not v:
++            return
+         self_insert = self._insert
+         values = super().setdefault(k, [])
+         for subv in v:
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/tests/test_dictutils.py b/tests/test_dictutils.py
+--- a/tests/test_dictutils.py	1970-01-01 00:00:00
++++ b/tests/test_dictutils.py	2026-11-06 13:33:05
+@@ -270,6 +270,35 @@
+     assert len(list(e_omd.iteritems(multi=True))) == 0
+ 
+ 
++def test_addlist_one_shot_iterable():
++    # a generator can only be walked once; addlist must not re-iterate it
++    omd = OMD()
++    omd.addlist('a', (n * 2 for n in range(3)))
++    assert omd.getlist('a') == [0, 2, 4]
++    assert omd.get('a') == 4
++    assert list(omd.iteritems(multi=True)) == [('a', 0), ('a', 2), ('a', 4)]
++    assert omd.keys() == ['a']
++    assert 'a' in omd
++    assert omd == OMD([('a', 0), ('a', 2), ('a', 4)])
++
++    expected = OMD()
++    expected.addlist('a', [0, 2, 4])
++    assert omd == expected
++    assert repr(omd) == repr(expected)
++
++    # appending a one-shot iterable preserves existing values
++    omd.addlist('a', iter([-2]))
++    assert omd.getlist('a') == [0, 2, 4, -2]
++
++    # an empty one-shot iterable adds nothing
++    e_omd = OMD()
++    e_omd.addlist('a', (x for x in ()))
++    assert len(e_omd) == 0
++    assert e_omd.keys() == []
++    assert 'a' not in e_omd
++    assert e_omd.getlist('a') == []
++
++
+ def test_pop_all():
+     omd = OMD()
+     omd.add('even', 0)
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/tests/test_urlutils.py b/tests/test_urlutils.py
+--- a/tests/test_urlutils.py	1970-01-01 00:00:00
++++ b/tests/test_urlutils.py	2026-11-06 13:33:47
+@@ -112,6 +112,20 @@
+     assert not (qpd == {'a': '999', 'b': '2'})
+ 
+ 
++def test_query_param_dict_addlist_one_shot_iterable():
++    qpd = QueryParamDict()
++    qpd.addlist('k', (c for c in ('a', 'b', 'c')))
++    assert qpd.getlist('k') == ['a', 'b', 'c']
++    assert qpd.get('k') == 'c'
++    assert qpd.keys() == ['k']
++
++    empty = QueryParamDict()
++    empty.addlist('k', (c for c in ()))
++    assert len(empty) == 0
++    assert empty.keys() == []
++    assert 'k' not in empty
++
++
+ def test_iri_query():
+     url = URL('http://minerals.mountain.ore/?rock=\N{SHAMROCK}')
+     assert url.query_params['rock'] == '\N{SHAMROCK}'

@@ -1,0 +1,25 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/number.py b/src/humanize/number.py
+--- a/src/humanize/number.py	1970-01-01 00:00:00
++++ b/src/humanize/number.py	2026-11-06 10:31:19
+@@ -563,6 +563,21 @@
+     else:
+         ordinal_ = ""
+     value_ = format(value, f".{digits}f")
++
++    # Count how many of the produced digits are significant: strip the decimal
++    # point and any leading zeros, but keep zeros at the end of the integer
++    # part (they carry value, e.g. "100.0").
++    def _significant_count(s: str) -> int:
++        mantissa, _, frac = s.partition(".")
++        body = mantissa.lstrip("-").lstrip("0")
++        return len(body) + (len(frac) if body else 0)
++
++    # If rounding carried into an extra digit (e.g. 9996 -> "10.00" k with
++    # precision 3), drop fraction digits until we are back to `precision`
++    # significant figures — unless that would leave no digits at all.
++    while "." in value_ and digits > 0 and _significant_count(value_) > precision:
++        digits -= 1
++        value_ = format(value, f".{digits}f")
+     if not (unit or ordinal_) or unit in ("°", "′", "″"):
+         space = ""
+     else:

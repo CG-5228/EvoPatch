@@ -1,0 +1,78 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 14:04:05
+@@ -1,6 +1,7 @@
+ """Version handling by a semver compatible version class."""
+ 
+ import re
++import sys
+ from functools import wraps
+ from typing import (
+     Any,
+@@ -73,6 +74,55 @@
+     return (a > b) - (a < b)
+ 
+ 
++def _int_max_str_digits() -> int:
++    """
++    Return the current limit on the number of digits ``int()`` accepts
++    for string conversion (``sys.get_int_max_str_digits()``, available
++    since Python 3.11).  Zero means unlimited.
++    """
++    get_limit = getattr(sys, "get_int_max_str_digits", None)
++    return get_limit() if get_limit is not None else 0
++
++
++def _identifier_value(identifier: str) -> Union[int, str]:
++    """
++    Return the comparison value of one dot-separated prerelease identifier.
++
++    Numeric identifiers (consisting only of digits) are converted to
++    ``int``, every other identifier is returned unchanged, exactly as
++    before.
++
++    A SemVer-legal numeric identifier longer than Python's limit for
++    integer string conversion (4300 digits by default since Python 3.11)
++    would make ``int()`` raise ``ValueError: Exceeds the limit ...``,
++    even though :meth:`Version.is_valid` accepts such a version.  Those
++    identifiers (ASCII digits, first digit not zero) are converted in
++    chunks that stay below the limit instead; integer arithmetic itself
++    is not limited.  Every other identifier still goes through plain
++    ``int()`` -- or is not converted at all -- so it produces exactly the
++    same result or error as it always did.
++    """
++    if not identifier.isdigit():
++        return identifier
++    limit = _int_max_str_digits()
++    if not (
++        limit
++        and len(identifier) > limit
++        and identifier.isascii()
++        and identifier[0] != "0"
++    ):
++        # Not a long, SemVer-legal numeric identifier: use int() exactly
++        # as before, including the ValueError it may raise.
++        return int(identifier)
++    # Plain ASCII digits beyond int()'s digit limit: build the integer in
++    # chunks which are each short enough to convert directly.
++    value = 0
++    for start in range(0, len(identifier), limit):
++        chunk = identifier[start : start + limit]
++        value = value * 10 ** len(chunk) + int(chunk)
++    return value
++
++
+ class Version:
+     """
+     A semver compatible version class.
+@@ -195,8 +245,8 @@
+             else:
+                 return _cmp(a, b)
+ 
+-        a_parts = [int(x) if x.isdigit() else x for x in (a or "").split(".")]
+-        b_parts = [int(x) if x.isdigit() else x for x in (b or "").split(".")]
++        a_parts = [_identifier_value(x) for x in (a or "").split(".")]
++        b_parts = [_identifier_value(x) for x in (b or "").split(".")]
+ 
+         for sub_a, sub_b in zip(a_parts, b_parts):
+             cmp_result = cmp_prerelease_tag(sub_a, sub_b)
