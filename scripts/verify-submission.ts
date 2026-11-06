@@ -36,16 +36,22 @@ const rows = lines.slice(1).map((l) => Object.fromEntries(l.split(",").map((v, i
 check("2+ runs", rows.length >= 2, `${rows.length}`);
 check("no -dirty runs", rows.every((r) => !r.agent_commit.endsWith("-dirty")));
 const first = rows[0];
-const better = rows.slice(1).find((r) => Number(r.score) > Number(first?.score));
-check("a later run beats run 1", !!better, better ? `run ${better.run}: ${better.score} > ${first.score}` : "");
+const better = rows.slice(1).filter((r) => Number(r.score) > Number(first?.score));
+check("a later run beats run 1", better.length > 0, better.map((r) => `run ${r.run}: ${r.score} > ${first.score}`).join(", "));
 
 const runCommit = (n: string) => git("log", "--format=%H", `--grep=^run ${n.padStart(2, "0")}: score`, "-n", "1");
-if (first && better) {
-  const a = runCommit(first.run);
-  const b = runCommit(better.run);
-  const between = git("log", "--format=%H", `${a}..${b}`, "--", "agent").split("\n").filter(Boolean);
-  const learned = between.filter((sha) => /^Agent-Session: \S+$/.test(git("log", "-1", "--format=%B", sha).trim().split("\n").pop() ?? ""));
-  check("an agent commit ending in Agent-Session: sits between them", learned.length > 0, `${learned.length} of ${between.length} agent/ commits`);
+if (first && better.length) {
+  // Any later run that beats run 1 will do, as long as an edit came first: a baseline can beat run 1 by luck, with none.
+  const learnedBefore = (r: Record<string, string>) =>
+    git("log", "--format=%H", `${runCommit(first.run)}..${runCommit(r.run)}`, "--", "agent")
+      .split("\n")
+      .filter((sha) => sha && /^Agent-Session: \S+$/.test(git("log", "-1", "--format=%B", sha).trim().split("\n").pop() ?? ""));
+  const proof = better.find((r) => learnedBefore(r).length > 0);
+  check(
+    "an agent commit ending in Agent-Session: sits between run 1 and a later, better run",
+    !!proof,
+    proof ? `run ${proof.run}, after ${learnedBefore(proof).length} agent commit(s)` : `none before run ${better.map((r) => r.run).join(", ")}`,
+  );
 }
 
 if (first) {
