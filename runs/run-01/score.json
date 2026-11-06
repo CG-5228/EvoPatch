@@ -1,0 +1,28 @@
+{
+  "run": 1,
+  "kind": "counted",
+  "session_id": "01m6qs8xxvzdsnj0aaywb7wqd1",
+  "agent_commit": "1cfa4a258c8eae31c29c107f6c666a3531aa5cec",
+  "agent_tree": "996d40c3dafde82ca7741dbad4d84e1296b4a9fb",
+  "k": 3,
+  "score": 33.33,
+  "tasks_passed": 2,
+  "tasks_total": 21,
+  "holdout_score": 40.74,
+  "train_score": 27.78,
+  "tests_only_score": 79.37,
+  "failure_classes": {
+    "resolved": 21,
+    "no_patch": 11,
+    "audit": 31
+  },
+  "tokens": 98774750,
+  "toolCalls": 5741,
+  "costUsd": 3.3872,
+  "responses": {
+    "model_calls": 3423,
+    "noise_responses": 0,
+    "cut_off_responses": 8
+  },
+  "duration_s": 13884
+}

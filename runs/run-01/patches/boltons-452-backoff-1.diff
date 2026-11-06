@@ -1,0 +1,53 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/iterutils.py b/boltons/iterutils.py
+--- a/boltons/iterutils.py	1970-01-01 00:00:00
++++ b/boltons/iterutils.py	2026-11-06 07:11:04
+@@ -624,7 +624,11 @@
+         count (int): Number of steps before stopping
+             iteration. Defaults to the number of steps between *start* and
+             *stop*. Pass the string, `'repeat'`, to continue iteration
+-            indefinitely.
++            indefinitely. When *count* is omitted it is derived from the
++            geometric progression from *start* up to *stop*, which is
++            undefined for a *factor* of 1.0 (a flat sequence never grows
++            toward *stop*); passing ``factor=1.0`` without a *count* raises
++            a :class:`ValueError`.
+         factor (float): Rate of exponential increase. Defaults to `2.0`,
+             e.g., `[1, 2, 4, 8, 16]`.
+         jitter (float): A factor between `-1.0` and `1.0`, used to
+@@ -647,6 +651,10 @@
+     if stop < start:
+         raise ValueError('expected stop >= start, not %r' % stop)
+     if count is None:
++        if factor == 1.0:
++            raise ValueError('cannot infer count with factor=1.0,'
++                             ' pass count explicitly: a flat sequence'
++                             ' never grows to reach stop %r' % stop)
+         denom = start if start else 1
+         count = 1 + math.ceil(math.log(stop/denom, factor))
+         count = count if start else count + 1
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/tests/test_iterutils.py b/tests/test_iterutils.py
+--- a/tests/test_iterutils.py	1970-01-01 00:00:00
++++ b/tests/test_iterutils.py	2026-11-06 07:12:09
+@@ -453,6 +453,22 @@
+     assert backoff(2, 15) == [2.0, 4.0, 8.0, 15.0]
+ 
+ 
++def test_backoff_factor_one_no_count():
++    import pytest
++    from boltons.iterutils import backoff, backoff_iter
++
++    with pytest.raises(ValueError):
++        list(backoff_iter(2.0, 30.0, factor=1.0))
++    with pytest.raises(ValueError):
++        backoff(2, 30, factor=1.0)
++
++    # explicit count still yields a flat sequence
++    assert list(backoff_iter(2.0, 30.0, count=4, factor=1.0)) == [2.0] * 4
++    # count omitted + factor=1.0 is rejected even with a zero start
++    with pytest.raises(ValueError):
++        list(backoff_iter(0.0, 30.0, factor=1.0))
++
++
+ def test_backoff_repeat():
+     from boltons.iterutils import backoff_iter
+ 

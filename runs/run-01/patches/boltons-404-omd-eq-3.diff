@@ -1,0 +1,48 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-06 09:08:25
+@@ -356,11 +356,16 @@
+                 return False
+             return True
+         elif hasattr(other, 'keys'):
+-            for selfk in self:
+-                try:
+-                    other[selfk] == self[selfk]
+-                except KeyError:
++            try:
++                if set(other.keys()) != set(self):
+                     return False
++                for selfk in self:
++                    if not (other[selfk] == self[selfk]):
++                        return False
++            except (KeyError, TypeError):
++                # missing keys, or an object that looks dict-like but
++                # is not actually subscriptable: not equal
++                return False
+             return True
+         return False
+ 
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-06 09:08:25
+@@ -1262,11 +1262,16 @@
+                 return False
+             return True
+         elif hasattr(other, 'keys'):
+-            for selfk in self:
+-                try:
+-                    other[selfk] == self[selfk]
+-                except KeyError:
++            try:
++                if set(other.keys()) != set(self):
+                     return False
++                for selfk in self:
++                    if not (other[selfk] == self[selfk]):
++                        return False
++            except (KeyError, TypeError):
++                # missing keys, or an object that looks dict-like but
++                # is not actually subscriptable: not equal
++                return False
+             return True
+         return False
+ 

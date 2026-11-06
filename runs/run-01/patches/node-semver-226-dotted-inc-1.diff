@@ -1,0 +1,36 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/classes/semver.js b/classes/semver.js
+--- a/classes/semver.js	1970-01-01 00:00:00
++++ b/classes/semver.js	2026-11-06 07:22:43
+@@ -305,16 +305,23 @@
+         if (identifier) {
+           // 1.2.0-beta.1 bumps to 1.2.0-beta.2,
+           // 1.2.0-beta.fooblz or 1.2.0-beta bumps to 1.2.0-beta.0
+-          let prerelease = [identifier, base]
+-          if (identifierBase === false) {
+-            prerelease = [identifier]
+-          }
+-          if (compareIdentifiers(this.prerelease[0], identifier) === 0) {
+-            if (isNaN(this.prerelease[1])) {
+-              this.prerelease = prerelease
+-            }
++          // An identifier can itself be dotted, e.g. 'rc.next', and then it
++          // stands for several identifiers at once: match it against that
++          // many leading identifiers instead of only the first one, so that
++          // 5.2.0-rc.next.3 keeps its counter and bumps it to 4 rather than
++          // restarting at 5.2.0-rc.next.0.
++          const idParts = identifier.split('.')
++          const counter = this.prerelease[idParts.length]
++          const sameIdentifier =
++            this.prerelease.length > idParts.length &&
++            !isNaN(counter) &&
++            idParts.every((part, index) => compareIdentifiers(this.prerelease[index], part) === 0)
++          if (sameIdentifier) {
++            // the counter right after the identifier was already bumped above
+           } else {
+-            this.prerelease = prerelease
++            this.prerelease = identifierBase === false ?
++              [...idParts] :
++              [...idParts, base]
+           }
+         }
+         break

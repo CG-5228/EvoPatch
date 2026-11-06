@@ -1,0 +1,42 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-06 08:15:12
+@@ -1202,11 +1202,18 @@
+         Helper to yield items from the parent iterator that match *value*.
+         Items that don't match are stored in the local cache as they
+         are encountered.
++
++        The cache is only read with ``get``: indexing the defaultdict would
++        insert an empty entry for a key that was never seen, so a lookup no
++        item matches must not touch ``self._cache[value]`` directly.
+         """
+         while True:
+             # If we've cached some items that match the target value, emit
+-            # the first one and evict it from the cache.
+-            if self._cache[value]:
++            # the first one and evict it from the cache. Use ``get`` rather
++            # than ``self._cache[value]``: the latter would insert an empty
++            # entry for a key that was never seen, making failed lookups
++            # show up as (empty) buckets.
++            if self._cache.get(value):
+                 yield self._cache[value].popleft()
+             # Otherwise we need to advance the parent iterator to search for
+             # a matching item, caching the rest.
+@@ -1235,7 +1242,16 @@
+         if not self._validator(value):
+             return iter(())
+ 
+-        return self._get_values(value)
++        def items():
++            for item in self._get_values(value):
++                # Record the key only once the lookup actually yields an
++                # item: a bucket that produces items is a real key, while
++                # probing a key nothing matches leaves the keys unchanged.
++                if value not in self._cache:
++                    self._cache[value] = deque()
++                yield item
++
++        return items()
+ 
+ 
+ def spy(iterable, n=1):

@@ -1,0 +1,72 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 08:52:45
+@@ -309,6 +309,27 @@
+         return string
+ 
+     @staticmethod
++    def _increment_decimal(string: str) -> str:
++        """
++        Add one to a string of decimal digits, keeping the original width
++        when possible (``"7" -> "8"``, ``"007" -> "008"``) and growing on
++        overflow (``"99" -> "100"``).
++
++        In contrast to :class:`int`, this never fails, no matter how many
++        digits the string has (``int()`` is limited to 4300 digits).
++
++        :param string: the decimal digits to increase
++        :return: the incremented string
++        """
++        digits = list(string)
++        for index in range(len(digits) - 1, -1, -1):
++            if digits[index] != "9":
++                digits[index] = chr(ord(digits[index]) + 1)
++                return "".join(digits)
++            digits[index] = "0"
++        return "1" + "".join(digits)
++
++    @staticmethod
+     def _increment_string(string: str) -> str:
+         """
+         Look for the last sequence of number(s) in a string and increment.
+@@ -516,6 +537,12 @@
+         >>> str(semver.Version.parse("0.1.4").next_version("prerelease"))
+         '0.1.5-rc.1'
+ 
++        A prerelease in the old "no-dot" style (``rc7``) keeps its style and
++        continues the counter instead of restarting it:
++
++        >>> str(semver.Version.parse("0.1.5-rc7").next_version("prerelease"))
++        '0.1.5-rc8'
++
+         :param part: One of "major", "minor", "patch", or "prerelease"
+         :param prerelease_token: prefix string of prerelease, defaults to 'rc'
+         :return: new object with the appropriate part raised
+@@ -542,7 +569,26 @@
+             if version.prerelease is not None and prerelease_token:
+                 current_token = version.prerelease.split(".")[0]
+                 if current_token != prerelease_token:
+-                    return version.replace(prerelease=f"{prerelease_token}.1", build=None)
++                    # The old "no-dot" style attaches the counter directly to
++                    # the token (for example "rc7" instead of "rc.7").  Such a
++                    # token still belongs to `prerelease_token`, so the counter
++                    # must continue instead of restarting at 1.
++                    attached = re.fullmatch(
++                        re.escape(str(prerelease_token)) + r"([0-9]+)", current_token
++                    )
++                    if attached is None:
++                        # A different token: start a new series.
++                        return version.replace(
++                            prerelease=f"{prerelease_token}.1", build=None
++                        )
++                    if version.prerelease == current_token:
++                        # The whole prerelease is "<token><counter>": keep the
++                        # no-dot style and continue the counter (rc7 -> rc8)
++                        # instead of switching to the dotted style (rc.8).
++                        counter = cls._increment_decimal(attached.group(1))
++                        return version.replace(
++                            prerelease=f"{prerelease_token}{counter}", build=None
++                        )
+             return version.bump_prerelease(prerelease_token, bump_when_empty=True)
+ 
+     @_comparator

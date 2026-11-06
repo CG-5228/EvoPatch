@@ -1,0 +1,89 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 08:40:22
+@@ -73,6 +73,20 @@
+     return (a > b) - (a < b)
+ 
+ 
++def _cmp_num_str(a: str, b: str) -> int:
++    """Compare two all-digit strings as non-negative integers.
++
++    Like ``_cmp(int(a), int(b))`` but without converting to ``int``, so
++    that identifiers longer than ``sys.get_int_max_str_digits()`` compare
++    fine.  Leading zeros are ignored, exactly as ``int()`` would.
++    """
++    a = a.lstrip("0")
++    b = b.lstrip("0")
++    if len(a) != len(b):
++        return 1 if len(a) > len(b) else -1
++    return _cmp(a, b)
++
++
+ class Version:
+     """
+     A semver compatible version class.
+@@ -185,18 +199,58 @@
+ 
+     @classmethod
+     def _nat_cmp(cls, a: Optional[str], b: Optional[str]) -> int:
++        all_parts = (a or "").split(".") + (b or "").split(".")
++        # The previous int()-based implementation converted every all-digit
++        # part eagerly, before any comparison ran, so int()'s errors surfaced
++        # at the same point with the same message.  Recreate them: the only
++        # failure tolerated now is the integer-conversion limit hit by plain
++        # ASCII digit strings, because being able to order arbitrarily long
++        # all-digit identifiers is exactly the point of this function.
++        first_error: Optional[ValueError] = None
++        first_error_was_ascii = False
++        has_hard_error = False
++        for x in all_parts:
++            if not x.isdigit():
++                continue
++            try:
++                int(x)
++            except ValueError as exc:
++                if first_error is None:
++                    first_error = exc
++                    first_error_was_ascii = x.isascii()
++                if not x.isascii() or "Exceeds the limit" not in str(exc):
++                    has_hard_error = True
++        if first_error is not None and (has_hard_error or not first_error_was_ascii):
++            # The old code raised this error; the limit error is only
++            # suppressed when it is the sole problem with these values.
++            raise first_error
++
++        def token(x):
++            # Mark numeric identifiers (all digits, lower precedence than
++            # alphanumeric ones) with a tuple, so that they can be compared
++            # numerically without converting arbitrarily long digit strings
++            # to int (allowed by SemVer and accepted by is_valid, but
++            # rejected by CPython's limit for integer string conversion).
++            # Plain ASCII digits stay digit strings; the non-ASCII digits
++            # left here always convert successfully (checked above).
++            if not x.isdigit():
++                return x
++            return ("num", x if x.isascii() else str(int(x)))
++
+         def cmp_prerelease_tag(a, b):
+-            if isinstance(a, int) and isinstance(b, int):
+-                return _cmp(a, b)
+-            elif isinstance(a, int):
++            a_is_num = isinstance(a, tuple)
++            b_is_num = isinstance(b, tuple)
++            if a_is_num and b_is_num:
++                return _cmp_num_str(a[1], b[1])
++            elif a_is_num:
+                 return -1
+-            elif isinstance(b, int):
++            elif b_is_num:
+                 return 1
+             else:
+                 return _cmp(a, b)
+ 
+-        a_parts = [int(x) if x.isdigit() else x for x in (a or "").split(".")]
+-        b_parts = [int(x) if x.isdigit() else x for x in (b or "").split(".")]
++        a_parts = [token(x) for x in (a or "").split(".")]
++        b_parts = [token(x) for x in (b or "").split(".")]
+ 
+         for sub_a, sub_b in zip(a_parts, b_parts):
+             cmp_result = cmp_prerelease_tag(sub_a, sub_b)

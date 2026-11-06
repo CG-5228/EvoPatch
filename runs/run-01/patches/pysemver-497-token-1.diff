@@ -1,0 +1,73 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 07:44:39
+@@ -541,6 +541,16 @@
+         if part in cls.NAMES[:3]:
+             return getattr(version, "bump_" + part)()
+         else:
++            # True when the current prerelease belongs to the same token
++            # family as `prerelease_token` (old-style "rc3", dotted "rc.3",
++            # or a string that merely starts with the token like "rc-1").
++            def _same_family(pre: str, token: str) -> bool:
++                return (
++                    bool(re.fullmatch(re.escape(token) + r"\d*", pre))
++                    or pre.startswith(token + ".")
++                    or pre.startswith(token + "-")
++                )
++
+             if version.prerelease and prerelease_token:
+                 prerelease_token = str(prerelease_token)
+                 cls._validate_identifiers(
+@@ -553,16 +563,47 @@
+                     rf"{re.escape(prerelease_token)}(\d+)", version.prerelease
+                 )
+                 if match:
++                    # Old-style prerelease (no dot separator): the numeric
++                    # suffix must be compared numerically.  String comparison
++                    # would wrongly order "rc10" before "rc9".  An arithmetic
++                    # bump of the suffix always yields a numerically higher
++                    # version.
+                     num = int(match.group(1))
+                     return version.replace(
+                         prerelease=f"{prerelease_token}{num + 1}", build=None
+                     )
+ 
+-                if not (
+-                    version.prerelease == prerelease_token
+-                    or version.prerelease.startswith(prerelease_token + ".")
+-                ):
+-                    return version.replace(prerelease=f"{prerelease_token}.1", build=None)
++                if _same_family(version.prerelease, prerelease_token):
++                    candidate = version.bump_prerelease(
++                        prerelease_token, bump_when_empty=True
++                    )
++                    if candidate > version:
++                        return candidate
++                    # The counter bump did not produce a higher version;
++                    # restart the token on the next patch instead.
++                    return version.replace(
++                        major=version.major,
++                        minor=version.minor,
++                        patch=version.patch + 1,
++                        prerelease=f"{prerelease_token}.1",
++                        build=None,
++                    )
++                # Different token: restart the new token on the same release.
++                candidate = version.replace(
++                    prerelease=f"{prerelease_token}.1", build=None
++                )
++                if candidate > version:
++                    return candidate
++                # The new token sorts before the current prerelease, so
++                # restarting it on the same release would go backwards.
++                # Move to the next patch and start the token there instead.
++                return version.replace(
++                    major=version.major,
++                    minor=version.minor,
++                    patch=version.patch + 1,
++                    prerelease=f"{prerelease_token}.1",
++                    build=None,
++                )
+             return version.bump_prerelease(prerelease_token, bump_when_empty=True)
+ 
+     @_comparator

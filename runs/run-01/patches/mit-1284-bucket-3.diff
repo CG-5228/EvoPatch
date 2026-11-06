@@ -1,0 +1,74 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-06 09:20:30
+@@ -1181,8 +1181,17 @@
+     def __init__(self, iterable, key, validator=None):
+         self._it = iter(iterable)
+         self._key = key
+-        self._cache = defaultdict(deque)
+-        self._validator = validator or (lambda x: True)
++        # ``_cache`` maps keys to their cached items. It is a plain dict so
++        # that merely probing a key (e.g. via ``in`` or ``bucket[key]``)
++        # never creates an entry for it; entries are only added below when
++        # an actual item produces that key. ``_keys`` remembers every key
++        # that some item produced, even if its items have since been
++        # consumed, so iteration only ever reports real keys.
++        self._cache = {}
++        # ``_keys`` remembers every key that some item produced, in order of
++        # first appearance (a dict is used as an insertion-ordered set).
++        self._keys = {}
++        self._validator = (lambda x: True) if validator is None else validator
+ 
+     def __contains__(self, value):
+         if not self._validator(value):
+@@ -1193,7 +1202,8 @@
+         except StopIteration:
+             return False
+         else:
+-            self._cache[value].appendleft(item)
++            self._cache.setdefault(value, deque()).appendleft(item)
++            self._keys[value] = None
+ 
+         return True
+ 
+@@ -1206,8 +1216,13 @@
+         while True:
+             # If we've cached some items that match the target value, emit
+             # the first one and evict it from the cache.
+-            if self._cache[value]:
+-                yield self._cache[value].popleft()
++            # Use ``get`` rather than ``self._cache[value]`` so that looking
++            # up a value the cache has never seen doesn't create an empty
++            # entry for it; otherwise failed lookups would show up as keys
++            # when iterating over the bucket.
++            cached = self._cache.get(value)
++            if cached:
++                yield cached.popleft()
+             # Otherwise we need to advance the parent iterator to search for
+             # a matching item, caching the rest.
+             else:
+@@ -1218,18 +1233,21 @@
+                         return
+                     item_value = self._key(item)
+                     if item_value == value:
++                        self._keys[value] = None
+                         yield item
+                         break
+                     elif self._validator(item_value):
+-                        self._cache[item_value].append(item)
++                        self._cache.setdefault(item_value, deque()).append(item)
++                        self._keys[item_value] = None
+ 
+     def __iter__(self):
+         for item in self._it:
+             item_value = self._key(item)
+             if self._validator(item_value):
+-                self._cache[item_value].append(item)
++                self._cache.setdefault(item_value, deque()).append(item)
++                self._keys[item_value] = None
+ 
+-        return iter(self._cache)
++        return iter(self._keys)
+ 
+     def __getitem__(self, value):
+         if not self._validator(value):

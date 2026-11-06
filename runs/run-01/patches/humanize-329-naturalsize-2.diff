@@ -1,0 +1,19 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/filesize.py b/src/humanize/filesize.py
+--- a/src/humanize/filesize.py	1970-01-01 00:00:00
++++ b/src/humanize/filesize.py	2026-11-06 08:01:30
+@@ -98,5 +98,14 @@
+ 
+     exp = int(min(log(abs_bytes, base), len(suffix)))
+     space = "" if gnu else " "
+-    ret: str = format % (bytes_ / (base**exp)) + space + _(suffix[exp - 1])
++    scaled = bytes_ / (base**exp)
++    ret: str = format % scaled + space + _(suffix[exp - 1])
++
++    # The formatter may round the scaled value up to the base, leaving a
++    # reading like "1000.0 kB" instead of "1.0 MB". When that happens the
++    # unit must move up with the rounded number. The largest unit has
++    # nowhere to move up to, so it keeps its oversized reading.
++    if exp < len(suffix) and abs(float(format % scaled)) >= base:
++        exp += 1
++        ret = format % (bytes_ / (base**exp)) + space + _(suffix[exp - 1])
+     return ret

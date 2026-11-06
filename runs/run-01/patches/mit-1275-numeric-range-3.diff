@@ -1,0 +1,28 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-06 09:12:18
+@@ -2458,15 +2458,15 @@
+         )
+ 
+     def __reversed__(self):
+-        # Empty iterator
+-        try:
+-            start = self._get_by_index(-1)
+-        except IndexError:
+-            return iter([])
+-
+-        return iter(
+-            numeric_range(start, self._start - self._step, -self._step)
+-        )
++        # Walk the indexes backwards instead of building a mirrored
++        # ``numeric_range``. A mirrored range would need a stop of
++        # ``start - step``, which can overflow for ``datetime`` objects at
++        # the edges of the valid range, and with inexact arithmetic (floats)
++        # the items it produces drift from the items this range produces, so
++        # they are neither the same values nor the same count.
++        start = self._start
++        step = self._step
++        return (start + index * step for index in range(self._len - 1, -1, -1))
+ 
+     def count(self, value):
+         return int(value in self)

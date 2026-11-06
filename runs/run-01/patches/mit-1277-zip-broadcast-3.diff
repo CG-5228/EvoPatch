@@ -1,0 +1,54 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-06 09:14:10
+@@ -4671,16 +4671,30 @@
+     different lengths.
+     """
+ 
+-    def is_scalar(obj):
++    def to_iterator(obj):
++        """Return an iterator for *obj*, or ``None`` if *obj* is scalar.
++
++        *obj* is opened exactly once here, and the iterator returned by
++        that single ``iter`` call is the one used for the rest of the
++        algorithm, so single-pass sources work as they do with the
++        built-in :func:`zip`.
++        """
+         if scalar_types and isinstance(obj, scalar_types):
+-            return True
++            return None
+         try:
+-            iter(obj)
++            return iter(obj)
+         except TypeError:
+-            return True
+-        else:
+-            return False
++            return None
+ 
++    def delegating(iterator):
++        """Yield from *iterator* directly, so that the ``zip`` call below
++        never invokes ``iter`` on the user's source a second time."""
++        while True:
++            try:
++                yield next(iterator)
++            except StopIteration:
++                return
++
+     size = len(objects)
+     if not size:
+         return
+@@ -4688,10 +4702,11 @@
+     new_item = [None] * size
+     iterables, iterable_positions = [], []
+     for i, obj in enumerate(objects):
+-        if is_scalar(obj):
++        iterator = to_iterator(obj)
++        if iterator is None:
+             new_item[i] = obj
+         else:
+-            iterables.append(iter(obj))
++            iterables.append(delegating(iterator))
+             iterable_positions.append(i)
+ 
+     if not iterables:

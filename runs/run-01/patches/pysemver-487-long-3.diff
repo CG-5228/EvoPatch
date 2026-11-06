@@ -1,0 +1,55 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 10:04:56
+@@ -186,17 +186,44 @@
+     @classmethod
+     def _nat_cmp(cls, a: Optional[str], b: Optional[str]) -> int:
+         def cmp_prerelease_tag(a, b):
+-            if isinstance(a, int) and isinstance(b, int):
+-                return _cmp(a, b)
+-            elif isinstance(a, int):
++            (a_is_numeric, a_value), (b_is_numeric, b_value) = a, b
++            if a_is_numeric and b_is_numeric:
++                # Both values are canonical decimal strings (no leading
++                # zeros): the numerically smaller one is the shorter one,
++                # or, at equal length, the lexicographically smaller one.
++                # Comparing strings instead of ints keeps numeric
++                # identifiers longer than the limit for integer string
++                # conversion (4300 digits by default) comparable.
++                if len(a_value) != len(b_value):
++                    return _cmp(len(a_value), len(b_value))
++                return _cmp(a_value, b_value)
++            elif a_is_numeric:
+                 return -1
+-            elif isinstance(b, int):
++            elif b_is_numeric:
+                 return 1
+             else:
+-                return _cmp(a, b)
++                return _cmp(a_value, b_value)
+ 
+-        a_parts = [int(x) if x.isdigit() else x for x in (a or "").split(".")]
+-        b_parts = [int(x) if x.isdigit() else x for x in (b or "").split(".")]
++        def classify(identifier):
++            # Mirrors the old ``int(x) if x.isdigit() else x`` conversion.
++            # Well-formed ASCII numeric identifiers (the only ones
++            # is_valid approves) are kept as strings so that identifiers
++            # longer than the limit for integer string conversion (4300
++            # digits by default) stay comparable.  Anything else that is
++            # a digit string -- leading zeros, non-ASCII digits -- still
++            # goes through int(), keeping its values and errors identical
++            # to the previous behavior.
++            if identifier.isdigit():
++                if identifier.isascii() and (
++                    identifier[0] != "0" or identifier == "0"
++                ):
++                    # Canonical decimal, no conversion needed.
++                    return True, identifier
++                return True, str(int(identifier))
++            return False, identifier
++
++        a_parts = [classify(x) for x in (a or "").split(".")]
++        b_parts = [classify(x) for x in (b or "").split(".")]
+ 
+         for sub_a, sub_b in zip(a_parts, b_parts):
+             cmp_result = cmp_prerelease_tag(sub_a, sub_b)

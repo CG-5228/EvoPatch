@@ -1,0 +1,41 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/filesize.py b/src/humanize/filesize.py
+--- a/src/humanize/filesize.py	1970-01-01 00:00:00
++++ b/src/humanize/filesize.py	2026-11-06 06:45:22
+@@ -65,6 +65,12 @@
+         '30000.0 QB'
+         >>> naturalsize(-4096, True)
+         '-4.0 KiB'
++        >>> naturalsize(999960)
++        '1.0 MB'
++        >>> naturalsize(1024**3 - 1, binary=True)
++        '1.0 GiB'
++        >>> naturalsize(1024**2 - 8, gnu=True)
++        '1.0M'
+ 
+         ```
+ 
+@@ -98,5 +104,23 @@
+ 
+     exp = int(min(log(abs_bytes, base), len(suffix)))
+     space = "" if gnu else " "
+-    ret: str = format % (bytes_ / (base**exp)) + space + _(suffix[exp - 1])
++
++    def _format_at(exponent: int) -> str:
++        return format % (bytes_ / (base**exponent)) + space + _(suffix[exponent - 1])
++
++    ret: str = _format_at(exp)
++
++    # The rounded number can reach the base even though the raw value does not
++    # (e.g. 999.96 kB shown as "1000.0 kB"). Move up one unit so the number and
++    # the suffix stay in agreement. The largest suffix has nowhere to go, so it
++    # keeps showing its value as is.
++    while exp < len(suffix):
++        try:
++            shown = abs(float(format % (bytes_ / (base**exp))))
++        except (TypeError, ValueError):
++            break
++        if shown < base:
++            break
++        exp += 1
++        ret = _format_at(exp)
+     return ret

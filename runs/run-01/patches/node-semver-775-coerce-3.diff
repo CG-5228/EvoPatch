@@ -1,0 +1,21 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/internal/re.js b/internal/re.js
+--- a/internal/re.js	1970-01-01 00:00:00
++++ b/internal/re.js	2026-11-06 09:42:28
+@@ -75,10 +75,14 @@
+                         `(${src[t.NUMERICIDENTIFIERLOOSE]})`)
+ 
+ // ## Pre-release Version Identifier
+-// A numeric identifier, or a non-numeric identifier.
++// A non-numeric identifier, or a numeric identifier.
++// The non-numeric alternative must be tried first: identifiers like '7f3c'
++// start with a digit, and if the numeric alternative matched first it would
++// only consume the leading digits, truncating the rest of the identifier in
++// regexes that are not end-anchored (e.g. COERCEFULL).
+ 
+-createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NUMERICIDENTIFIER]
+-}|${src[t.NONNUMERICIDENTIFIER]})`)
++createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NONNUMERICIDENTIFIER]
++}|${src[t.NUMERICIDENTIFIER]})`)
+ 
+ createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NUMERICIDENTIFIERLOOSE]
+ }|${src[t.NONNUMERICIDENTIFIER]})`)

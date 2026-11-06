@@ -1,0 +1,90 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/setutils.py b/boltons/setutils.py
+--- a/boltons/setutils.py	1970-01-01 00:00:00
++++ b/boltons/setutils.py	2026-11-06 09:13:13
+@@ -180,24 +180,29 @@
+         return apparent_index
+ 
+     def _add_dead(self, start, stop=None):
+-        # TODO: does not handle when the new interval subsumes
+-        # multiple existing intervals
++        # Merge [start, stop) with every existing dead interval it overlaps
++        # or touches (contiguous dead slots form one run). Repeatedly scan
++        # so an interval that only becomes adjacent after a merge is caught
++        # too, avoiding fragmented runs (which would otherwise leave stale,
++        # dangling intervals after _cull trims the trailing dead slots).
+         dints = self.dead_indices
+         if stop is None:
+             stop = start + 1
+-        cand_int = [start, stop]
+-        if not dints:
+-            dints.append(cand_int)
+-            return
+-        int_idx = bisect_left(dints, cand_int)
+-        dint = dints[int_idx - 1]
+-        d_start, d_stop = dint
+-        if start <= d_start <= stop:
+-            dint[0] = start
+-        elif start <= d_stop <= stop:
+-            dint[1] = stop
+-        else:
+-            dints.insert(int_idx, cand_int)
++        new_start, new_stop = start, stop
++        merged = True
++        while merged:
++            merged = False
++            i = 0
++            while i < len(dints):
++                d_start, d_stop = dints[i]
++                if d_start <= new_stop and new_start <= d_stop:
++                    new_start = min(new_start, d_start)
++                    new_stop = max(new_stop, d_stop)
++                    del dints[i]
++                    merged = True
++                else:
++                    i += 1
++        dints.insert(bisect_left(dints, [new_start, new_stop]), [new_start, new_stop])
+         return
+ 
+     # common operations (shared by set and list)
+@@ -418,26 +423,32 @@
+             return self.from_iterable(iter_slice)
+         if index < 0:
+             index += len(self)
++        if index < 0 or index >= len(self):
++            raise IndexError(f'{self.__class__.__name__} index out of range')
+         real_index = self._get_real_index(index)
+-        try:
+-            ret = self.item_list[real_index]
+-        except IndexError:
+-            raise IndexError('IndexedSet index out of range')
+-        return ret
++        return self.item_list[real_index]
+ 
+     def pop(self, index=None):
+         "pop(index) -> remove the item at a given index (-1 by default)"
+         item_index_map = self.item_index_map
+         len_self = len(item_index_map)
+-        if index is None or index == -1 or index == len_self - 1:
++        if index is None:
++            index = -1
++        index = operator.index(index)
++        if index < 0:
++            index += len_self
++        if index < 0 or index >= len_self:
++            raise IndexError('IndexedSet index out of range')
++        real_index = self._get_real_index(index)
++        # Fast path: the target is the physical last slot and there are
++        # no trailing dead slots, so pop it directly to keep the list tight.
++        if real_index == len(self.item_list) - 1 and not self.dead_indices:
+             ret = self.item_list.pop()
+-            del item_index_map[ret]
+         else:
+-            real_index = self._get_real_index(index)
+             ret = self.item_list[real_index]
+             self.item_list[real_index] = _MISSING
+-            del item_index_map[ret]
+             self._add_dead(real_index)
++        del item_index_map[ret]
+         self._cull()
+         return ret
+ 

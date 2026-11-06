@@ -1,0 +1,80 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-06 09:28:28
+@@ -223,9 +223,34 @@
+         OrderedMultiDict([('a', -1), ('a', 0), ('a', 1), ('a', 2)])
+ 
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+-        tuples and other sequences and iterables work.
++        tuples and other sequences and iterables work, including
++        one-shot iterators such as generators:
++
++        >>> omd.addlist('g', (x * 2 for x in range(3)))
++        >>> omd.getlist('g')
++        [0, 2, 4]
++        >>> OrderedMultiDict().addlist('g', (x for x in ()))
+         """
+-        if not v:
++        if not isinstance(v, list):
++            if hasattr(v, '__iter__') or hasattr(v, '__getitem__'):
++                # Consume any non-list iterable exactly once, up front.
++                # This makes one-shot iterators (e.g., generators) behave
++                # like the equivalent list: all values get linked in and
++                # stored below the key. It also lets an empty iterable add
++                # nothing instead of creating an empty entry for k. Using
++                # a structural check (rather than truthiness) means custom
++                # iterables are never misjudged, and TypeErrors raised by
++                # the iteration itself always surface.
++                v = list(v)
++            elif not v:
++                # legacy behavior for non-iterables: falsy ones (e.g.
++                # None) silently add nothing
++                return
++            else:
++                # legacy behavior: truthy non-iterables raise the standard
++                # not-iterable TypeError
++                raise TypeError("%r object is not iterable" % type(v).__name__)
++        if len(v) == 0:
+             return
+         self_insert = self._insert
+         values = super().setdefault(k, [])
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-06 09:28:28
+@@ -1121,9 +1121,34 @@
+         OrderedMultiDict([('a', -1), ('a', 0), ('a', 1), ('a', 2)])
+ 
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+-        tuples and other sequences and iterables work.
++        tuples and other sequences and iterables work, including
++        one-shot iterators such as generators:
++
++        >>> omd.addlist('g', (x * 2 for x in range(3)))
++        >>> omd.getlist('g')
++        [0, 2, 4]
++        >>> OrderedMultiDict().addlist('g', (x for x in ()))
+         """
+-        if not v:
++        if not isinstance(v, list):
++            if hasattr(v, '__iter__') or hasattr(v, '__getitem__'):
++                # Consume any non-list iterable exactly once, up front.
++                # This makes one-shot iterators (e.g., generators) behave
++                # like the equivalent list: all values get linked in and
++                # stored below the key. It also lets an empty iterable add
++                # nothing instead of creating an empty entry for k. Using
++                # a structural check (rather than truthiness) means custom
++                # iterables are never misjudged, and TypeErrors raised by
++                # the iteration itself always surface.
++                v = list(v)
++            elif not v:
++                # legacy behavior for non-iterables: falsy ones (e.g.
++                # None) silently add nothing
++                return
++            else:
++                # legacy behavior: truthy non-iterables raise the standard
++                # not-iterable TypeError
++                raise TypeError("%r object is not iterable" % type(v).__name__)
++        if len(v) == 0:
+             return
+         self_insert = self._insert
+         values = super().setdefault(k, [])

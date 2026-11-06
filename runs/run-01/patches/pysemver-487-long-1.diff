@@ -1,0 +1,81 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 08:00:12
+@@ -184,19 +184,67 @@
+                 )
+ 
+     @classmethod
++    def _cmp_numeric_str(cls, a: str, b: str) -> int:
++        """
++        Compare two ASCII all-digit prerelease identifiers as integers.
++
++        This is equivalent to ``_cmp(int(a), int(b))`` but never calls
++        :func:`int` on the strings: since Python 3.11 ``int()`` refuses
++        strings longer than 4300 digits (:gh:`487`), while SemVer places no
++        length limit on numeric identifiers.
++
++        Leading zeros (only reachable for directly constructed versions, since
++        :meth:`parse` rejects them) are insignificant, exactly as :func:`int`
++        treats them, so ``007`` equals ``7``.
++        """
++        a = a.lstrip("0") or "0"
++        b = b.lstrip("0") or "0"
++        if len(a) != len(b):
++            # Canonical digit runs: a longer run is the greater integer.
++            return _cmp(len(a), len(b))
++        return _cmp(a, b)
++
++    @classmethod
+     def _nat_cmp(cls, a: Optional[str], b: Optional[str]) -> int:
+-        def cmp_prerelease_tag(a, b):
+-            if isinstance(a, int) and isinstance(b, int):
+-                return _cmp(a, b)
+-            elif isinstance(a, int):
++        # An identifier that ``int()`` can convert but that is not plain
++        # ASCII digits (e.g. "²" or Arabic-Indic digits) must keep using the
++        # historical ``int()`` conversion, including its errors.
++        def convert(part):
++            if not part.isdigit():
++                return part
++            if part.isascii():
++                return part  # handled numerically without int() below
++            return int(part)
++
++        # Splitting eagerly (rather than inside the loop) preserves the old
++        # behaviour where every identifier was converted up-front, so a bad
++        # identifier raises even if an earlier one already decided the result.
++        a_parts = [convert(x) for x in (a or "").split(".")]
++        b_parts = [convert(x) for x in (b or "").split(".")]
++
++        def cmp_prerelease_tag(sub_a, sub_b):
++            # A part is a numeric identifier iff it is ASCII digits (string,
++            # kept as-is) or a non-ASCII digit run converted to int above.
++            a_is_num = (isinstance(sub_a, str) and sub_a.isascii()
++                        and sub_a.isdigit()) or isinstance(sub_a, int)
++            b_is_num = (isinstance(sub_b, str) and sub_b.isascii()
++                        and sub_b.isdigit()) or isinstance(sub_b, int)
++            if a_is_num and b_is_num:
++                if isinstance(sub_a, str) and isinstance(sub_b, str):
++                    # Two ASCII numeric identifiers: compared numerically
++                    # without building big integers, so arbitrarily long ones
++                    # (over the 4300-digit int() limit) work.
++                    return cls._cmp_numeric_str(sub_a, sub_b)
++                # At least one non-ASCII digit run was converted with int().
++                a_v = sub_a if isinstance(sub_a, int) else int(sub_a)
++                b_v = sub_b if isinstance(sub_b, int) else int(sub_b)
++                return _cmp(a_v, b_v)
++            if a_is_num:
++                # Numeric identifiers have lower precedence than alphanumeric.
+                 return -1
+-            elif isinstance(b, int):
++            if b_is_num:
+                 return 1
+-            else:
+-                return _cmp(a, b)
+-
+-        a_parts = [int(x) if x.isdigit() else x for x in (a or "").split(".")]
+-        b_parts = [int(x) if x.isdigit() else x for x in (b or "").split(".")]
++            return _cmp(sub_a, sub_b)
+ 
+         for sub_a, sub_b in zip(a_parts, b_parts):
+             cmp_result = cmp_prerelease_tag(sub_a, sub_b)

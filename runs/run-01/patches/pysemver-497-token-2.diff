@@ -1,0 +1,72 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/.ruff_cache/.gitignore b/.ruff_cache/.gitignore
+--- a/.ruff_cache/.gitignore	1970-01-01 00:00:00
++++ b/.ruff_cache/.gitignore	2026-11-06 08:55:32
+@@ -0,0 +1,2 @@
++# Automatically created by ruff.
++*
+Binary files a/.ruff_cache/0.15.9/18128649696085220265 and b/.ruff_cache/0.15.9/18128649696085220265 differ
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/.ruff_cache/CACHEDIR.TAG b/.ruff_cache/CACHEDIR.TAG
+--- a/.ruff_cache/CACHEDIR.TAG	1970-01-01 00:00:00
++++ b/.ruff_cache/CACHEDIR.TAG	2026-11-06 08:55:32
+@@ -0,0 +1 @@
++Signature: 8a477f597d28d172789f06886806bc55
+\ No newline at end of file
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-06 08:59:42
+@@ -518,6 +518,14 @@
+         >>> str(semver.Version.parse("0.1.4").next_version("prerelease"))
+         '0.1.5-rc.1'
+ 
++        Switching to a ``prerelease_token`` that sorts before the current
++        prerelease restarts the token on the next patch release, so the
++        result is always greater than this version:
++
++        >>> v = semver.Version.parse("4.5.6-rc.2")
++        >>> str(v.next_version("prerelease", prerelease_token="beta"))
++        '4.5.7-beta.1'
++
+         :param part: One of "major", "minor", "patch", or "prerelease"
+         :param prerelease_token: prefix string of prerelease, defaults to 'rc'
+         :return: new object with the appropriate part raised
+@@ -554,15 +562,38 @@
+                 )
+                 if match:
+                     num = int(match.group(1))
+-                    return version.replace(
++                    candidate = version.replace(
+                         prerelease=f"{prerelease_token}{num + 1}", build=None
+                     )
++                    if (
++                        candidate > version
++                        # Old-style prereleases are a single identifier
++                        # compared lexically, so crossing a digit boundary
++                        # ("rc9" -> "rc10") is lexically lower even though
++                        # the number was raised; keep the established
++                        # behavior for the token's own prerelease line.
++                        or len(str(num + 1)) > len(str(num))
++                    ):
++                        return candidate
+ 
+                 if not (
+                     version.prerelease == prerelease_token
+                     or version.prerelease.startswith(prerelease_token + ".")
+                 ):
+-                    return version.replace(prerelease=f"{prerelease_token}.1", build=None)
++                    # Switching to a different prerelease token: restarting
++                    # the token on the same release must not move the version
++                    # backwards.  If it would not yield a higher version (the
++                    # new token sorts before the current prerelease), continue
++                    # on the next patch release instead, so the result is
++                    # always greater than this version.
++                    candidate = version.replace(
++                        prerelease=f"{prerelease_token}.1", build=None
++                    )
++                    if candidate > version:
++                        return candidate
++                    return version.bump_patch().replace(
++                        prerelease=f"{prerelease_token}.1", build=None
++                    )
+             return version.bump_prerelease(prerelease_token, bump_when_empty=True)
+ 
+     @_comparator
