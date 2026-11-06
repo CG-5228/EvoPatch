@@ -38,4 +38,6 @@ npm run fix -- --repo <owner>/<name> --sha <commit> --bug .tmp/bug.md --tests <t
 | [toolz #659](https://github.com/pytoolz/toolz/issues/659): `assoc_in` and `update_in` raise `StopIteration` for an empty key path | 5 Nov 2026 | `451af60dec590a6010e2babdbf391ea8f815122f` | `toolz/tests` | [#660](https://github.com/pytoolz/toolz/pull/660) | Filed the day before this list. The report leaves open whether to raise or return, so the agent has to choose |
 | [tenacity #710](https://github.com/jd/tenacity/issues/710): a zero exponential multiplier overflows into the maximum wait | 12 Sep 2026 | `aac059c906170ee7b6ce1aa086a226f3aded5c99` | `tests` | [#711](https://github.com/jd/tenacity/pull/711), [#712](https://github.com/jd/tenacity/pull/712), [#718](https://github.com/jd/tenacity/pull/718), [#770](https://github.com/jd/tenacity/pull/770) | Four competing fixes to compare with. The tests that need `trio` or `tornado` won't load unless the agent installs them |
 
+**Chosen for the demo: tenacity #710.**
+
 The sandbox can reach GitHub, so an agent could read those PRs. `npm run fix` lists every command that used the network or named the repo, and shot 8 should show that list.
