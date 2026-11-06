@@ -1,0 +1,25 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/filesize.py b/src/humanize/filesize.py
+--- a/src/humanize/filesize.py	1970-01-01 00:00:00
++++ b/src/humanize/filesize.py	2026-11-06 20:37:05
+@@ -98,5 +98,20 @@
+ 
+     exp = int(min(log(abs_bytes, base), len(suffix)))
+     space = "" if gnu else " "
+-    ret: str = format % (bytes_ / (base**exp)) + space + _(suffix[exp - 1])
++
++    formatted = format % (bytes_ / (base**exp))
++    # The formatted number can round up to the base (e.g. "1000.0 kB" or
++    # "1024.0 MiB"); carry into the next unit so the number and the suffix
++    # agree. The largest unit has nothing to carry into, so it is kept.
++    while exp < len(suffix):
++        try:
++            rounded = abs(float(formatted))
++        except ValueError:
++            break
++        if rounded < base:
++            break
++        exp += 1
++        formatted = format % (bytes_ / (base**exp))
++
++    ret: str = formatted + space + _(suffix[exp - 1])
+     return ret

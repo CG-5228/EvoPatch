@@ -1,0 +1,36 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/iterutils.py b/boltons/iterutils.py
+--- a/boltons/iterutils.py	1970-01-01 00:00:00
++++ b/boltons/iterutils.py	2026-11-06 21:56:29
+@@ -626,7 +626,9 @@
+             *stop*. Pass the string, `'repeat'`, to continue iteration
+             indefinitely.
+         factor (float): Rate of exponential increase. Defaults to `2.0`,
+-            e.g., `[1, 2, 4, 8, 16]`.
++            e.g., `[1, 2, 4, 8, 16]`. A factor of 1.0 yields a flat
++            sequence; it only infers *count* when *start* equals *stop*,
++            otherwise an explicit *count* is required.
+         jitter (float): A factor between `-1.0` and `1.0`, used to
+             uniformly randomize and thus spread out timeouts in a distributed
+             system, avoiding rhythm effects. Positive values use the base
+@@ -647,9 +649,18 @@
+     if stop < start:
+         raise ValueError('expected stop >= start, not %r' % stop)
+     if count is None:
+-        denom = start if start else 1
+-        count = 1 + math.ceil(math.log(stop/denom, factor))
+-        count = count if start else count + 1
++        if factor == 1.0:
++            if stop == start:
++                count = 1
++            else:
++                raise ValueError('cannot compute count: a flat sequence'
++                                 ' (factor=%r) can never climb from start=%r'
++                                 ' to stop=%r; pass count explicitly'
++                                 % (factor, start, stop))
++        else:
++            denom = start if start else 1
++            count = 1 + math.ceil(math.log(stop/denom, factor))
++            count = count if start else count + 1
+     if count != 'repeat' and count < 0:
+         raise ValueError('count must be positive or "repeat", not %r' % count)
+     if jitter:

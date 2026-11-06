@@ -1,0 +1,72 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/functions/diff.js b/functions/diff.js
+--- a/functions/diff.js	1970-01-01 00:00:00
++++ b/functions/diff.js	2026-11-06 21:30:41
+@@ -15,36 +15,51 @@
+   const highHasPre = !!highVersion.prerelease.length
+   const lowHasPre = !!lowVersion.prerelease.length
+ 
++  // add the `pre` prefix if we are going to a prerelease version
++  const prefix = highHasPre ? 'pre' : ''
++
++  // Going from a prerelease to a release (the release being the high
++  // version) needs special casing: without it, the prerelease is
++  // considered lower than the release on the same core version, so a
++  // plain component-wise diff would miss the real bump level.
+   if (lowHasPre && !highHasPre) {
+-    // Going from prerelease -> no prerelease requires some special casing
++    const sameCore =
++      lowVersion.major === highVersion.major &&
++      lowVersion.minor === highVersion.minor &&
++      lowVersion.patch === highVersion.patch
+ 
+-    // If the low version has only a major, then it will always be a major
+-    // Some examples:
+-    // 1.0.0-1 -> 1.0.0
+-    // 1.0.0-1 -> 1.1.1
+-    // 1.0.0-1 -> 2.0.0
+-    if (!lowVersion.patch && !lowVersion.minor) {
++    // If the low version has only a major (minor and patch both 0),
++    // the release is always treated as a major -- reaching the first
++    // stable X.0.0 line is a major-level event.
++    if (!lowVersion.minor && !lowVersion.patch) {
+       return 'major'
+     }
+ 
+-    // Otherwise it can be determined by checking the high version
++    // The level is the first core component that differs.
++    if (lowVersion.major !== highVersion.major) {
++      return 'major'
++    }
+ 
+-    if (highVersion.patch) {
+-      // anything higher than a patch bump would result in the wrong version
++    if (lowVersion.minor !== highVersion.minor) {
++      return 'minor'
++    }
++
++    // Same major and minor but the patch advanced: that's a patch bump
++    // regardless of which line the prerelease sat on.
++    if (!sameCore) {
+       return 'patch'
+     }
+ 
+-    if (highVersion.minor) {
+-      // anything higher than a minor bump would result in the wrong version
++    // The core versions are identical: we merely dropped the
++    // prerelease tag.  The level reflects what that release line means
++    // semantically -- 1.1.0-pre -> 1.1.0 is a minor and
++    // 1.0.1-pre -> 1.0.1 is a patch (the .0.0 case was handled above).
++    if (!lowVersion.patch) {
+       return 'minor'
+     }
+ 
+-    // bumping major/minor/patch all have same result
+-    return 'major'
++    return 'patch'
+   }
+-
+-  // add the `pre` prefix if we are going to a prerelease version
+-  const prefix = highHasPre ? 'pre' : ''
+ 
+   if (v1.major !== v2.major) {
+     return prefix + 'major'

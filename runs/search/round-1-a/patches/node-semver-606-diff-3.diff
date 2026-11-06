@@ -1,0 +1,42 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/functions/diff.js b/functions/diff.js
+--- a/functions/diff.js	1970-01-01 00:00:00
++++ b/functions/diff.js	2026-11-06 21:59:39
+@@ -27,20 +27,28 @@
+       return 'major'
+     }
+ 
+-    // Otherwise it can be determined by checking the high version
++    // When the numeric parts are identical we are releasing the prerelease
++    // itself, so the bump level is determined by the version being released:
++    // 1.0.1-1 -> 1.0.1 is a patch, 1.1.0-1 -> 1.1.0 is a minor
++    if (highVersion.major === lowVersion.major &&
++        highVersion.minor === lowVersion.minor &&
++        highVersion.patch === lowVersion.patch) {
++      if (highVersion.patch) {
++        // anything higher than a patch bump would result in the wrong version
++        return 'patch'
++      }
+ 
+-    if (highVersion.patch) {
+-      // anything higher than a patch bump would result in the wrong version
+-      return 'patch'
+-    }
++      if (highVersion.minor) {
++        // anything higher than a minor bump would result in the wrong version
++        return 'minor'
++      }
+ 
+-    if (highVersion.minor) {
+-      // anything higher than a minor bump would result in the wrong version
+-      return 'minor'
++      // bumping major/minor/patch all have same result
++      return 'major'
+     }
+ 
+-    // bumping major/minor/patch all have same result
+-    return 'major'
++    // Otherwise the numeric parts differ and the regular comparison below
++    // classifies the change correctly, e.g. 3.4.6-2 -> 3.5.2 is a minor
+   }
+ 
+   // add the `pre` prefix if we are going to a prerelease version

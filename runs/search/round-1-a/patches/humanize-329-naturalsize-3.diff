@@ -1,0 +1,62 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/filesize.py b/src/humanize/filesize.py
+--- a/src/humanize/filesize.py	1970-01-01 00:00:00
++++ b/src/humanize/filesize.py	2026-11-06 22:05:58
+@@ -3,6 +3,7 @@
+ from __future__ import annotations
+ 
+ from math import log
++from re import search
+ 
+ from humanize.i18n import _gettext as _
+ 
+@@ -98,5 +99,32 @@
+ 
+     exp = int(min(log(abs_bytes, base), len(suffix)))
+     space = "" if gnu else " "
+-    ret: str = format % (bytes_ / (base**exp)) + space + _(suffix[exp - 1])
++
++    # The formatted number can round up to the base (e.g. "%.1f" turns
++    # 999.96 kB into "1000.0 kB"). Move up one unit so the number and the
++    # suffix agree, unless we are already at the largest unit.
++    mantissa = bytes_ / (base**exp)
++    while exp < len(suffix):
++        try:
++            shown = format % mantissa
++        except TypeError:
++            # A format this code cannot render: let the final return raise.
++            shown = None
++        if shown is None:
++            break
++        try:
++            displayed = abs(float(shown))
++        except ValueError:
++            # The formatted number is wrapped in decoration, e.g. "(%.1f)".
++            number = search(r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?", shown)
++            if number is None:
++                break
++            mantissa = float(number.group())
++            displayed = abs(mantissa)
++        if displayed < base:
++            break
++        exp += 1
++        mantissa = bytes_ / (base**exp)
++
++    ret: str = format % mantissa + space + _(suffix[exp - 1])
+     return ret
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/tests/test_filesize.py b/tests/test_filesize.py
+--- a/tests/test_filesize.py	1970-01-01 00:00:00
++++ b/tests/test_filesize.py	2026-11-06 22:06:48
+@@ -82,6 +82,13 @@
+         ([1.123456789, False, True], "1B"),
+         ([1.123456789 * 10**3, False, True], "1.1K"),
+         ([1.123456789 * 10**6, False, True], "1.1M"),
++        ([999960], "1.0 MB"),
++        ([999980000], "1.0 GB"),
++        ([1024**3 - 1, True], "1.0 GiB"),
++        ([1024**2 - 1, False, True], "1.0M"),
++        ([10**30 - 1], "1.0 QB"),
++        ([1024**10 - 1, True], "1.0 QiB"),
++        ([1000**10 * 999.96], "1000.0 QB"),
+     ],
+ )
+ def test_naturalsize(test_args: list[int] | list[int | bool], expected: str) -> None:

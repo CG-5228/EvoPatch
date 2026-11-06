@@ -1,0 +1,51 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/functions/diff.js b/functions/diff.js
+--- a/functions/diff.js	1970-01-01 00:00:00
++++ b/functions/diff.js	2026-11-06 20:52:42
+@@ -16,7 +16,7 @@
+   const lowHasPre = !!lowVersion.prerelease.length
+ 
+   if (lowHasPre && !highHasPre) {
+-    // Going from prerelease -> no prerelease requires some special casing
++    // Going from prerelease -> no prerelease requires some special casing.
+ 
+     // If the low version has only a major, then it will always be a major
+     // Some examples:
+@@ -27,20 +27,28 @@
+       return 'major'
+     }
+ 
+-    // Otherwise it can be determined by checking the high version
+-
+-    if (highVersion.patch) {
+-      // anything higher than a patch bump would result in the wrong version
+-      return 'patch'
++    // If both versions share the same major.minor.patch numbers, the
++    // prerelease was heading toward that exact release; determine the level
++    // from the release itself.
++    if (v1.compareMain(v2) === 0) {
++      if (highVersion.patch) {
++        return 'patch'
++      }
++      if (highVersion.minor) {
++        return 'minor'
++      }
++      return 'major'
+     }
+ 
+-    if (highVersion.minor) {
+-      // anything higher than a minor bump would result in the wrong version
++    // Otherwise compare the major/minor components directly to find what
++    // actually changed between the two release lines.
++    if (v1.major !== v2.major) {
++      return 'major'
++    }
++    if (v1.minor !== v2.minor) {
+       return 'minor'
+     }
+-
+-    // bumping major/minor/patch all have same result
+-    return 'major'
++    return 'patch'
+   }
+ 
+   // add the `pre` prefix if we are going to a prerelease version

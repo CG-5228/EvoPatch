@@ -1,0 +1,20 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/internal/re.js b/internal/re.js
+--- a/internal/re.js	1970-01-01 00:00:00
++++ b/internal/re.js	2026-11-06 22:15:27
+@@ -77,8 +77,14 @@
+ // ## Pre-release Version Identifier
+ // A numeric identifier, or a non-numeric identifier.
+ 
+-createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NUMERICIDENTIFIER]
+-}|${src[t.NONNUMERICIDENTIFIER]})`)
++// Try the non-numeric alternative first: an identifier like `7f3c` is a
++// single non-numeric identifier, but the numeric alternative would match
++// only its leading digits (`7`). In $-anchored contexts backtracking
++// recovers from that, but COERCEFULL's tail is only `(?:$|[^\d])`, which
++// accepts the letter after the digits as the boundary and truncates the
++// prerelease (e.g. `2.3.1-nightly.7f3c` -> `2.3.1-nightly.7`).
++createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NONNUMERICIDENTIFIER]
++}|${src[t.NUMERICIDENTIFIER]})`)
+ 
+ createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NUMERICIDENTIFIERLOOSE]
+ }|${src[t.NONNUMERICIDENTIFIER]})`)

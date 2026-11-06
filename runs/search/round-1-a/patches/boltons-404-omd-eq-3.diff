@@ -1,0 +1,54 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-06 22:03:42
+@@ -356,10 +356,22 @@
+                 return False
+             return True
+         elif hasattr(other, 'keys'):
++            try:
++                if set(other.keys()) != set(self.keys()):
++                    return False
++            except TypeError:
++                # unhashable keys on either side; fall back to the
++                # key-by-key lookups below
++                pass
+             for selfk in self:
+                 try:
+-                    other[selfk] == self[selfk]
++                    otherv = other[selfk]
+                 except KeyError:
++                    return False
++                selfv = self[selfk]
++                # match dict semantics: identical values compare equal
++                # even when they are not ==-equal (e.g., NaN)
++                if not (otherv is selfv or otherv == selfv):
+                     return False
+             return True
+         return False
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-06 22:03:42
+@@ -1262,10 +1262,22 @@
+                 return False
+             return True
+         elif hasattr(other, 'keys'):
++            try:
++                if set(other.keys()) != set(self.keys()):
++                    return False
++            except TypeError:
++                # unhashable keys on either side; fall back to the
++                # key-by-key lookups below
++                pass
+             for selfk in self:
+                 try:
+-                    other[selfk] == self[selfk]
++                    otherv = other[selfk]
+                 except KeyError:
++                    return False
++                selfv = self[selfk]
++                # match dict semantics: identical values compare equal
++                # even when they are not ==-equal (e.g., NaN)
++                if not (otherv is selfv or otherv == selfv):
+                     return False
+             return True
+         return False
