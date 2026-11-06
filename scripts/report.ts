@@ -16,6 +16,7 @@ interface Row {
   tree: string;
   tokens: number;
   classes: Record<string, number>;
+  responses?: { model_calls: number; noise_responses: number; cut_off_responses: number };
   session: string;
   usage: Record<string, unknown>;
   tasks: Record<string, { score: number; attempts: { attempt: number; outcome: string; bug_tests: string; similarity: number }[] }>;
@@ -34,6 +35,7 @@ function load(run: number): Row {
     tree: s.agent_tree,
     tokens: s.tokens,
     classes: s.failure_classes,
+    responses: s.responses,
     session: s.session_id,
     usage: JSON.parse(readFileSync(join(dir, "feature-usage.json"), "utf8")),
     tasks: Object.fromEntries(
@@ -76,6 +78,14 @@ const lines = [
   "| Run | " + ["resolved", "f2p_failed", "p2p_regression", "no_patch", "timeout", "patch_rejected", "audit"].join(" | ") + " |",
   "|---|---|---|---|---|---|---|---|",
   ...rows.map((r) => `| ${r.run} | ${["resolved", "f2p_failed", "p2p_regression", "no_patch", "timeout", "patch_rejected", "audit"].map((c) => r.classes[c] ?? 0).join(" | ")} |`),
+  "",
+  "## Model responses",
+  "",
+  "Not scored. If the noise rate moves between runs, the model's service moved, not the agent.",
+  "",
+  "| Run | Model calls | Noise | Cut off at the output limit |",
+  "|---|---|---|---|",
+  ...rows.map((r) => `| ${r.run} | ${r.responses?.model_calls ?? "-"} | ${r.responses?.noise_responses ?? "-"} | ${r.responses?.cut_off_responses ?? "-"} |`),
   "",
 ];
 writeFileSync(join(ROOT, "docs", "results.md"), lines.join("\n"));

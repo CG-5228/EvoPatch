@@ -36,6 +36,7 @@ import {
   skillRef,
   SUMMARY_CSV,
   syncAgent,
+  responseStats,
   turnStats,
   writeJson,
   type TurnExport,
@@ -52,7 +53,7 @@ const official = kind !== "scratch";
 
 // 1. Counted evidence comes only from the frozen harness and a known agent.
 if (official) {
-  if (process.env.TF_MODEL || process.env.TF_AGENT_NAME) die("TF_MODEL and TF_AGENT_NAME override agent/agent.json. Unset them for an official run.");
+  if (process.env.TF_MODEL || process.env.TF_AGENT_NAME || process.env.TF_MODEL_PARAMS) die("TF_MODEL, TF_MODEL_PARAMS and TF_AGENT_NAME override agent/agent.json. Unset them for an official run.");
   if (!isClean("agent", "evals", "scripts", "package.json", "package-lock.json")) die("agent/, evals/, scripts/ or the package files have uncommitted changes. Commit them first.");
   const hidden = git("ls-files", "-o", "-i", "--exclude-standard", "--", "evals").split("\n").filter((f) => f && !f.includes("__pycache__"));
   if (hidden.length) die(`Files under evals/ exist here but aren't in git, so a fresh clone would differ:\n  ${hidden.join("\n  ")}`);
@@ -132,11 +133,26 @@ let infraStreak = 0;
 let aborted = "";
 const started = Date.now();
 
+// Tarballs are byte-identical across builds, so each is built once.
+const tarballs = new Map<string, Buffer>();
+function tarballOf(task: Task): Buffer {
+  if (!tarballs.has(task.id)) tarballs.set(task.id, taskTarball(task));
+  return tarballs.get(task.id)!;
+}
+
+// One scoring at a time, the way curation checked every test for stability.
+let scoring: Promise<unknown> = Promise.resolve();
+function scoreNext(...args: Parameters<typeof scoreAttempt>): Promise<AttemptScore> {
+  const next = scoring.then(() => scoreAttempt(...args));
+  scoring = next.catch(() => undefined);
+  return next;
+}
+
 async function attemptOnce(task: Task, attempt: number): Promise<void> {
   const infra: Done["infra"] = [];
   for (let tries = 0; tries <= protocol.infra_retries; tries++) {
     if (aborted) return;
-    const turn = await runTurn(tf, sessionId, taskPrompt(task), { files: [{ name: tarballName(task), body: taskTarball(task) }] });
+    const turn = await runTurn(tf, sessionId, taskPrompt(task), { files: [{ name: tarballName(task), body: tarballOf(task) }] });
     if (turn.fatal) {
       aborted = `the provider refused the request: ${turn.error}`;
       return;
@@ -173,7 +189,7 @@ async function attemptOnce(task: Task, attempt: number): Promise<void> {
     mkdirSync(dirname(patchFile), { recursive: true });
     if (patch?.length) writeFileSync(patchFile, patch);
     const commands = commandsOf(exported);
-    const score: AttemptScore = { ...scoreAttempt(task, patch, commands, attempt), commands };
+    const score: AttemptScore = { ...(await scoreNext(task, patch, commands, attempt)), commands };
     const entry: Done = { score: { ...score, turn_id: turn.turnId, report: report?.toString().slice(0, 1000) }, turn: exported, infra };
     done.set(key(task, attempt), entry);
     appendFileSync(donePath, JSON.stringify(entry) + "\n");
@@ -213,7 +229,7 @@ const agentTree = git("rev-parse", `${sha}:agent`);
 const { data: session } = await tf.sessions.get(sessionId);
 
 writeJson(join(dir, "results.json"), results);
-writeJson(join(dir, "score.json"), { run: kind === "counted" ? run : label, kind, session_id: sessionId, agent_commit: sha, agent_tree: agentTree, k, ...total, tests_only_score: testsOnly.score, failure_classes: classes, ...stats, duration_s: durationS });
+writeJson(join(dir, "score.json"), { run: kind === "counted" ? run : label, kind, session_id: sessionId, agent_commit: sha, agent_tree: agentTree, k, ...total, tests_only_score: testsOnly.score, failure_classes: classes, ...stats, responses: responseStats(turns), duration_s: durationS });
 writeJson(join(dir, "session.json"), { exported_at: new Date().toISOString(), base_url: env.baseUrl, redactions: { note: "Uploaded tarballs are replaced by their sha256 and size. evals/prompt.ts rebuilds them." }, session, turns });
 writeJson(join(dir, "feature-usage.json"), featureUsage(turns));
 writeJson(join(dir, "infra.json"), entries.flatMap((e) => e.infra));

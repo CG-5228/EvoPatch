@@ -12,8 +12,8 @@ for (const t of loadTasks().filter((x) => x.language === "js")) {
   const profile = profileFor(t);
   const reference = readFileSync(join(fixtureDir(t), "reference.patch"));
   for (const [label, patch] of [["base", null], ["fixed", reference]] as const) {
-    const real = files(runInImage(fixtureDir(t), profile, patch));
-    const shim = files(runInImage(fixtureDir(t), profile, patch, true, true));
+    const real = files(await runInImage(fixtureDir(t), profile, patch));
+    const shim = files(await runInImage(fixtureDir(t), profile, patch, true, true));
     const differ = [...new Set([...Object.keys(real), ...Object.keys(shim)])].filter((id) => real[id] !== shim[id]);
     wrong += differ.length;
     const failing = Object.values(real).filter((v) => v === "fail").length;

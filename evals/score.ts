@@ -66,7 +66,7 @@ export function similarity(patch: string, reference: string): number {
   return round(shared / new Set([...a, ...b]).size, 3);
 }
 
-export function scoreAttempt(task: Task, patch: Buffer | null, commands: string[] = [], attempt = 1): AttemptScore {
+export async function scoreAttempt(task: Task, patch: Buffer | null, commands: string[] = [], attempt = 1): Promise<AttemptScore> {
   const f2p = readList(task, "f2p.json");
   const p2p = readList(task, "p2p.json");
   const audit = auditCommands(commands);
@@ -81,7 +81,7 @@ export function scoreAttempt(task: Task, patch: Buffer | null, commands: string[
   if (!patch?.length) {
     return { ...base, resolved: false, tests_resolved: false, failure_class: "no_patch", f2p_passed: 0, p2p_failed: 0, applied: false, dropped: [], similarity: 0, failing: [] };
   }
-  const result: RunnerResult = runInImage(fixtureDir(task), profileFor(task), patch);
+  const result: RunnerResult = await runInImage(fixtureDir(task), profileFor(task), patch);
   const f2pPassed = f2p.filter((id) => result.tests[id] === "pass").length;
   const p2pFailed = p2p.filter((id) => result.tests[id] !== "pass");
   const testsResolved = result.applied && !result.timed_out && f2pPassed === f2p.length && p2pFailed.length === 0;
@@ -161,7 +161,7 @@ function realDiff(task: Task, reference: string): Buffer {
   }
 }
 
-function selftest(all: boolean): void {
+async function selftest(all: boolean): Promise<void> {
   for (const [command, hard] of AUDIT_FIXTURES) check(`audit: ${command.slice(0, 70)}`, auditCommands([command]).hard.length > 0 === hard);
 
   const ready = loadTasks().filter((t) => existsSync(join(fixtureDir(t), "f2p.json")) && readList(t, "f2p.json").length);
@@ -176,21 +176,21 @@ function selftest(all: boolean): void {
     check(`${t.id}: tarball holds no hidden tests or reference`, !/hidden\/|reference\.patch|f2p\.json|p2p\.json/.test(listing));
     check(`${t.id}: prompt holds no fix`, !taskPrompt(t).includes(t.fix_sha));
 
-    const fixed = scoreAttempt(t, reference);
+    const fixed = await scoreAttempt(t, reference);
     check(`${t.id}: reference patch resolves`, fixed.resolved, fixed.failure_class);
-    check(`${t.id}: real macOS diff output resolves`, scoreAttempt(t, realDiff(t, reference.toString())).resolved);
-    check(`${t.id}: empty patch does not`, scoreAttempt(t, Buffer.alloc(0)).failure_class === "no_patch");
+    check(`${t.id}: real macOS diff output resolves`, (await scoreAttempt(t, realDiff(t, reference.toString()))).resolved);
+    check(`${t.id}: empty patch does not`, (await scoreAttempt(t, Buffer.alloc(0))).failure_class === "no_patch");
 
     const testFile = `${profile.test_paths[0]}/evopatch_extra.${t.language === "js" ? "js" : "py"}`;
     const newFile = (path: string, body: string) => Buffer.from(`--- a/${path}\n+++ b/${path}\n@@ -0,0 +1 @@\n+${body}\n`);
-    const testOnly = scoreAttempt(t, newFile(testFile, "x = 1"));
+    const testOnly = await scoreAttempt(t, newFile(testFile, "x = 1"));
     check(`${t.id}: test-only patch does not`, !testOnly.resolved && testOnly.dropped.includes(testFile));
-    const tamper = scoreAttempt(t, newFile("conftest.py", "collect_ignore_glob = ['*']"));
+    const tamper = await scoreAttempt(t, newFile("conftest.py", "collect_ignore_glob = ['*']"));
     check(`${t.id}: root conftest is dropped`, !tamper.resolved && tamper.dropped.includes("conftest.py"));
-    check(`${t.id}: malformed patch does not`, !scoreAttempt(t, Buffer.from(`--- a/${profile.source_paths[0]}nope\n+++ b/${profile.source_paths[0]}nope\n@@ -9,1 +9,1 @@\n-a\n+b\n`)).resolved);
-    const hit = scoreAttempt(t, reference, ["pip install more-itertools"]);
+    check(`${t.id}: malformed patch does not`, !(await scoreAttempt(t, Buffer.from(`--- a/${profile.source_paths[0]}nope\n+++ b/${profile.source_paths[0]}nope\n@@ -9,1 +9,1 @@\n-a\n+b\n`))).resolved);
+    const hit = await scoreAttempt(t, reference, ["pip install more-itertools"]);
     check(`${t.id}: an audit hit voids a passing patch`, hit.tests_resolved && !hit.resolved && hit.failure_class === "audit");
-    const again = scoreAttempt(t, reference);
+    const again = await scoreAttempt(t, reference);
     check(`${t.id}: re-score is identical`, JSON.stringify(again) === JSON.stringify(fixed));
   }
   const one = (id: string, resolved: boolean) => ({ task_id: id, holdout: id === "h", score: resolved ? 1 : 0, passed: resolved, attempts: [] });
@@ -200,18 +200,20 @@ function selftest(all: boolean): void {
   if (failures) process.exitCode = 1;
 }
 
-function rescore(dir: string): void {
+async function rescore(dir: string): Promise<void> {
   const saved = JSON.parse(readFileSync(join(resolve(dir), "results.json"), "utf8")) as TaskScore[];
   const tasks = new Map(loadTasks().map((t) => [t.id, t]));
-  const rescored = saved.map((s) => {
+  const rescored: TaskScore[] = [];
+  for (const s of saved) {
     const task = tasks.get(s.task_id);
     if (!task) throw new Error(`unknown task ${s.task_id}`);
-    const attempts = s.attempts.map((a) => {
+    const attempts: AttemptScore[] = [];
+    for (const a of s.attempts) {
       const file = join(resolve(dir), "patches", `${a.task_id}-${a.attempt}.diff`);
-      return scoreAttempt(task, existsSync(file) ? readFileSync(file) : null, a.commands ?? [], a.attempt);
-    });
-    return scoreTask(task, attempts);
-  });
+      attempts.push(await scoreAttempt(task, existsSync(file) ? readFileSync(file) : null, a.commands ?? [], a.attempt));
+    }
+    rescored.push(scoreTask(task, attempts));
+  }
   const now = scoreRun(rescored);
   const was = JSON.parse(readFileSync(join(resolve(dir), "score.json"), "utf8")) as { score: number };
   console.log(JSON.stringify(now));
@@ -221,7 +223,7 @@ function rescore(dir: string): void {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const arg = process.argv[2];
-  if (arg === "--selftest") selftest(process.argv.includes("--all"));
-  else if (arg) rescore(arg);
+  if (arg === "--selftest") await selftest(process.argv.includes("--all"));
+  else if (arg) await rescore(arg);
   else console.log("usage: npm run score -- runs/run-NN | --selftest [--all]");
 }

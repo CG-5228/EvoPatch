@@ -22,7 +22,8 @@ export const GITHUB_REPO = "CG-5228/EvoPatch";
 if (existsSync(join(ROOT, ".env"))) process.loadEnvFile(join(ROOT, ".env"));
 
 export const env = {
-  baseUrl: process.env.TRUEFORGE_BASE_URL ?? "http://localhost:8790",
+  // TrueForge listens on ::1 only. With "localhost", Node races both address families on a 250 ms timer.
+  baseUrl: (process.env.TRUEFORGE_BASE_URL ?? "http://[::1]:8790").replace("//localhost:", "//[::1]:"),
   token: process.env.TRUEFORGE_TOKEN || undefined,
 };
 
@@ -32,6 +33,7 @@ export interface Protocol {
   concurrency: number;
   iteration_limit: number;
   max_rounds: number;
+  rounds_end: string;
   max_changed_lines: number;
   max_skill_bytes: number;
   max_agent_bytes: number;
@@ -138,6 +140,7 @@ export function readAgentAt(sha: string): AgentAt {
   const agent = JSON.parse(show("agent/agent.json")) as AgentFile;
   if (process.env.TF_AGENT_NAME) agent.name = process.env.TF_AGENT_NAME;
   if (process.env.TF_MODEL) agent.model = { ...agent.model, name: process.env.TF_MODEL };
+  if (process.env.TF_MODEL_PARAMS) agent.model = { ...agent.model, params: JSON.parse(process.env.TF_MODEL_PARAMS) };
   const skills: SkillFile[] = [];
   for (const line of git("ls-tree", "--name-only", `${sha}:agent/skills`).split("\n").filter(Boolean).sort()) {
     const path = `agent/skills/${line}`;
@@ -229,6 +232,15 @@ export interface TurnResult {
 const FATAL_ERROR = /\b(401|402|403)\b|unauthori[sz]ed|insufficient|quota|credit|budget/i;
 const REAL_FAILURE = /^Output (truncated|blocked)|iteration limit/i; // the agent ran out of room: that counts
 
+/** Every layer of a wrapped error: the SDK and fetch each hide the real cause one level down. */
+export function errorChain(e: unknown): string {
+  const parts: string[] = [];
+  for (let c = e as { message?: string; code?: string; cause?: unknown } | undefined, depth = 0; c && depth < 6; c = c.cause as typeof c, depth++) {
+    parts.push([c.code, c.message].filter(Boolean).join(" "));
+  }
+  return [...new Set(parts)].join(" <- ");
+}
+
 /** Decide whose fault a finished turn was. Written into docs/protocol.md before run 1. */
 export function classifyTurn(state: { status: string; message?: string; reason?: string; requiredActions?: unknown[] }): Pick<TurnResult, "outcome" | "fatal"> {
   if (state.status === "done") return { outcome: state.requiredActions?.length ? "infra" : "ok", fatal: false };
@@ -253,6 +265,7 @@ export async function runTurn(tf: TrueForge, sessionId: string, text: string, op
     ...(opts.files ?? []).map((f) => ({ type: "file" as const, name: f.name, data: `data:application/gzip;base64,${f.body.toString("base64")}` })),
   ];
   let turnId: string;
+  const posted = Date.now();
   try {
     const { data } = await tf.sessions.createTurn(
       sessionId,
@@ -261,8 +274,7 @@ export async function runTurn(tf: TrueForge, sessionId: string, text: string, op
     );
     turnId = data.id;
   } catch (e) {
-    const cause = (e as { cause?: { code?: string; message?: string } }).cause;
-    const error = `createTurn rejected: ${(e as Error).message.slice(0, 300)}${cause ? ` (${cause.code ?? ""} ${cause.message ?? ""})` : ""}`;
+    const error = `createTurn rejected after ${((Date.now() - posted) / 1000).toFixed(1)}s: ${errorChain(e).slice(0, 300)}`;
     return { turnId: "", status: "rejected", text: "", error, outcome: "infra", fatal: FATAL_ERROR.test(error) };
   }
   const started = Date.now();
@@ -351,6 +363,9 @@ interface RawEvent {
   toolCalls?: { id: string; function?: { name?: string; arguments?: string }; name?: string; arguments?: string }[];
   toolCallId?: string;
   content?: unknown;
+  reasoningContent?: string;
+  finishReason?: string;
+  usage?: { outputTokens?: number };
   agentInfo?: { name?: string };
 }
 
@@ -427,6 +442,40 @@ export function featureUsage(turns: TurnExport[]) {
     }
   }
   return usage;
+}
+
+/** Noise from its first token: fragments of mixed scripts rather than any language. MiMo does this about once in 160 calls. */
+export function isNoise(text: string): boolean {
+  if (text.length < 80) return false;
+  const foreign = (text.match(/[\u3000-\u30ff\u3400-\u9fff\uff00-\uffef]/g)?.length ?? 0) / text.length;
+  const words = (text.match(/[A-Za-z]{4,}/g) ?? []).join("").length / text.length;
+  return (foreign > 0.03 && words < 0.45) || words < 0.12;
+}
+
+/** Report only, never scored. If these rates move between runs, the model's service moved, not the agent. */
+export function responseStats(turns: TurnExport[]): { model_calls: number; noise_responses: number; cut_off_responses: number } {
+  const stats = { model_calls: 0, noise_responses: 0, cut_off_responses: 0 };
+  for (const t of turns) {
+    for (const raw of t.events as unknown as RawEvent[]) {
+      if (raw.type !== "model.message") continue;
+      stats.model_calls++;
+      if (isNoise(typeof raw.content === "string" ? raw.content : "") || isNoise(raw.reasoningContent ?? "")) stats.noise_responses++;
+      if (raw.finishReason === "length") stats.cut_off_responses++;
+    }
+  }
+  return stats;
+}
+
+/** How the attempt stopped. A list of tool calls just ends, which hides a cut-off or a garbled response. */
+export function howItEnded(turn: TurnExport) {
+  const state = turn.state as { status: string; message?: string };
+  const last = (turn.events as unknown as RawEvent[]).filter((e) => e.type === "model.message" && (e.threadId ?? "main") === "main").at(-1);
+  const text = (typeof last?.content === "string" && last.content) || last?.reasoningContent || "";
+  return {
+    turn_status: state.status,
+    turn_error: state.message ?? null,
+    last_response: last ? { finish_reason: last.finishReason ?? null, output_tokens: last.usage?.outputTokens ?? null, called_a_tool: Boolean(last.toolCalls?.length), chars: text.length, opening: text.slice(0, 240), ending: text.slice(-160) } : null,
+  };
 }
 
 /** Tokens and tool calls across turns. */

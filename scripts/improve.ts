@@ -25,6 +25,7 @@ import {
   flag,
   git,
   headSha,
+  howItEnded,
   isClean,
   option,
   push,
@@ -98,6 +99,7 @@ function testSummary(a: Attempt) {
     bug_tests_passed: `${a.score.f2p_passed} of ${a.score.f2p_total}`,
     regressions: a.score.p2p_failed,
     failures: [...new Map(failures.map((f) => [JSON.stringify(f), f])).values()],
+    how_it_ended: a.turn ? howItEnded(a.turn) : null,
   };
 }
 
@@ -144,7 +146,7 @@ try {
 Unpack your evidence: \`mkdir -p bundle out && tar -xzf uploads/improve-bundle.tar.gz -C bundle\`.
 
 - \`bundle/agent/\`: your current instructions and skills.
-- \`bundle/failures/<attempt>/\`: attempts you got wrong. \`report.md\` is the bug report, \`patch.diff\` is what you submitted, \`trace.md\` is what you did, \`result.json\` says which tests failed. You can't see the tests or the right answer.
+- \`bundle/failures/<attempt>/\`: attempts you got wrong. \`report.md\` is the bug report, \`patch.diff\` is what you submitted, \`trace.md\` is what you did, \`result.json\` says which tests failed and how the attempt ended. You can't see the tests or the right answer.
 - \`bundle/passes/<attempt>/\`: attempts at the same tasks that passed.
 - \`bundle/earlier-rounds.json\`: earlier changes and what they did to the score. Don't repeat a change that was dropped.
 
@@ -174,7 +176,7 @@ The rule must help on code you have never seen. Never mention project names, fun
   const exported = await exportSession(tf, session.id);
   const proofDir = option("proof-dir") ? join(ROOT, option("proof-dir")!) : join(RUNS_DIR, `run-${nn}`);
   writeJson(join(proofDir, `improve-${session.id}.json`), exported);
-  if (turn.outcome !== "ok") die(`The improve turn ended with status ${turn.status}${turn.error ? `: ${turn.error}` : ""}. Nothing was committed.`);
+  if (turn.outcome === "infra" || turn.fatal) die(`The improve turn ended with status ${turn.status}${turn.error ? `: ${turn.error}` : ""}. Nothing was committed.`);
 
   // ---------- read and check the change ----------
 
@@ -188,6 +190,7 @@ The rule must help on code you have never seen. Never mention project names, fun
     console.error(`\n✗ The guards rejected this change:\n  ${problems.join("\n  ")}\n  Saved to ${file.replace(`${ROOT}/`, "")}`);
     process.exit(3);
   };
+  if (turn.outcome !== "ok") reject([`the session ended early: ${turn.error ?? turn.status}`]);
   if (!rawManifest || !rawDiagnosis) reject(["out/manifest.json or out/diagnosis.json is missing"]);
   let paths: string[] = [];
   let diagnosis: Diagnosis = {};

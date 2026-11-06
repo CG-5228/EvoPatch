@@ -2,8 +2,10 @@
 //
 // Rounds of: improve → two train-only screens → keep, or git revert. Holdout tasks never run here.
 // An edit is kept only if both screens beat the bar: the highest baseline train score, then the last kept edit's score.
-// Stops after protocol.max_rounds, or after two rounds in a row with no kept edit. Any failure stops the loop and
-// waits for a person: fallbacks are Chris's call. Then run the final counted runs and `npm run verdict`.
+// Runs protocol.max_rounds rounds, and starts none after protocol.rounds_end, so the final runs keep their time.
+// Any failure stops the loop and waits for a person: fallbacks are Chris's call. Running this again picks up where it
+// stopped: it finishes a round whose edit was never screened, and keeps the screens that already ran.
+// Then run the final counted runs and `npm run verdict`.
 
 import { execFileSync, spawnSync } from "node:child_process";
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
@@ -16,13 +18,26 @@ const read = (dir: string) => JSON.parse(readFileSync(join(dir, "score.json"), "
 const name = (r: number) => `runs/run-${String(r).padStart(2, "0")}`;
 let bar = Math.max(...baseline.map((r) => read(join(ROOT, name(r))).train_score ?? 0));
 const roundsFile = join(RUNS_DIR, "rounds.json");
-const rounds = (existsSync(roundsFile) ? JSON.parse(readFileSync(roundsFile, "utf8")) : []) as Record<string, unknown>[];
+interface Round {
+  round: number;
+  kept: boolean;
+  commit?: string;
+  bar?: number;
+  screens?: number[];
+  change?: string;
+  reason?: string;
+}
+const rounds = (existsSync(roundsFile) ? JSON.parse(readFileSync(roundsFile, "utf8")) : []) as Round[];
 const sources = baseline.map(name);
+for (const r of rounds) {
+  (r.screens ?? []).forEach((_, i) => sources.push(`runs/search/round-${r.round}-${"ab"[i]}`));
+  if (r.kept) bar = Math.min(...r.screens!);
+}
 const verdictFile = join(ROOT, "VERDICT.md");
 
 const tsx = (script: string, ...args: string[]) => spawnSync("npx", ["tsx", `scripts/${script}.ts`, ...args], { cwd: ROOT, stdio: "inherit" });
 
-function record(entry: Record<string, unknown>, line: string): void {
+function record(entry: Round, line: string): void {
   rounds.push(entry);
   writeJson(roundsFile, rounds);
   if (!existsSync(verdictFile)) appendFileSync(verdictFile, "# Verdict log\n\nOne entry per round, written by `npm run evolve`.\n\n");
@@ -34,25 +49,37 @@ function record(entry: Record<string, unknown>, line: string): void {
 
 function screen(round: number, tag: string): number {
   const label = `round-${round}-${tag}`;
-  const result = tsx("run-evals", "--kind", "search", "--label", label, "--train-only");
-  if (result.status !== 0) die(`Screen ${label} stopped. Fix it, resume it with --resume, and restart evolve.`);
+  const dir = join(RUNS_DIR, "search", label);
+  if (!existsSync(join(dir, "score.json"))) {
+    const result = tsx("run-evals", "--kind", "search", "--label", label, "--train-only", ...(existsSync(join(dir, ".partial")) ? ["--resume"] : []));
+    if (result.status !== 0) die(`Screen ${label} stopped. Fix the cause, then run evolve again: it resumes this screen.`);
+  }
   sources.push(`runs/search/${label}`);
-  return read(join(RUNS_DIR, "search", label)).train_score ?? 0;
+  return read(dir).train_score ?? 0;
 }
 
-let dry = 0;
+/** The newest edit, if no round has recorded it: a screen stopped, and this run finishes that round. */
+function unscreened(): string | null {
+  const [commit, subject] = git("log", "-1", "--format=%H%n%s", "--", "agent").split("\n");
+  return subject?.startsWith("agent: learn") && !rounds.some((r) => r.commit === commit) ? commit : null;
+}
+
 const first = rounds.length + 1;
-for (let round = first; round <= protocol.max_rounds && dry < 2; round++) {
+for (let round = first; round <= protocol.max_rounds; round++) {
+  if (Date.now() > Date.parse(protocol.rounds_end)) {
+    console.log(`It's past ${protocol.rounds_end}: no more rounds, so the final runs keep their time.`);
+    break;
+  }
+  const pending = round === first ? unscreened() : null;
   const before = headSha();
-  let ok = false;
+  let ok = pending !== null;
   for (let tries = 1; tries <= 3 && !ok; tries++) {
     const result = tsx("improve", "--from", sources.join(","));
     if (result.status === 0) ok = true;
     else if (result.status !== 3) die("improve stopped. Nothing was committed by this step.");
   }
-  const child = headSha();
+  const child = pending ?? headSha();
   if (!ok || child === before) {
-    dry++;
     record({ round, kept: false, reason: "no accepted change" }, `- Round ${round}: no change passed the guards.`);
     continue;
   }
@@ -62,11 +89,9 @@ for (let round = first; round <= protocol.max_rounds && dry < 2; round++) {
   const kept = a > bar && b !== null && b > bar;
   const entry = { round, commit: child, kept, bar, screens: [a, ...(b === null ? [] : [b])], change: subject.split("\n")[2] ?? "" };
   if (kept) {
-    dry = 0;
     bar = Math.min(a, b as number);
     record(entry, `- Round ${round}: kept ${child.slice(0, 7)}. Train ${a}, ${b}, over the bar of ${entry.bar}.`);
   } else {
-    dry++;
     execFileSync("git", ["revert", "--no-edit", child], { cwd: ROOT, stdio: "ignore" });
     git("commit", "--amend", "-q", "-m", `Revert agent change ${child.slice(0, 7)}: train ${a}${b === null ? "" : `, ${b}`} didn't clear ${entry.bar}`);
     push();

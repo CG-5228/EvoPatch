@@ -1,8 +1,9 @@
 {
-  "k": 2,
-  "concurrency": 1,
+  "k": 3,
+  "concurrency": 8,
   "iteration_limit": 120,
   "max_rounds": 5,
+  "rounds_end": "2026-11-07T18:00:00Z",
   "max_changed_lines": 40,
   "max_skill_bytes": 12000,
   "max_agent_bytes": 30000,

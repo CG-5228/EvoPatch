@@ -65,7 +65,7 @@ function fromFixedFile(testId: string, touched: string[]): boolean {
   });
 }
 
-function curate(task: Task, profile: Profile) {
+async function curate(task: Task, profile: Profile) {
   const upstream = clone(task.repo);
   const dir = join(FIXTURES, task.id);
   rmSync(dir, { recursive: true, force: true });
@@ -80,11 +80,11 @@ function curate(task: Task, profile: Profile) {
   const reference = git(upstream, "diff", task.base_sha, task.fix_sha, "--", ...profile.source_paths);
   writeFileSync(join(dir, "reference.patch"), reference);
 
-  const before = runInImage(dir, profile, null);
+  const before = await runInImage(dir, profile, null);
   const fixed: RunnerResult[] = [];
-  for (let i = 0; i < repeats; i++) fixed.push(runInImage(dir, profile, reference));
-  const visibleBase = runInImage(dir, profile, null, false);
-  const visibleFixed = runInImage(dir, profile, reference, false);
+  for (let i = 0; i < repeats; i++) fixed.push(await runInImage(dir, profile, reference));
+  const visibleBase = await runInImage(dir, profile, null, false);
+  const visibleFixed = await runInImage(dir, profile, reference, false);
 
   const stable = new Set(Object.keys(fixed[0].tests).filter((id) => fixed.every((r) => r.tests[id] === fixed[0].tests[id])));
   const quarantined = Object.keys(fixed[0].tests).filter((id) => !stable.has(id));
@@ -134,7 +134,7 @@ const tasks = readdirSync(TASKS).filter((f) => f.endsWith(".json")).sort().map((
 
 for (const task of tasks) {
   const started = Date.now();
-  const row = curate(task, profileFor(task));
+  const row = await curate(task, profileFor(task));
   ledger[task.id] = row;
   writeFileSync(LEDGER, JSON.stringify(ledger, null, 1) + "\n");
   console.log(`${row.problems.length ? "FAIL" : "ok  "} ${task.id.padEnd(28)} f2p ${String(row.f2p).padStart(4)}  p2p ${String(row.p2p).padStart(5)}  visible ${row.visible_base}  stale ${row.stale}  flaky ${row.quarantined.length}  ${Math.round((Date.now() - started) / 1000)}s ${row.problems.join("; ")}`);

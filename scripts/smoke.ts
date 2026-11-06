@@ -32,6 +32,6 @@ const pinned = state ? (JSON.parse(state.toString()) as { downloaded_git_skills:
 if (!pinned) die(`Smoke test failed: the sandbox didn't install skills at ${agent.at.sha.slice(0, 7)} (session ${session.id}).`);
 
 const patch = await downloadFile(tf, session.id, turn.turnId, "out/patch.diff");
-const scored = scoreAttempt(task, patch, commandsOf(exported));
+const scored = await scoreAttempt(task, patch, commandsOf(exported));
 console.log(JSON.stringify(usage));
 console.log(`✓ Smoke test passed: ${agent.at.agent.name} ran ${task.id} (${scored.failure_class}, session ${session.id}). Not counted as a run.`);
