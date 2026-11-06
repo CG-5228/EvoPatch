@@ -1,0 +1,33 @@
+{
+  "cause": "Ground truth was sought outside the workspace: the agent, very often through a delegated review subagent, fetched the project's source, tests, or official fix over the network, or located and read another installed copy of the library elsewhere on the machine (installed packages, global directories, other checkouts, filesystem-wide searches). A single such command invalidates the attempt before scoring, so most of these attempts lost every point even though every test they could see passed.",
+  "rule": "Take every fact about the code from the workspace in front of you: never fetch the project's code, tests, or fix from the network, never read, import, or hunt for another copy of the library installed elsewhere on the machine, and hold every subagent you spawn to the same limit; when something seems to require outside code, re-anchor in the working tree and use the project's own tools there.",
+  "cited": [
+    "round-1-a/boltons-452-backoff-3",
+    "run-01/node-semver-775-coerce-1",
+    "run-03/boltons-348-lru-1",
+    "round-1-a/humanize-329-naturalsize-2"
+  ],
+  "predicted_effect": "Attempts stop losing credit to out-of-tree lookups: no command fetches the project or consults other installed copies of the library in either the main thread or a subagent, so the dominant failure mode (attempts voided despite passing their tests) largely disappears and verified fixes keep counting.",
+  "learned": "I learned that most failed attempts were lost not by fixing wrongly but by reaching outside the workspace — fetching the project's code or consulting another installed copy of the library, usually via a delegated review — which voids an attempt no matter how well its tests pass, so every fact about the code must come from the working tree, in my thread and any subagent's.",
+  "session_id": "01m6sj7z3xxg3s5mn5357arkyb",
+  "parent": "5e3e4331fddc6b2e76e51a9ab0209781e80023bc",
+  "usage": {
+    "turns": 1,
+    "execs": 96,
+    "skill_reads": {
+      "fix-workflow": 5,
+      "patch-review": 4,
+      "sandbox-recipes": 2
+    },
+    "subagent_threads": 4,
+    "subagent_names": [
+      "analyst-network",
+      "analyst-outside-tree",
+      "analyst-unsubmitted",
+      "skeptic"
+    ],
+    "sandboxes": 1,
+    "init_failures": 0,
+    "suspected_timeouts": 0
+  }
+}
