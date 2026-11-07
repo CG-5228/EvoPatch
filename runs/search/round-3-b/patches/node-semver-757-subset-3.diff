@@ -1,0 +1,125 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/ranges/subset.js b/ranges/subset.js
+--- a/ranges/subset.js	1970-01-01 00:00:00
++++ b/ranges/subset.js	2026-11-07 06:22:56
+@@ -3,8 +3,9 @@
+ const Range = require('../classes/range.js')
+ const Comparator = require('../classes/comparator.js')
+ const { ANY } = Comparator
+-const satisfies = require('../functions/satisfies.js')
++const SemVer = require('../classes/semver.js')
+ const compare = require('../functions/compare.js')
++const cmp = require('../functions/cmp.js')
+ 
+ // Complex range `r1 || r2 || ...` is a subset of `R1 || R2 || ...` iff:
+ // - Every simple range `r1, r2, ...` is a null set, OR
+@@ -28,16 +29,16 @@
+ // - If EQ
+ //   - If GT, and EQ does not satisfy GT, return true (null set)
+ //   - If LT, and EQ does not satisfy LT, return true (null set)
+-//   - If EQ satisfies every C, return true
++//   - If EQ is in the simple range C, return true
+ //   - Else return false
+ // - If GT
+ //   - If GT.semver is lower than any > or >= comp in C, return false
+-//   - If GT is >=, and GT.semver does not satisfy every C, return false
++//   - If GT is >=, and GT.semver is not in the simple range C, return false
+ //   - If GT.semver has a prerelease, and not in prerelease mode
+ //     - If no C has a prerelease and the GT.semver tuple, return false
+ // - If LT
+ //   - If LT.semver is greater than any < or <= comp in C, return false
+-//   - If LT is <=, and LT.semver does not satisfy every C, return false
++//   - If LT is <=, and LT.semver is not in the simple range C, return false
+ //   - If LT.semver has a prerelease, and not in prerelease mode
+ //     - If no C has a prerelease and the LT.semver tuple, return false
+ // - Else return true
+@@ -124,18 +125,25 @@
+ 
+   // will iterate one or zero times
+   for (const eq of eqSet) {
+-    if (gt && !satisfies(eq, String(gt), options)) {
++    // eq does not meet the simple range's own gt/lt bounds, so the
++    // simple range is a null set.  check on version ordering only,
++    // because eq is always in the simple range if it passes, with the
++    // prerelease tuple allowance coming from eq itself.
++    if (gt && !cmp(eq, gt.operator, gt.semver, options)) {
+       return null
+     }
+ 
+-    if (lt && !satisfies(eq, String(lt), options)) {
++    if (lt && !cmp(eq, lt.operator, lt.semver, options)) {
+       return null
+     }
+ 
+-    for (const c of dom) {
+-      if (!satisfies(eq, String(c), options)) {
+-        return false
+-      }
++    // eq must be in the simple range C as a whole: a prerelease eq can
++    // be in C even when it does not satisfy every C on its own, eg
++    // 6.3.0-rc.5 is in ^6.3.0-rc.4 (>=6.3.0-rc.4 <7.0.0-0), because
++    // another comparator in C allows its prerelease tuple.
++    const eqVersion = eq instanceof SemVer ? eq : new SemVer(eq, options)
++    if (!safeSetHas(eqVersion, dom, options)) {
++      return false
+     }
+ 
+     return true
+@@ -174,7 +182,7 @@
+         if (higher === c && higher !== gt) {
+           return false
+         }
+-      } else if (gt.operator === '>=' && !satisfies(gt.semver, String(c), options)) {
++      } else if (gt.operator === '>=' && !safeSetHas(gt.semver, dom, options)) {
+         return false
+       }
+     }
+@@ -192,7 +200,7 @@
+         if (lower === c && lower !== lt) {
+           return false
+         }
+-      } else if (lt.operator === '<=' && !satisfies(lt.semver, String(c), options)) {
++      } else if (lt.operator === '<=' && !safeSetHas(lt.semver, dom, options)) {
+         return false
+       }
+     }
+@@ -220,6 +228,40 @@
+   }
+ 
+   return true
++}
++
++// Is `version` in the simple range `set`, using the same rules that
++// Range#test applies: every comparator must pass on version ordering,
++// and a version with a prerelease must match a comparator with a
++// prerelease in the same tuple, unless includePrerelease is set.
++const setHas = (version, set, options = {}) => {
++  if (options.includePrerelease) {
++    return set.every(c => c.test(version))
++  }
++  const isSemVer = version instanceof SemVer
++  if (!isSemVer) {
++    version = new SemVer(version, options)
++  }
++  if (version.prerelease.length) {
++    const ok = set.some(c => c.semver !== ANY && c.semver.prerelease.length &&
++      c.semver.major === version.major &&
++      c.semver.minor === version.minor &&
++      c.semver.patch === version.patch)
++    if (!ok) {
++      return false
++    }
++  }
++  return set.every(c => c.test(version))
++}
++
++// Is `version` in the simple range `set`, with invalid (non-semver)
++// versions treated as not being in it.
++const safeSetHas = (version, set, options = {}) => {
++  try {
++    return setHas(version, set, options)
++  } catch (er) {
++    return false
++  }
+ }
+ 
+ // >=1.2.3 is lower than >1.2.3

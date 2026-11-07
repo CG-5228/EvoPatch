@@ -1,0 +1,31 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/filesize.py b/src/humanize/filesize.py
+--- a/src/humanize/filesize.py	1970-01-01 00:00:00
++++ b/src/humanize/filesize.py	2026-11-07 05:05:20
+@@ -2,6 +2,7 @@
+ 
+ from __future__ import annotations
+ 
++import re
+ from math import log
+ 
+ from humanize.i18n import _gettext as _
+@@ -98,5 +99,18 @@
+ 
+     exp = int(min(log(abs_bytes, base), len(suffix)))
+     space = "" if gnu else " "
+-    ret: str = format % (bytes_ / (base**exp)) + space + _(suffix[exp - 1])
++    scaled = bytes_ / (base**exp)
++    ret: str = format % scaled + space + _(suffix[exp - 1])
++
++    # If rounding at this precision pushes the number up to (or past) the
++    # base, the unit must move up with it: 999.96 kB is 1.0 MB, not
++    # 1000.0 kB. The largest unit has nowhere to go, so it is kept as is.
++    match = re.search(r"[-+]?\d+(?:\.\d*)?(?:[eE][-+]?\d+)?", format % scaled)
++    rounded_up = match is not None and abs(float(match.group())) >= base
++
++    if rounded_up and exp < len(suffix):
++        exp += 1
++        scaled = bytes_ / (base**exp)
++        ret = format % scaled + space + _(suffix[exp - 1])
++
+     return ret

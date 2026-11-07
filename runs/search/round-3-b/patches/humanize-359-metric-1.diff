@@ -1,0 +1,55 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/.ruff_cache/.gitignore b/.ruff_cache/.gitignore
+--- a/.ruff_cache/.gitignore	1970-01-01 00:00:00
++++ b/.ruff_cache/.gitignore	2026-11-07 04:59:46
+@@ -0,0 +1,2 @@
++# Automatically created by ruff.
++*
+Binary files a/.ruff_cache/0.15.9/5236660091129015387 and b/.ruff_cache/0.15.9/5236660091129015387 differ
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/.ruff_cache/CACHEDIR.TAG b/.ruff_cache/CACHEDIR.TAG
+--- a/.ruff_cache/CACHEDIR.TAG	1970-01-01 00:00:00
++++ b/.ruff_cache/CACHEDIR.TAG	2026-11-07 04:59:46
+@@ -0,0 +1 @@
++Signature: 8a477f597d28d172789f06886806bc55
+\ No newline at end of file
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/number.py b/src/humanize/number.py
+--- a/src/humanize/number.py	1970-01-01 00:00:00
++++ b/src/humanize/number.py	2026-11-07 05:20:28
+@@ -548,13 +548,20 @@
+         return scientific(value, precision - 1) + unit
+ 
+     old_bucket = exponent // 3 * 3
++    original_value = value
+     value /= 10**old_bucket
+     digits = int(max(0, precision - exponent % 3 - 1))
+-    if exponent < 30 and round(abs(value), digits) >= 1000:
+-        exponent += 3 - exponent % 3
+-        new_bucket = exponent // 3 * 3
+-        value /= 10 ** (new_bucket - old_bucket)
+-        digits = int(max(0, precision - exponent % 3 - 1))
++    if round(abs(value), digits) >= 1000:
++        if exponent < 30:
++            exponent += 3 - exponent % 3
++            new_bucket = exponent // 3 * 3
++            value /= 10 ** (new_bucket - old_bucket)
++            digits = int(max(0, precision - exponent % 3 - 1))
++        elif precision >= 1:
++            # Rounding carries the value past the largest metric prefix
++            # (there is no prefix after Q), so fall back to scientific
++            # notation, like any other out-of-range value.
++            return scientific(original_value, precision - 1) + unit
+ 
+     if exponent >= 3:
+         ordinal_ = "kMGTPEZYRQ"[exponent // 3 - 1]
+@@ -563,6 +570,12 @@
+     else:
+         ordinal_ = ""
+     value_ = format(value, f".{digits}f")
++    # Rounding can carry the scaled value up over the next power of ten
++    # (e.g. 9996 -> "10.00 k"), which prints one digit more than precision
++    # asks for. Drop decimal places until the digit count fits again.
++    while digits > 0 and len(value_.replace(".", "").replace("-", "")) > precision:
++        digits -= 1
++        value_ = format(value, f".{digits}f")
+     if not (unit or ordinal_) or unit in ("°", "′", "″"):
+         space = ""
+     else:

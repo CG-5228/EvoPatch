@@ -1,0 +1,46 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/setutils.py b/boltons/setutils.py
+--- a/boltons/setutils.py	1970-01-01 00:00:00
++++ b/boltons/setutils.py	2026-11-07 04:56:14
+@@ -167,6 +167,18 @@
+             real_index += d_stop - d_start
+         return real_index
+ 
++    def _normalize_index(self, index):
++        """Turn a list-style index (where negatives count from the end) into
++        a non-negative apparent index, raising IndexError like a list when
++        the position is out of range. The result is safe to hand to
++        :meth:`_get_real_index`, which must not normalize a second time.
++        """
++        if index < 0:
++            index += len(self)
++        if index < 0 or index >= len(self):
++            raise IndexError('IndexedSet index out of range')
++        return index
++
+     def _get_apparent_index(self, index):
+         if index < 0:
+             index += len(self)
+@@ -416,8 +428,7 @@
+         else:
+             iter_slice = self.iter_slice(start, stop, step)
+             return self.from_iterable(iter_slice)
+-        if index < 0:
+-            index += len(self)
++        index = self._normalize_index(index)
+         real_index = self._get_real_index(index)
+         try:
+             ret = self.item_list[real_index]
+@@ -429,7 +440,12 @@
+         "pop(index) -> remove the item at a given index (-1 by default)"
+         item_index_map = self.item_index_map
+         len_self = len(item_index_map)
+-        if index is None or index == -1 or index == len_self - 1:
++        if index is None:
++            index = -1
++        # normalize/validate up front: out-of-range positions must raise
++        # IndexError like list.pop, rather than wrapping into item_list
++        index = self._normalize_index(operator.index(index))
++        if index == len_self - 1 and self.item_list[-1] is not _MISSING:
+             ret = self.item_list.pop()
+             del item_index_map[ret]
+         else:

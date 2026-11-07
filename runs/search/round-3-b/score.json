@@ -1,0 +1,28 @@
+{
+  "run": "round-3-b",
+  "kind": "search",
+  "session_id": "01m6t5c86j7khbzf0gtqgvqqbr",
+  "agent_commit": "9699b7bf2a6e8b6a01c0b6ab97d73f1eb7e69f39",
+  "agent_tree": "e9e3c16839697b32a7767aefc660b5bc6d79c2c1",
+  "k": 3,
+  "score": 88.89,
+  "tasks_passed": 9,
+  "tasks_total": 12,
+  "holdout_score": null,
+  "train_score": 88.89,
+  "tests_only_score": 94.44,
+  "failure_classes": {
+    "resolved": 32,
+    "audit": 2,
+    "no_patch": 2
+  },
+  "tokens": 56795945,
+  "toolCalls": 2669,
+  "costUsd": 2.1463,
+  "responses": {
+    "model_calls": 1854,
+    "noise_responses": 0,
+    "cut_off_responses": 4
+  },
+  "duration_s": 7234
+}

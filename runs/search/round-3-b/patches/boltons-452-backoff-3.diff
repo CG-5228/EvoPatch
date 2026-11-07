@@ -1,0 +1,30 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/iterutils.py b/boltons/iterutils.py
+--- a/boltons/iterutils.py	1970-01-01 00:00:00
++++ b/boltons/iterutils.py	2026-11-07 06:05:24
+@@ -647,9 +647,23 @@
+     if stop < start:
+         raise ValueError('expected stop >= start, not %r' % stop)
+     if count is None:
+-        denom = start if start else 1
+-        count = 1 + math.ceil(math.log(stop/denom, factor))
+-        count = count if start else count + 1
++        if factor == 1.0:
++            # a factor of 1.0 does not grow the sequence, so the number
++            # of steps between start and stop can only be worked out in
++            # the cases where the sequence still reaches stop on its own
++            if stop == start:
++                count = 1
++            elif start == 0.0 and stop <= 1.0:
++                count = 2
++            else:
++                raise ValueError(
++                    'cannot infer count with factor=1.0: a flat sequence'
++                    ' never reaches a larger stop (start=%r, stop=%r);'
++                    ' pass count explicitly' % (start, stop))
++        else:
++            denom = start if start else 1
++            count = 1 + math.ceil(math.log(stop/denom, factor))
++            count = count if start else count + 1
+     if count != 'repeat' and count < 0:
+         raise ValueError('count must be positive or "repeat", not %r' % count)
+     if jitter:

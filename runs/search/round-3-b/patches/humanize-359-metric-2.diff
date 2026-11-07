@@ -1,0 +1,32 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/number.py b/src/humanize/number.py
+--- a/src/humanize/number.py	1970-01-01 00:00:00
++++ b/src/humanize/number.py	2026-11-07 06:03:13
+@@ -547,13 +547,27 @@
+     if exponent >= 33 or exponent < -30:
+         return scientific(value, precision - 1) + unit
+ 
++    original = value
+     old_bucket = exponent // 3 * 3
+     value /= 10**old_bucket
+     digits = int(max(0, precision - exponent % 3 - 1))
+-    if exponent < 30 and round(abs(value), digits) >= 1000:
++    if round(abs(value), digits) >= 1000:
++        if exponent >= 30:
++            # Rounding pushed the value up past the largest prefix ("Q"),
++            # which cannot be represented; fall back to scientific notation
++            # like other out-of-range values.
++            return scientific(original, max(0, precision - 1)) + unit
++        # Rounding pushed the value up into the next prefix bucket.
+         exponent += 3 - exponent % 3
+         new_bucket = exponent // 3 * 3
+         value /= 10 ** (new_bucket - old_bucket)
++        digits = int(max(0, precision - exponent % 3 - 1))
++    elif exponent % 3 < 2 and round(abs(value), digits) >= 10 ** (exponent % 3 + 1):
++        # Rounding pushed the value up past the next power of ten while
++        # staying in the same prefix bucket, so the value would otherwise be
++        # printed with one digit more than `precision`. Recompute `digits`
++        # against the rounded value's exponent, e.g. 9996 -> "10.0 k".
++        exponent += 1
+         digits = int(max(0, precision - exponent % 3 - 1))
+ 
+     if exponent >= 3:

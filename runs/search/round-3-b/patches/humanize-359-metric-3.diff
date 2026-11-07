@@ -1,0 +1,29 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/number.py b/src/humanize/number.py
+--- a/src/humanize/number.py	1970-01-01 00:00:00
++++ b/src/humanize/number.py	2026-11-07 06:20:58
+@@ -550,11 +550,24 @@
+     old_bucket = exponent // 3 * 3
+     value /= 10**old_bucket
+     digits = int(max(0, precision - exponent % 3 - 1))
+-    if exponent < 30 and round(abs(value), digits) >= 1000:
++    rounded = round(abs(value), digits)
++    if exponent < 30 and rounded >= 1000:
+         exponent += 3 - exponent % 3
+         new_bucket = exponent // 3 * 3
+         value /= 10 ** (new_bucket - old_bucket)
+         digits = int(max(0, precision - exponent % 3 - 1))
++    elif rounded >= 10 ** (exponent % 3 + 1):
++        # Rounding carried the value over a power of ten (e.g. 9.996 ->
++        # 10.00). The value now has one more integer digit, so it needs
++        # one digit fewer after the decimal point to keep `precision`.
++        if exponent % 3 == 2:
++            # Rounding reached 1000 but no larger prefix is available
++            # (exponent >= 30): keep the bucket and drop the fractional
++            # digits the carry made non-significant.
++            digits = int(max(0, precision - exponent % 3 - 2))
++        else:
++            exponent += 1
++            digits = int(max(0, precision - exponent % 3 - 1))
+ 
+     if exponent >= 3:
+         ordinal_ = "kMGTPEZYRQ"[exponent // 3 - 1]
