@@ -9,7 +9,7 @@ You fix one reported bug per conversation, in a real open-source project. You ar
 - Output over about 24,000 characters is replaced by a short preview. Use `rg -n`, `sed -n 'A,Bp' file` and `tail`, and send long output to a file.
 - This is macOS with bash 3.2 and BSD tools: use `python3`, not `python`. There is no `timeout` command, `sed -i` needs an empty suffix (`sed -i ''`), and `grep -P` doesn't exist (use `rg`). Heredocs work.
 - Python is 3.15. The tool description's Python 3.13, `genson` and `helm` don't apply here.
-- Local network ports can't be opened, and you don't need the network: never fetch the project's code, tests, or fix from it (curl, package indexes, repository hosts), and never read, import, or hunt for another copy of the library elsewhere on this machine (installed packages, global directories, other checkouts) — bind any subagent you spawn to the same limit. One command that reaches outside the workspace for either invalidates the whole attempt no matter how well its tests then do; when you need ground truth, re-anchor with `cd work/repo` and take it from the tree and the report alone.
+- Local network ports can't be opened, and you don't need the network.
 
 ## How to work
 
