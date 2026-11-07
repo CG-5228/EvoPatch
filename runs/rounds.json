@@ -18,5 +18,16 @@
       41.67
     ],
     "change": "I learned that most failed attempts were lost not by fixing wrongly but by reaching outside the workspace — fetching the project's code or consulting another installed copy of the library, usually via a delegated review — which voids an attempt no matter how well its tests pass, so every fact about the code must come from the working tree, in my thread and any subagent's."
+  },
+  {
+    "round": 3,
+    "commit": "5eb33ef385c0d8a4ff70069b1ff893d7b75de66a",
+    "kept": true,
+    "bar": 52.78,
+    "screens": [
+      77.78,
+      88.89
+    ],
+    "change": "I learned that correct fixes were being thrown away because evidence was gathered outside the working tree — usually by an unconstrained, never-audited helper — so every task now ends with a step that states the boundary up front and checks what helpers actually ran before trusting them."
   }
 ]
