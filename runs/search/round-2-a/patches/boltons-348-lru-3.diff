@@ -1,0 +1,49 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/cacheutils.py b/boltons/cacheutils.py
+--- a/boltons/cacheutils.py	1970-01-01 00:00:00
++++ b/boltons/cacheutils.py	2026-11-07 01:33:52
+@@ -238,6 +238,7 @@
+                 super(LRI, self).__setitem__(key, value)
+             else:
+                 link[VALUE] = value
++                super(LRI, self).__setitem__(key, value)
+ 
+     def __getitem__(self, key):
+         with self._lock:
+@@ -290,7 +291,8 @@
+             self._init_ll()
+ 
+     def copy(self):
+-        return self.__class__(max_size=self.max_size, values=self)
++        return self.__class__(max_size=self.max_size, values=self,
++                              on_miss=self.on_miss)
+ 
+     def setdefault(self, key, default=None):
+         with self._lock:
+@@ -317,14 +319,24 @@
+                 setitem(k, F[k])
+             return
+ 
++    def __ior__(self, other):
++        # dict.__ior__ (the ``|=`` operator) would write the underlying
++        # dict storage directly, bypassing __setitem__ and leaving the
++        # linked list lookup out of sync (i.e., exactly the staleness
++        # __setitem__ is careful to avoid).
++        self.update(other)
++        return self
++
+     def __eq__(self, other):
+         with self._lock:
+             if self is other:
+                 return True
+-            if len(other) != len(self):
+-                return False
+             if not isinstance(other, LRI):
+-                return other == self
++                # NB: comparing as a dict rather than deferring to
++                # ``other == self``, which bounces back into this method
++                # for dict subtypes (and objects without a length) and
++                # recurses/raises instead of returning a result.
++                return dict.__eq__(self, other)
+             return super(LRI, self).__eq__(other)
+ 
+     def __ne__(self, other):

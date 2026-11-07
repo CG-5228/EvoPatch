@@ -1,0 +1,23 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/cacheutils.py b/boltons/cacheutils.py
+--- a/boltons/cacheutils.py	1970-01-01 00:00:00
++++ b/boltons/cacheutils.py	2026-11-07 00:12:32
+@@ -238,6 +238,7 @@
+                 super(LRI, self).__setitem__(key, value)
+             else:
+                 link[VALUE] = value
++                super(LRI, self).__setitem__(key, value)
+ 
+     def __getitem__(self, key):
+         with self._lock:
+@@ -324,7 +325,10 @@
+             if len(other) != len(self):
+                 return False
+             if not isinstance(other, LRI):
+-                return other == self
++                # NB: comparing the other way around (other == self)
++                # recurses infinitely when *other* is a plain dict,
++                # as dict's comparison defers back to this method.
++                return dict.__eq__(self, other)
+             return super(LRI, self).__eq__(other)
+ 
+     def __ne__(self, other):

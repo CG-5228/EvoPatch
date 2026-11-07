@@ -1,0 +1,32 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/filesize.py b/src/humanize/filesize.py
+--- a/src/humanize/filesize.py	1970-01-01 00:00:00
++++ b/src/humanize/filesize.py	2026-11-07 01:45:32
+@@ -2,6 +2,7 @@
+ 
+ from __future__ import annotations
+ 
++import re
+ from math import log
+ 
+ from humanize.i18n import _gettext as _
+@@ -98,5 +99,20 @@
+ 
+     exp = int(min(log(abs_bytes, base), len(suffix)))
+     space = "" if gnu else " "
++
++    # Formatting can round the value up to the base (e.g. 999960 formats as
++    # "1000.0 kB"). When that happens, scale up to the next unit so the unit
++    # matches the rounded number. The largest unit has no bigger unit to move
++    # to, so it keeps showing its value even if it rounds up to the base.
++    while exp < len(suffix):
++        formatted = format % (bytes_ / (base**exp))
++        # Pick the leading number out of the formatted text so that formats
++        # with surrounding literals (e.g. "%.1f%%") are handled too.
++        match = re.match(r"\s*[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?", formatted)
++        rounds_up = match is not None and abs(float(match.group(0))) >= base
++        if not rounds_up:
++            break
++        exp += 1
++
+     ret: str = format % (bytes_ / (base**exp)) + space + _(suffix[exp - 1])
+     return ret

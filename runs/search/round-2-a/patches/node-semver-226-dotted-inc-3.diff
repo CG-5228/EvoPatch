@@ -1,0 +1,27 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/classes/semver.js b/classes/semver.js
+--- a/classes/semver.js	1970-01-01 00:00:00
++++ b/classes/semver.js	2026-11-07 01:29:04
+@@ -305,12 +305,19 @@
+         if (identifier) {
+           // 1.2.0-beta.1 bumps to 1.2.0-beta.2,
+           // 1.2.0-beta.fooblz or 1.2.0-beta bumps to 1.2.0-beta.0
+-          let prerelease = [identifier, base]
++          // an identifier may itself be dot-separated, e.g. 'rc.next',
++          // in which case it must match the whole prefix of the current
++          // prerelease, and the counter right after that prefix is bumped.
++          const identifierParts = identifier.split('.')
++          let prerelease = [...identifierParts, base]
+           if (identifierBase === false) {
+-            prerelease = [identifier]
++            prerelease = identifierParts
+           }
+-          if (compareIdentifiers(this.prerelease[0], identifier) === 0) {
+-            if (isNaN(this.prerelease[1])) {
++          const prefix = this.prerelease
++            .slice(0, identifierParts.length)
++            .join('.')
++          if (compareIdentifiers(prefix, identifier) === 0) {
++            if (isNaN(this.prerelease[identifierParts.length])) {
+               this.prerelease = prerelease
+             }
+           } else {
