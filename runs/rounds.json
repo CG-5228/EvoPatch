@@ -8,5 +8,15 @@
       47.22
     ],
     "change": "A working fix is worth nothing until it is captured: bound every optional verification round, and after a fresh green run against the current code go straight through the required review to the terminal submit step instead of opening one more check, while treating any unresolved failing signal as blocking."
+  },
+  {
+    "round": 2,
+    "commit": "a235ec083415ac9892987da4c6a513b7ed69b17e",
+    "kept": false,
+    "bar": 52.78,
+    "screens": [
+      41.67
+    ],
+    "change": "I learned that most failed attempts were lost not by fixing wrongly but by reaching outside the workspace — fetching the project's code or consulting another installed copy of the library, usually via a delegated review — which voids an attempt no matter how well its tests pass, so every fact about the code must come from the working tree, in my thread and any subagent's."
   }
 ]
