@@ -10,4 +10,9 @@ description: The steps for fixing a reported bug. Read this first on every task.
 3. **Fix.** Change the source, not the tests.
 4. **Test.** Run your repro again, then `work/tools/test`.
 5. **Review.** Follow your `patch-review` skill.
-6. **Finish.** Run `work/tools/finish "what you changed and why"`.
+6. **Audit.** All evidence must come from the working tree: never fetch
+   code from the network or read another installed copy of the library,
+   in any thread. When you delegate, say so in the brief, and before you
+   trust a helper's verdict inspect the commands it actually ran and
+   reject any that reached outside the working tree.
+7. **Finish.** Run `work/tools/finish "what you changed and why"`.
