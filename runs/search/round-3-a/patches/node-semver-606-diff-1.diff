@@ -1,0 +1,33 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/functions/diff.js b/functions/diff.js
+--- a/functions/diff.js	1970-01-01 00:00:00
++++ b/functions/diff.js	2026-11-07 02:35:05
+@@ -27,20 +27,18 @@
+       return 'major'
+     }
+ 
+-    // Otherwise it can be determined by checking the high version
+-
+-    if (highVersion.patch) {
+-      // anything higher than a patch bump would result in the wrong version
++    // If the main part has no difference
++    if (lowVersion.compareMain(highVersion) === 0) {
++      if (lowVersion.minor && !lowVersion.patch) {
++        return 'minor'
++      }
+       return 'patch'
+     }
+ 
+-    if (highVersion.minor) {
+-      // anything higher than a minor bump would result in the wrong version
+-      return 'minor'
+-    }
+-
+-    // bumping major/minor/patch all have same result
+-    return 'major'
++    // Otherwise the two versions differ in their major/minor/patch numbers,
++    // so fall through and let the comparison below report that difference.
++    // e.g. 3.4.6-2 -> 3.5.2 differs in the minor, so it is a minor bump, even
++    // though the higher version has a non-zero patch.
+   }
+ 
+   // add the `pre` prefix if we are going to a prerelease version

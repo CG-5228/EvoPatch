@@ -1,0 +1,38 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-07 02:21:40
+@@ -225,7 +225,14 @@
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+         tuples and other sequences and iterables work.
+         """
+-        if not v:
++        try:
++            len_v = len(v)
++        except TypeError:
++            # one-shot iterables (generators and other iterators) are
++            # consumed by the loop below, so materialize them first
++            v = list(v)
++            len_v = len(v)
++        if not len_v:
+             return
+         self_insert = self._insert
+         values = super().setdefault(k, [])
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-07 02:22:12
+@@ -1123,7 +1123,14 @@
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+         tuples and other sequences and iterables work.
+         """
+-        if not v:
++        try:
++            len_v = len(v)
++        except TypeError:
++            # one-shot iterables (generators and other iterators) are
++            # consumed by the loop below, so materialize them first
++            v = list(v)
++            len_v = len(v)
++        if not len_v:
+             return
+         self_insert = self._insert
+         values = super().setdefault(k, [])

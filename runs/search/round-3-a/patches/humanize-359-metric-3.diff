@@ -1,0 +1,37 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/number.py b/src/humanize/number.py
+--- a/src/humanize/number.py	1970-01-01 00:00:00
++++ b/src/humanize/number.py	2026-11-07 03:56:21
+@@ -545,16 +545,31 @@
+     exponent = math.floor(math.log10(abs(value))) if value != 0 else 0
+ 
+     if exponent >= 33 or exponent < -30:
+-        return scientific(value, precision - 1) + unit
++        return scientific(value, max(0, precision - 1)) + unit
+ 
+     old_bucket = exponent // 3 * 3
++    original = value
+     value /= 10**old_bucket
+     digits = int(max(0, precision - exponent % 3 - 1))
+-    if exponent < 30 and round(abs(value), digits) >= 1000:
++    if round(abs(value), digits) >= 1000:
++        if exponent >= 30:
++            # Rounding carries past the biggest prefix, so there is no
++            # prefix left to use: fall back to scientific notation, as for
++            # values that are out of range without rounding.
++            return scientific(original, max(0, precision - 1)) + unit
++        # Rounding carried up into the next bucket (999.8 -> 1.00 k).
+         exponent += 3 - exponent % 3
+         new_bucket = exponent // 3 * 3
+         value /= 10 ** (new_bucket - old_bucket)
+         digits = int(max(0, precision - exponent % 3 - 1))
++
++    # Rounding up can also cross a power of ten inside the current bucket
++    # (9.996 -> 10.0, 99.96 -> 100.0).  Recount the integer digits of the
++    # rounded value so the output still holds `precision` significant
++    # digits instead of one more (10.00 -> 10.0).
++    rounded = round(abs(value), digits)
++    if rounded:
++        digits = int(max(0, precision - len(str(int(rounded)))))
+ 
+     if exponent >= 3:
+         ordinal_ = "kMGTPEZYRQ"[exponent // 3 - 1]

@@ -1,0 +1,17 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/number.py b/src/humanize/number.py
+--- a/src/humanize/number.py	1970-01-01 00:00:00
++++ b/src/humanize/number.py	2026-11-07 02:24:02
+@@ -556,6 +556,13 @@
+         value /= 10 ** (new_bucket - old_bucket)
+         digits = int(max(0, precision - exponent % 3 - 1))
+ 
++    # Formatting rounds, so rounding can also carry past the next power of ten
++    # (e.g. 9.996 with precision 3 -> "10.00"). Such a carry adds a digit that
++    # precision did not ask for, so the number of decimals is reduced to keep
++    # the output at ``precision`` significant digits.
++    while digits > 0 and len(format(abs(value), f".{digits}f").replace(".", "").lstrip("0")) > precision:
++        digits -= 1
++
+     if exponent >= 3:
+         ordinal_ = "kMGTPEZYRQ"[exponent // 3 - 1]
+     elif exponent < 0:
