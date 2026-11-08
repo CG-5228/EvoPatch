@@ -25,3 +25,4 @@ started_utc,kind,label,session_id,agent_commit,status
 2026-11-08T15:42:37.246Z,counted,run-04,01m6xx6tma3v1dxw9yd249xay1,16311afe28599fbca83a7c62c07113766cacdf36,started
 2026-11-08T18:41:32Z,counted,run-04,01m6xx6tma3v1dxw9yd249xay1,16311afe28599fbca83a7c62c07113766cacdf36,finished: 84.13
 2026-11-08T18:41:45.260Z,counted,run-05,01m6y7ets1avfm8r9g76dkma98,c179033e598ce4a6abd2aef1943dba017f47d2f2,started
+2026-11-08T20:10:26.880Z,counted,run-05,01m6y7ets1avfm8r9g76dkma98,c179033e598ce4a6abd2aef1943dba017f47d2f2,aborted: the provider refused the request: [Model Error] Request failed (429): Budget exceeded for model tfy-managed/mimo-v2.6-flash; exceeded budgets: 'evopatch-budget' (aggregate  enforce; resets 2026-12-01T
