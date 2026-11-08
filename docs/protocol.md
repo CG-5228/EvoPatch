@@ -105,3 +105,17 @@ This one changes what the agent reads, so it matters more than the notes above. 
 **What didn't change:** `agent/`, `evals/`, the tasks, the scorer, the audit, the holdout, the guards, the screens and the keep rule. The audit's rule names and matched commands still never reach the agent, and holdout attempts still never enter `improve`. The baselines stand.
 
 **How to read it.** This is a change to the improve protocol, made after seeing baseline results. Any edit from round 2 on learned from evidence the frozen protocol withheld. The gates are unchanged, so such an edit still has to beat the same bar, including on repos it never learned from.
+
+### 7 and 8 Nov: the chain stopped for 25 hours
+
+This note changes nothing a run does.
+
+On Saturday at 09:09 UTC the laptop's lid was closed and macOS put it to sleep, which `caffeinate` can't prevent. Round 4's first screen lost its connection, stopped after 4 failures in a row at 09:21 with 34 of 36 attempts saved, and couldn't push the commit that records the stop: `Could not resolve host: github.com`. Each retry then refused to start, because skills are fetched from GitHub and that commit wasn't there. After 6 retries the chain stopped for a person at 11:39. Nobody was watching, so nothing ran until Sunday 12:44 UTC.
+
+Two things followed from the stop:
+
+- `rounds_end` (Saturday 18:00 UTC) passed during it, so round 5 never started. There were 4 rounds, not 5.
+- Round 4's edit was already made, so under the frozen rule its round still finishes. Its first screen resumed with the 34 saved attempts and ran the 2 that hadn't been scored, at the same agent.
+
+The restart used a wrapper with the same retry rule as `scripts/run-protocol.sh`, plus a push before each retry and more retries, then the final counted runs. It's `scripts/final-chain.sh`.
+
