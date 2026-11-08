@@ -119,3 +119,21 @@ Two things followed from the stop:
 
 The restart used a wrapper with the same retry rule as `scripts/run-protocol.sh`, plus a push before each retry and more retries, then the final counted runs. It's `scripts/final-chain.sh`.
 
+### 8 Nov: run 5 stopped when the model credits ran out
+
+This note changes nothing a run does.
+
+At 20:10 UTC, with 36 of run 5's 63 attempts saved, the gateway refused every model call:
+
+```
+Budget exceeded for model tfy-managed/mimo-v2.6-flash; exceeded budgets: 'evopatch-budget' (aggregate, enforce; resets 2026-12-01T00:00:00.000Z), 'base-rule' (aggregate, soft_enforce; resets 2026-12-01T00:00:00.000Z), 'EvoPatch-budget' (aggregate, enforce; resets 9999-12-31T23:59:59.000Z)
+```
+
+The harness reads a budget error as an account error, not an infrastructure failure, so the run stopped and waited for a person (`runs/registry.csv`: "aborted"). TrueFoundry loads the model credits for this event, so only they can add more.
+
+Until run 5 finishes, only one run has finished on the final agent. Check 5 (2 or more runs after the change, all above the baseline's best) can't pass, so the verdict is "gain not shown", the rule set before run 1. If the credits come back before the close, run 5 resumes from its saved attempts with the same agent, tasks, scorer and run harness, and the verdict is run again on runs 4 and 5. Run 5's saved attempts don't count until then. They're copied to `runs/run-05-incomplete/` so they can be checked.
+
+The drift check (run 1's agent run again late, to catch the model changing) and the live demo on an outside bug also need credits, so neither ran.
+
+The scripts merged into `main` after this stop (`report.ts`, `verify-submission.ts`, `fix.ts`, `final-chain.sh`) don't take part in a run. `run-evals.ts`, `lib.ts`, `evals/` and `agent/` didn't change.
+

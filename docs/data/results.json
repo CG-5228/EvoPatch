@@ -1,6 +1,6 @@
 {
   "repo": "CG-5228/EvoPatch",
-  "generated_from": "b014ea995d03ceebd3e4108226430589aab892c6",
+  "generated_from": "8b131651e4d7ca12617009ecb67d0c9222cc8db7",
   "baseline_runs": [
     1,
     2,
@@ -2991,5 +2991,36 @@
     }
   ],
   "controls": [],
-  "verdict": null
+  "verdict": {
+    "checks": [
+      {
+        "name": "1 Baseline spread",
+        "result": "PASS",
+        "detail": "3 runs: min 33.33, max 47.62, mean 40.21, median 39.68"
+      },
+      {
+        "name": "2 Scorer and tasks unchanged",
+        "result": "PASS",
+        "detail": "no changes to evals/ since run-01"
+      },
+      {
+        "name": "3 Held-out gain",
+        "result": "PASS",
+        "detail": "post-edit held-out 92.59 all beat the baseline max 44.44"
+      },
+      {
+        "name": "4 The diff",
+        "result": "MANUAL",
+        "detail": "12 line(s) changed in agent/skills/fix-workflow/SKILL.md, agent/skills/patch-review/SKILL.md, no task ids, file names or buggy lines quoted. Read it yourself (small? a general rule?): git diff 1888a73 16311af -- agent/"
+      },
+      {
+        "name": "5 Beats the spread, repeats",
+        "result": "FAIL",
+        "detail": "1 post-edit run; run at least 2 so one lucky run can't fool you"
+      }
+    ],
+    "line": "Verdict: gain NOT shown (Beats the spread, repeats)",
+    "baseline": "run-01, run-02, run-03",
+    "post": "run-04"
+  }
 }
