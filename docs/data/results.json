@@ -1,6 +1,6 @@
 {
   "repo": "CG-5228/EvoPatch",
-  "generated_from": "de379e2bcf8301bd89ef921f0877a09cd7cb919b",
+  "generated_from": "b014ea995d03ceebd3e4108226430589aab892c6",
   "baseline_runs": [
     1,
     2,
@@ -2787,7 +2787,7 @@
         "attempts": 63,
         "reviewed": 61,
         "briefs": 84,
-        "briefs_with_network_rule": 7,
+        "briefs_with_network_rule": 84,
         "reviewer_hit": 3,
         "root_hit": 1,
         "voided": 3,

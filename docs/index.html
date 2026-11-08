@@ -524,7 +524,12 @@ function reviewerBlock(data) {
   if (!runs.length) { $("reviewer-line").textContent = "No counted runs yet."; table.closest(".card").style.display = "none"; return; }
   const sum = (k) => total(runs.map((r) => r.reviewer[k]));
   const involved = sum("voided_reviewer_only") + sum("voided_both");
-  $("reviewer-line").textContent = `After fixing a bug the agent starts a reviewer subagent to check the patch. ${involved} of ${sum("voided")} voided attempts involve that reviewer. A subagent sees only the brief the agent writes for it, and ${sum("briefs_with_network_rule")} of ${sum("briefs")} briefs carried a rule against using the network. ${sum("patches_passing")} of ${sum("patches_submitted")} submitted patches passed the maintainers' tests.`;
+  const named = data.baseline_runs || [];
+  const briefs = (rs) => `${total(rs.map((r) => r.reviewer.briefs_with_network_rule))} of ${total(rs.map((r) => r.reviewer.briefs))}`;
+  const before = runs.filter((r) => named.includes(r.run));
+  const after = runs.filter((r) => !named.includes(r.run));
+  const briefLine = `A subagent sees only the brief the agent writes for it. Briefs that told the reviewer to stay in the working tree: ${briefs(before)} in the baseline runs${after.length ? `, ${briefs(after)} after the agent's changes` : ""}.`;
+  $("reviewer-line").textContent = `After fixing a bug the agent starts a reviewer subagent to check the patch. ${involved} of ${sum("voided")} voided attempts involve that reviewer. ${briefLine} ${sum("patches_passing")} of ${sum("patches_submitted")} submitted patches passed the maintainers' tests.`;
   headRow(table, ["Run", "Reviewed attempts", "Reviewer tripped the audit", "Main agent tripped it", "Voided", "Reviewer involved", "Briefs with the rule", "Patches passing"]);
   const body = table.createTBody();
   for (const r of runs) {
