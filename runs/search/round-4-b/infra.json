@@ -1,0 +1,14 @@
+[
+  {
+    "attempt": "boltons-348-lru-1",
+    "error": "rejected: createTurn rejected after 4.1s: fetch failed <- ECONNRESET read ECONNRESET"
+  },
+  {
+    "attempt": "boltons-458-addlist-2",
+    "error": "error: [Model Error] Request failed (200): Failed to process successful response: Failed to process successful response: terminated: read ECONNRESET"
+  },
+  {
+    "attempt": "node-semver-775-coerce-1",
+    "error": "error: [Model Error] Request failed (200): Failed to process successful response: Failed to process successful response: terminated: read ECONNRESET"
+  }
+]

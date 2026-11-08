@@ -1,0 +1,31 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/iterutils.py b/boltons/iterutils.py
+--- a/boltons/iterutils.py	1970-01-01 00:00:00
++++ b/boltons/iterutils.py	2026-11-07 07:57:24
+@@ -647,9 +647,24 @@
+     if stop < start:
+         raise ValueError('expected stop >= start, not %r' % stop)
+     if count is None:
+-        denom = start if start else 1
+-        count = 1 + math.ceil(math.log(stop/denom, factor))
+-        count = count if start else count + 1
++        if factor == 1.0:
++            # A factor of 1.0 yields a flat sequence that never climbs up to
++            # a larger stop, so the number of steps cannot be computed the
++            # usual way (math.log with base 1.0 raises ZeroDivisionError).
++            # Only infer a count when the flat sequence already covers stop.
++            if start == stop:
++                count = 1
++            elif not start and stop <= 1.0:
++                count = 2  # yields 0.0, then 1.0 (clamped down to stop)
++            else:
++                raise ValueError(
++                    'cannot infer count with factor=1.0 (count was not given): '
++                    'a flat backoff sequence starting at %r never reaches stop '
++                    '%r; pass count explicitly, e.g., count=4' % (start, stop))
++        else:
++            denom = start if start else 1
++            count = 1 + math.ceil(math.log(stop/denom, factor))
++            count = count if start else count + 1
+     if count != 'repeat' and count < 0:
+         raise ValueError('count must be positive or "repeat", not %r' % count)
+     if jitter:

@@ -1,0 +1,41 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/iterutils.py b/boltons/iterutils.py
+--- a/boltons/iterutils.py	1970-01-01 00:00:00
++++ b/boltons/iterutils.py	2026-11-08 15:01:20
+@@ -626,7 +626,9 @@
+             *stop*. Pass the string, `'repeat'`, to continue iteration
+             indefinitely.
+         factor (float): Rate of exponential increase. Defaults to `2.0`,
+-            e.g., `[1, 2, 4, 8, 16]`.
++            e.g., `[1, 2, 4, 8, 16]`. A factor of `1.0` yields a flat
++            sequence and therefore requires an explicit *count* when
++            *stop* is greater than *start*.
+         jitter (float): A factor between `-1.0` and `1.0`, used to
+             uniformly randomize and thus spread out timeouts in a distributed
+             system, avoiding rhythm effects. Positive values use the base
+@@ -647,9 +649,23 @@
+     if stop < start:
+         raise ValueError('expected stop >= start, not %r' % stop)
+     if count is None:
+-        denom = start if start else 1
+-        count = 1 + math.ceil(math.log(stop/denom, factor))
+-        count = count if start else count + 1
++        if factor == 1.0:
++            # A factor of 1.0 yields a flat sequence, which can never
++            # climb from *start* up to a larger *stop*, so count cannot
++            # be worked out here (computing it via log() would raise a
++            # ZeroDivisionError, log(1.0) being zero). When the sequence
++            # already sits at stop, the count is trivial instead.
++            reach = start if start else 1.0  # see zero-start handling below
++            if reach < stop:
++                raise ValueError('expected factor > 1.0 when count is not'
++                                 ' specified; factor of %r never reaches'
++                                 ' stop of %r, so count cannot be inferred;'
++                                 ' pass count explicitly' % (factor, stop))
++            count = 1 if start else 2
++        else:
++            denom = start if start else 1
++            count = 1 + math.ceil(math.log(stop/denom, factor))
++            count = count if start else count + 1
+     if count != 'repeat' and count < 0:
+         raise ValueError('count must be positive or "repeat", not %r' % count)
+     if jitter:

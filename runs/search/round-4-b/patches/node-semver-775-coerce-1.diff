@@ -1,0 +1,39 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/functions/coerce.js b/functions/coerce.js
+--- a/functions/coerce.js	1970-01-01 00:00:00
++++ b/functions/coerce.js	2026-11-08 14:48:57
+@@ -35,8 +35,12 @@
+     while ((next = coerceRtlRegex.exec(version)) &&
+         (!match || match.index + match[0].length !== version.length)
+     ) {
++      // Only a match ending further right can be more right-ward than the
++      // one we hold.  Accepting any terminus change would let a later,
++      // shorter match (e.g. the `7f` in `7f3c`) replace a longer one that
++      // ends further right, truncating the prerelease identifier.
+       if (!match ||
+-            next.index + next[0].length !== match.index + match[0].length) {
++            next.index + next[0].length > match.index + match[0].length) {
+         match = next
+       }
+       coerceRtlRegex.lastIndex = next.index + next[1].length + next[2].length
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/internal/re.js b/internal/re.js
+--- a/internal/re.js	1970-01-01 00:00:00
++++ b/internal/re.js	2026-11-08 14:48:57
+@@ -75,10 +75,15 @@
+                         `(${src[t.NUMERICIDENTIFIERLOOSE]})`)
+ 
+ // ## Pre-release Version Identifier
+-// A numeric identifier, or a non-numeric identifier.
++// A non-numeric identifier, or a numeric identifier.
++// The non-numeric alternative is tried first so that an identifier such as
++// `7f3c` is matched whole.  If the numeric alternative were tried first it
++// would match the leading `7`, and in the unanchored COERCEFULL regex the
++// permissive `(?:$|[^\d])` guard then accepts that truncated match (the
++// next char `f` is not a digit), so the rest of the identifier is cut off.
+ 
+-createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NUMERICIDENTIFIER]
+-}|${src[t.NONNUMERICIDENTIFIER]})`)
++createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NONNUMERICIDENTIFIER]
++}|${src[t.NUMERICIDENTIFIER]})`)
+ 
+ createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NUMERICIDENTIFIERLOOSE]
+ }|${src[t.NONNUMERICIDENTIFIER]})`)

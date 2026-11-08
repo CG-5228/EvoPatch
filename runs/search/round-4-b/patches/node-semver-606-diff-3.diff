@@ -1,0 +1,62 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/functions/diff.js b/functions/diff.js
+--- a/functions/diff.js	1970-01-01 00:00:00
++++ b/functions/diff.js	2026-11-08 15:16:05
+@@ -16,30 +16,48 @@
+   const lowHasPre = !!lowVersion.prerelease.length
+ 
+   if (lowHasPre && !highHasPre) {
+-    // Going from prerelease -> no prerelease requires some special casing
++    // Going from a prerelease to a release requires some special casing,
++    // because the prerelease sits below the release of the same numbers.
++    // Compare the two versions component by component instead of looking
++    // at the release alone: 3.4.6-2 -> 3.5.2 is a minor bump even though
++    // the release has a nonzero patch.
+ 
+-    // If the low version has only a major, then it will always be a major
+-    // Some examples:
++    // If the low version has only a major (its minor and patch are 0),
++    // then it will always be a major. Some examples:
+     // 1.0.0-1 -> 1.0.0
+     // 1.0.0-1 -> 1.1.1
+     // 1.0.0-1 -> 2.0.0
+-    if (!lowVersion.patch && !lowVersion.minor) {
++    if (!lowVersion.minor && !lowVersion.patch) {
+       return 'major'
+     }
+ 
+-    // Otherwise it can be determined by checking the high version
++    // Otherwise the most significant component that differs decides.
++    if (lowVersion.major !== highVersion.major) {
++      return 'major'
++    }
+ 
+-    if (highVersion.patch) {
+-      // anything higher than a patch bump would result in the wrong version
++    if (lowVersion.minor !== highVersion.minor) {
++      return 'minor'
++    }
++
++    if (lowVersion.patch !== highVersion.patch) {
+       return 'patch'
+     }
+ 
+-    if (highVersion.minor) {
+-      // anything higher than a minor bump would result in the wrong version
++    // Same numbers, only the prerelease differs. Completing the
++    // prerelease's own line counts one level below what it announced:
++    // 0.1.0-1 -> 0.1.0 is a minor bump (a nonzero minor announced a whole
++    // line), 0.0.2-1 -> 0.0.2 is a patch bump, and 1.0.0-1 -> 1.0.0 is a
++    // major bump. A nonzero patch without a nonzero minor sits halfway
++    // into its patch line and completes it the same way.
++    if (lowVersion.minor && !lowVersion.patch) {
+       return 'minor'
+     }
+ 
+-    // bumping major/minor/patch all have same result
++    if (lowVersion.patch) {
++      return 'patch'
++    }
++
+     return 'major'
+   }
+ 

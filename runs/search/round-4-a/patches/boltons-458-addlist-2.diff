@@ -1,0 +1,42 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-07 08:19:31
+@@ -225,6 +225,17 @@
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+         tuples and other sequences and iterables work.
+         """
++        if type(v) is not list:
++            # Materialize the iterable up front, before anything looks at
++            # it, then test emptiness on the materialized list. One-shot
++            # iterators (generators) would otherwise be drained by the
++            # insertion loop below, leaving *values* empty while the
++            # linked list is full, i.e., a dict that disagrees with
++            # itself. Only a plain list is shared with the caller, so it
++            # is safe to skip the copy for it; every other iterable is
++            # consumed exactly once. Non-iterables raise the usual
++            # TypeError from *list* instead of being silently ignored.
++            v = list(v)
+         if not v:
+             return
+         self_insert = self._insert
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-07 08:19:31
+@@ -1123,6 +1123,17 @@
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+         tuples and other sequences and iterables work.
+         """
++        if type(v) is not list:
++            # Materialize the iterable up front, before anything looks at
++            # it, then test emptiness on the materialized list. One-shot
++            # iterators (generators) would otherwise be drained by the
++            # insertion loop below, leaving *values* empty while the
++            # linked list is full, i.e., a dict that disagrees with
++            # itself. Only a plain list is shared with the caller, so it
++            # is safe to skip the copy for it; every other iterable is
++            # consumed exactly once. Non-iterables raise the usual
++            # TypeError from *list* instead of being silently ignored.
++            v = list(v)
+         if not v:
+             return
+         self_insert = self._insert

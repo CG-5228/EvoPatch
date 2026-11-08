@@ -1,0 +1,63 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/iterutils.py b/boltons/iterutils.py
+--- a/boltons/iterutils.py	1970-01-01 00:00:00
++++ b/boltons/iterutils.py	2026-11-08 14:35:46
+@@ -647,9 +647,27 @@
+     if stop < start:
+         raise ValueError('expected stop >= start, not %r' % stop)
+     if count is None:
+-        denom = start if start else 1
+-        count = 1 + math.ceil(math.log(stop/denom, factor))
+-        count = count if start else count + 1
++        if factor == 1.0:
++            # A factor of 1.0 yields a flat sequence, so the value of
++            # stop can only be reached when it is already the current
++            # value (or via the special zero-start behavior below); no
++            # count can be computed when a larger stop must be climbed.
++            if start == stop:
++                count = 1
++            elif start == 0.0 and 0.0 < stop <= 1.0:
++                # start == 0.0: the generator yields the zero, steps to
++                # 1, then clamps to stop, reaching it on the second step.
++                count = 2
++            else:
++                raise ValueError(
++                    'expected factor > 1.0 when count is omitted, not'
++                    ' %r; a flat sequence (factor=1.0) never reaches'
++                    ' stop=%r from start=%r; pass count explicitly to'
++                    ' get a flat sequence' % (factor, stop, start))
++        else:
++            denom = start if start else 1
++            count = 1 + math.ceil(math.log(stop/denom, factor))
++            count = count if start else count + 1
+     if count != 'repeat' and count < 0:
+         raise ValueError('count must be positive or "repeat", not %r' % count)
+     if jitter:
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/probe.py b/probe.py
+--- a/probe.py	1970-01-01 00:00:00
++++ b/probe.py	2026-11-08 13:59:47
+@@ -0,0 +1,25 @@
++from boltons.iterutils import backoff_iter
++cases = [
++    dict(start=2.0, stop=30.0, factor=1.0),
++    dict(start=2.0, stop=30.0, count=4, factor=1.0),
++    dict(start=0.0, stop=1.0, factor=1.0),
++    dict(start=0.0, stop=0.5, factor=1.0),
++    dict(start=0.0, stop=0.0, factor=1.0),
++    dict(start=5.0, stop=5.0, factor=1.0),
++    dict(start=5.0, stop=6.0, factor=1.0),
++    dict(start=0.0, stop=16.0, factor=1.0),
++    dict(start=0.0, stop=1.0000001, factor=1.0),
++    dict(start=1.0, stop=1.0, factor=1.0),
++    dict(start=0.0, stop=2.0, factor=1.0000000001),
++    dict(start=0.0, stop=1.0, factor=1.0000000001),
++    dict(start=1.0, stop=10.0, factor=1.0000000001),
++    dict(start=2.0, stop=30.0, factor=1.0, jitter=0.5),
++    dict(start=0.0, stop=0.0, factor=1.0, count='repeat'),
++]
++for c in cases:
++    name = repr(c)
++    try:
++        res = list(backoff_iter(**c))
++        print("OK  ", name, "->", res[:8], "len=%s" % (len(res) if len(res)<50 else 'big'))
++    except Exception as e:
++        print("RAISE", name, "->", type(e).__name__, str(e)[:160])

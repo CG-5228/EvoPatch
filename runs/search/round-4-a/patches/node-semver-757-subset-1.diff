@@ -1,0 +1,74 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/ranges/subset.js b/ranges/subset.js
+--- a/ranges/subset.js	1970-01-01 00:00:00
++++ b/ranges/subset.js	2026-11-07 07:49:35
+@@ -28,11 +28,13 @@
+ // - If EQ
+ //   - If GT, and EQ does not satisfy GT, return true (null set)
+ //   - If LT, and EQ does not satisfy LT, return true (null set)
+-//   - If EQ satisfies every C, return true
++//   - If EQ satisfies the simple range `C1 C2 ...` taken as a whole, return true
+ //   - Else return false
+ // - If GT
+ //   - If GT.semver is lower than any > or >= comp in C, return false
+ //   - If GT is >=, and GT.semver does not satisfy every C, return false
++//     (single-comp checks compare raw version precedence; prerelease
++//      gating of C as a whole is enforced by needDomGTPre/LTPre)
+ //   - If GT.semver has a prerelease, and not in prerelease mode
+ //     - If no C has a prerelease and the GT.semver tuple, return false
+ // - If LT
+@@ -122,20 +124,29 @@
+     }
+   }
+ 
++  // single-comparator boundary checks compare raw versions: prerelease
++  // gating for a range as a whole is enforced by the needDomGTPre/LTPre
++  // checks on the dom below
++  const raw = { ...options, includePrerelease: true }
++
+   // will iterate one or zero times
+   for (const eq of eqSet) {
+-    if (gt && !satisfies(eq, String(gt), options)) {
++    // the = comparator in this simple range matches eq's own tuple, so
++    // prerelease gating cannot exclude eq here; compare against the
++    // bounds as raw versions instead of letting the gate reject them
++    if (gt && !satisfies(eq, String(gt), raw)) {
+       return null
+     }
+ 
+-    if (lt && !satisfies(eq, String(lt), options)) {
++    if (lt && !satisfies(eq, String(lt), raw)) {
+       return null
+     }
+ 
+-    for (const c of dom) {
+-      if (!satisfies(eq, String(c), options)) {
+-        return false
+-      }
++    // whether a prerelease is allowed through the gate depends on the
++    // simple range's whole set of comparators, not on each comparator
++    // on its own, so test the dom simple range as a single range
++    if (!satisfies(eq, dom.map(c => String(c)).join(' '), options)) {
++      return false
+     }
+ 
+     return true
+@@ -174,7 +185,8 @@
+         if (higher === c && higher !== gt) {
+           return false
+         }
+-      } else if (gt.operator === '>=' && !satisfies(gt.semver, String(c), options)) {
++      } else if (gt.operator === '>=' &&
++          !satisfies(gt.semver, String(c), raw)) {
+         return false
+       }
+     }
+@@ -192,7 +204,8 @@
+         if (lower === c && lower !== lt) {
+           return false
+         }
+-      } else if (lt.operator === '<=' && !satisfies(lt.semver, String(c), options)) {
++      } else if (lt.operator === '<=' &&
++          !satisfies(lt.semver, String(c), raw)) {
+         return false
+       }
+     }

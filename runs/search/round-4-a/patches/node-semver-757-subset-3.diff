@@ -1,0 +1,121 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/ranges/subset.js b/ranges/subset.js
+--- a/ranges/subset.js	1970-01-01 00:00:00
++++ b/ranges/subset.js	2026-11-08 13:18:02
+@@ -3,7 +3,6 @@
+ const Range = require('../classes/range.js')
+ const Comparator = require('../classes/comparator.js')
+ const { ANY } = Comparator
+-const satisfies = require('../functions/satisfies.js')
+ const compare = require('../functions/compare.js')
+ 
+ // Complex range `r1 || r2 || ...` is a subset of `R1 || R2 || ...` iff:
+@@ -28,16 +27,17 @@
+ // - If EQ
+ //   - If GT, and EQ does not satisfy GT, return true (null set)
+ //   - If LT, and EQ does not satisfy LT, return true (null set)
+-//   - If EQ satisfies every C, return true
++//   - If EQ satisfies every C, and every C admits EQ's prerelease (if any),
++//     return true
+ //   - Else return false
+ // - If GT
+ //   - If GT.semver is lower than any > or >= comp in C, return false
+-//   - If GT is >=, and GT.semver does not satisfy every C, return false
++//   - If GT is >=, and GT.semver fails any C comparator, return false
+ //   - If GT.semver has a prerelease, and not in prerelease mode
+ //     - If no C has a prerelease and the GT.semver tuple, return false
+ // - If LT
+ //   - If LT.semver is greater than any < or <= comp in C, return false
+-//   - If LT is <=, and LT.semver does not satisfy every C, return false
++//   - If LT is <=, and LT.semver fails any C comparator, return false
+ //   - If LT.semver has a prerelease, and not in prerelease mode
+ //     - If no C has a prerelease and the LT.semver tuple, return false
+ // - Else return true
+@@ -124,20 +124,36 @@
+ 
+   // will iterate one or zero times
+   for (const eq of eqSet) {
+-    if (gt && !satisfies(eq, String(gt), options)) {
++    if (gt && !gt.test(eq)) {
+       return null
+     }
+ 
+-    if (lt && !satisfies(eq, String(lt), options)) {
++    if (lt && !lt.test(eq)) {
+       return null
+     }
+ 
+     for (const c of dom) {
+-      if (!satisfies(eq, String(c), options)) {
++      if (!c.test(eq)) {
+         return false
+       }
+     }
+ 
++    // the eq version must be admitted by the dom range as a whole, not
++    // just by each comparator.  a prerelease like 1.2.3-pre.0 is only
++    // allowed if some comparator in dom is a prerelease in the same
++    // tuple, otherwise eg `1.2.3-pre.0` is not a subset of `<2.0.0`.
++    if (eq.prerelease.length && !options.includePrerelease) {
++      const hasDomPre = dom.some(c =>
++        c.semver !== ANY &&
++        c.semver.prerelease.length &&
++        c.semver.major === eq.major &&
++        c.semver.minor === eq.minor &&
++        c.semver.patch === eq.patch)
++      if (!hasDomPre) {
++        return false
++      }
++    }
++
+     return true
+   }
+ 
+@@ -174,7 +190,7 @@
+         if (higher === c && higher !== gt) {
+           return false
+         }
+-      } else if (gt.operator === '>=' && !satisfies(gt.semver, String(c), options)) {
++      } else if (gt.operator === '>=' && !c.test(gt.semver)) {
+         return false
+       }
+     }
+@@ -192,7 +208,7 @@
+         if (lower === c && lower !== lt) {
+           return false
+         }
+-      } else if (lt.operator === '<=' && !satisfies(lt.semver, String(c), options)) {
++      } else if (lt.operator === '<=' && !c.test(lt.semver)) {
+         return false
+       }
+     }
+@@ -234,10 +250,30 @@
+     : a
+ }
+ 
++// in non-prerelease mode, <1.2.3-0 is the same as <1.2.3 (nothing can
++// exist between them once prerelease admission is taken into account),
++// so bounds differing only by that -0 suffix are equal, not ordered
++const isZeroishLT = c => c.operator === '<' &&
++  c.semver.prerelease.length === 1 &&
++  c.semver.prerelease[0] === 0
++
++const sameLTZeroish = (a, b) =>
++  a.operator === '<' && b.operator === '<' &&
++  a.semver.major === b.semver.major &&
++  a.semver.minor === b.semver.minor &&
++  a.semver.patch === b.semver.patch &&
++  ((a.semver.prerelease.length === 0 && isZeroishLT(b)) ||
++   (isZeroishLT(a) && b.semver.prerelease.length === 0))
++
+ // <=1.2.3 is higher than <1.2.3
+ const lowerLT = (a, b, options) => {
+   if (!a) {
+     return b
++  }
++  // on an equivalent bound, keep `a` (the subset's own bound) so the tie
++  // never rejects the subset relation
++  if (!options.includePrerelease && sameLTZeroish(a, b)) {
++    return a
+   }
+   const comp = compare(a.semver, b.semver, options)
+   return comp < 0 ? a

@@ -1,0 +1,46 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/filesize.py b/src/humanize/filesize.py
+--- a/src/humanize/filesize.py	1970-01-01 00:00:00
++++ b/src/humanize/filesize.py	2026-11-07 08:51:14
+@@ -2,6 +2,7 @@
+ 
+ from __future__ import annotations
+ 
++import re
+ from math import log
+ 
+ from humanize.i18n import _gettext as _
+@@ -98,5 +99,33 @@
+ 
+     exp = int(min(log(abs_bytes, base), len(suffix)))
+     space = "" if gnu else " "
+-    ret: str = format % (bytes_ / (base**exp)) + space + _(suffix[exp - 1])
++
++    scaled = bytes_ / (base**exp)
++    # Formatting can round the scaled value up to the base (e.g. 999.96 kB
++    # formats as "1000.0 kB"). Carry into the next unit so the rounded number
++    # and the unit agree, unless we are already at the largest unit.
++    if _reaches_base(format, scaled, base) and exp < len(suffix):
++        exp += 1
++        scaled = bytes_ / (base**exp)
++
++    ret: str = format % scaled + space + _(suffix[exp - 1])
+     return ret
++
++
++def _reaches_base(fmt: str, value: float, base: int) -> bool:
++    """Whether ``value`` formatted with ``fmt`` displays a number >= ``base``."""
++    text = fmt % value
++    try:
++        return abs(float(text)) >= base
++    except ValueError:
++        pass
++    # The format wraps the number in other text. Find the number that comes
++    # from ``value`` by formatting a perturbed value: literal text does not
++    # change, only the number rendered from the value does.
++    pattern = r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?"
++    shown = re.findall(pattern, text)
++    shifted = re.findall(pattern, fmt % (value + max(1.0, abs(value) * 0.01)))
++    for candidate, other in zip(shown, shifted):
++        if candidate != other:
++            return abs(float(candidate)) >= base
++    return False

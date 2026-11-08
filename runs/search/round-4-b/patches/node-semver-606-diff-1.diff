@@ -1,0 +1,28 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/functions/diff.js b/functions/diff.js
+--- a/functions/diff.js	1970-01-01 00:00:00
++++ b/functions/diff.js	2026-11-08 13:49:03
+@@ -27,6 +27,24 @@
+       return 'major'
+     }
+ 
++    // When the numeric parts differ, the level is the highest component
++    // that changed between the two versions, exactly as for two releases.
++    // Some examples:
++    // 3.4.6-2 -> 3.5.2 is a minor
++    // 1.0.1-1 -> 1.1.1 is a minor
++    // 1.2.3-1 -> 2.1.0 is a major
++    if (lowVersion.major !== highVersion.major) {
++      return 'major'
++    }
++
++    if (lowVersion.minor !== highVersion.minor) {
++      return 'minor'
++    }
++
++    if (lowVersion.patch !== highVersion.patch) {
++      return 'patch'
++    }
++
+     // Otherwise it can be determined by checking the high version
+ 
+     if (highVersion.patch) {

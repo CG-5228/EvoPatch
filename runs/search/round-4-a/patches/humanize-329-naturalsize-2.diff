@@ -1,0 +1,80 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/filesize.py b/src/humanize/filesize.py
+--- a/src/humanize/filesize.py	1970-01-01 00:00:00
++++ b/src/humanize/filesize.py	2026-11-07 08:37:33
+@@ -2,6 +2,7 @@
+ 
+ from __future__ import annotations
+ 
++import re
+ from math import log
+ 
+ from humanize.i18n import _gettext as _
+@@ -51,6 +52,8 @@
+         ```pycon
+         >>> naturalsize(3000000)
+         '3.0 MB'
++        >>> naturalsize(999_960)
++        '1.0 MB'
+         >>> naturalsize(300, False, True)
+         '300B'
+         >>> naturalsize(3000, False, True)
+@@ -96,7 +99,59 @@
+     if abs_bytes < base:
+         return f"{int(bytes_)}B" if gnu else _("%d Bytes") % int(bytes_)
+ 
++    # The value is rendered with `format` (one decimal place by default), so
++    # choose the exponent from the number as it will actually be shown: when
++    # that number rounds up to the base (e.g. 999960 -> "1000.0") the unit has
++    # to move up with it. The largest suffix is exempt, because there is no
++    # bigger unit to move up to.
+     exp = int(min(log(abs_bytes, base), len(suffix)))
++    if exp < len(suffix) and _printed_value(format, abs_bytes / (base**exp)) >= base:
++        exp += 1
++
+     space = "" if gnu else " "
+     ret: str = format % (bytes_ / (base**exp)) + space + _(suffix[exp - 1])
+     return ret
++
++
++_CONVERSION = re.compile(r"%(?:[-+ #0]*\d*)?(?:\.\d+)?([A-Za-z])")
++
++
++def _conversion(format: str) -> re.Match[str] | None:
++    """Match of the conversion ``format`` renders, skipping ``%%`` escapes."""
++    i = 0
++    while True:
++        i = format.find("%", i)
++        if i == -1:
++            return None
++        if format[i : i + 2] == "%%":
++            i += 2
++            continue
++        match = _CONVERSION.match(format, i)
++        if match is None:
++            return None
++        return match
++
++
++def _printed_value(format: str, value: float) -> float:
++    """``value`` as the number ``format`` renders it, or ``0.0`` if unreadable.
++
++    Only the converted field is read, so literal text around it (``"v1 %.1f"``,
++    a trailing ``"%%"``) cannot sway the decision, and exponent formats such
++    as ``"%.3e"`` are compared by the quantity they print rather than by the
++    mantissa alone.
++    """
++    match = _conversion(format)
++    if match is None:
++        return 0.0
++
++    prefix = format[: match.start()].replace("%%", "%")
++    suffix = format[match.end() :].replace("%%", "%")
++    text = format % value
++    if suffix and text.endswith(suffix):
++        text = text[: -len(suffix)]
++    if not text.startswith(prefix):
++        return 0.0
++    try:
++        return float(text[len(prefix) :])
++    except ValueError:
++        return 0.0
