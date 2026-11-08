@@ -1,0 +1,63 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/functions/coerce.js b/functions/coerce.js
+--- a/functions/coerce.js	1970-01-01 00:00:00
++++ b/functions/coerce.js	2026-11-07 08:47:12
+@@ -2,6 +2,40 @@
+ const parse = require('./parse')
+ const { safeRe: re, t } = require('../internal/re')
+ 
++// The COERCE* patterns only know that a version has ended once they have seen
++// one more character behind it, and that character may not be a digit.  An
++// identifier that starts with a digit therefore loses everything behind that
++// first digit: '2.3.1-nightly.7f3c' is found as '2.3.1-nightly.7f'.  Major,
++// minor and patch are matched in front of the prerelease, so whatever follows
++// them in the input is read again with the strict version pattern and the
++// longest piece of it that is a version is used.  That keeps every prerelease
++// identifier and build part, and never takes less than the match found itself.
++const SEARCH_LIMIT = 1024
++const suffixOf = match => `${match[5] ? `-${match[5]}` : ''}${match[6] ? `+${match[6]}` : ''}`
++
++const extendVersion = (version, match) => {
++  const head = `${match[1] || ''}${match[2]}` +
++    (match[3] ? `.${match[3]}` : '') +
++    (match[4] ? `.${match[4]}` : '')
++  const taken = suffixOf(match).length
++  const rest = version.slice(match.index + head.length)
++  if (!/^[+-]/.test(rest)) {
++    return suffixOf(match)
++  }
++  const body = rest.slice(0, SEARCH_LIMIT)
++  const cut = body.search(/[^0-9A-Za-z.+-]/)
++  const searchable = cut === -1 ? body : body.slice(0, cut)
++  const base = `${match[2]}.${match[3] || '0'}.${match[4] || '0'}`
++  const full = re[t.FULL]
++  for (let i = Math.min(searchable.length, SEARCH_LIMIT); i > taken; i--) {
++    const candidate = searchable.slice(0, i)
++    if (full.test(`${base}${candidate}`)) {
++      return candidate
++    }
++  }
++  return suffixOf(match)
++}
++
+ const coerce = (version, options) => {
+   if (version instanceof SemVer) {
+     return version
+@@ -52,9 +86,14 @@
+   const major = match[2]
+   const minor = match[3] || '0'
+   const patch = match[4] || '0'
+-  const prerelease = options.includePrerelease && match[5] ? `-${match[5]}` : ''
+-  const build = options.includePrerelease && match[6] ? `+${match[6]}` : ''
+-
+-  return parse(`${major}.${minor}.${patch}${prerelease}${build}`, options)
++  const suffix = options.includePrerelease ? extendVersion(version, match) : ''
++  const parsed = parse(`${major}.${minor}.${patch}${suffix}`, options)
++  if (parsed || !options.includePrerelease || suffix === suffixOf(match)) {
++    return parsed
++  }
++  // An extended suffix can push a version over the length or safety limits
++  // where the shorter suffix the pattern captured itself still parses; keep
++  // that original result instead of returning null.
++  return parse(`${major}.${minor}.${patch}${suffixOf(match)}`, options)
+ }
+ module.exports = coerce

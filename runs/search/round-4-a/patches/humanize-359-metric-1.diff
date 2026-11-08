@@ -1,0 +1,43 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/number.py b/src/humanize/number.py
+--- a/src/humanize/number.py	1970-01-01 00:00:00
++++ b/src/humanize/number.py	2026-11-07 07:44:40
+@@ -545,15 +545,36 @@
+     exponent = math.floor(math.log10(abs(value))) if value != 0 else 0
+ 
+     if exponent >= 33 or exponent < -30:
+-        return scientific(value, precision - 1) + unit
++        # scientific() cannot format without a number of decimals, so even a
++        # precision of 0 needs one.
++        return scientific(value, max(precision - 1, 0)) + unit
+ 
++    original_value = value
+     old_bucket = exponent // 3 * 3
+     value /= 10**old_bucket
+     digits = int(max(0, precision - exponent % 3 - 1))
+-    if exponent < 30 and round(abs(value), digits) >= 1000:
+-        exponent += 3 - exponent % 3
++
++    # Rounding can add a digit: 9.996 must print as "10.0" (three significant
++    # figures) rather than "10.00" (four). Whenever the rounded value carries
++    # into a higher power of ten, bump the exponent and recalculate how many
++    # digits are still allowed, so the output never exceeds `precision`.
++    while True:
++        rounded = round(abs(value), digits)
++        if exponent < 30 and rounded >= 1000:
++            # Rounding carries into the next metric prefix.
++            exponent += 3 - exponent % 3
++        elif rounded >= 10 ** (exponent % 3 + 1):
++            # Rounding carries into the next power of ten within the prefix.
++            exponent += 1
++        else:
++            break
++        if exponent >= 33:
++            # Past the largest prefix ("Q"): round-up landed beyond the metric
++            # range, so fall back to scientific as at the top of this function.
++            return scientific(original_value, max(precision - 1, 0)) + unit
+         new_bucket = exponent // 3 * 3
+         value /= 10 ** (new_bucket - old_bucket)
++        old_bucket = new_bucket
+         digits = int(max(0, precision - exponent % 3 - 1))
+ 
+     if exponent >= 3:

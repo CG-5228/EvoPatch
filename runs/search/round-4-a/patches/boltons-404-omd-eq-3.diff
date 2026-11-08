@@ -1,0 +1,36 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-07 08:49:36
+@@ -358,8 +358,13 @@
+         elif hasattr(other, 'keys'):
+             for selfk in self:
+                 try:
+-                    other[selfk] == self[selfk]
++                    selfv = self[selfk]
++                    otherv = other[selfk]
+                 except KeyError:
++                    return False
++                if selfv is otherv:
++                    continue
++                if not (selfv == otherv):
+                     return False
+             return True
+         return False
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-07 08:49:36
+@@ -1264,8 +1264,13 @@
+         elif hasattr(other, 'keys'):
+             for selfk in self:
+                 try:
+-                    other[selfk] == self[selfk]
++                    selfv = self[selfk]
++                    otherv = other[selfk]
+                 except KeyError:
++                    return False
++                if selfv is otherv:
++                    continue
++                if not (selfv == otherv):
+                     return False
+             return True
+         return False

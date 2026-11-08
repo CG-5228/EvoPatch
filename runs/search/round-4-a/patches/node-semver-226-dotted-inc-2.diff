@@ -1,0 +1,30 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/classes/semver.js b/classes/semver.js
+--- a/classes/semver.js	1970-01-01 00:00:00
++++ b/classes/semver.js	2026-11-07 08:34:23
+@@ -304,13 +304,21 @@
+         }
+         if (identifier) {
+           // 1.2.0-beta.1 bumps to 1.2.0-beta.2,
+-          // 1.2.0-beta.fooblz or 1.2.0-beta bumps to 1.2.0-beta.0
+-          let prerelease = [identifier, base]
++          // 1.2.0-beta.fooblz or 1.2.0-beta bumps to 1.2.0-beta.0,
++          // 1.2.0-rc.next.3 with identifier 'rc.next' bumps to 1.2.0-rc.next.4
++          // The identifier may itself contain dots (e.g. 'rc.next'), in which
++          // case it covers as many leading prerelease identifiers as it has
++          // segments; only the part after them is the counter to bump.
++          const idParts = identifier.split('.')
++          let prerelease = [...idParts, base]
+           if (identifierBase === false) {
+-            prerelease = [identifier]
++            prerelease = [...idParts]
+           }
+-          if (compareIdentifiers(this.prerelease[0], identifier) === 0) {
+-            if (isNaN(this.prerelease[1])) {
++          const matchesIdentifier = idParts.every((part, idx) =>
++            compareIdentifiers(this.prerelease[idx], part) === 0
++          )
++          if (matchesIdentifier) {
++            if (isNaN(this.prerelease[idParts.length])) {
+               this.prerelease = prerelease
+             }
+           } else {

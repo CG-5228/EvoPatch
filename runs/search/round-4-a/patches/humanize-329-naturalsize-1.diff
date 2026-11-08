@@ -1,0 +1,94 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/.ruff_cache/.gitignore b/.ruff_cache/.gitignore
+--- a/.ruff_cache/.gitignore	1970-01-01 00:00:00
++++ b/.ruff_cache/.gitignore	2026-11-07 07:22:36
+@@ -0,0 +1,2 @@
++# Automatically created by ruff.
++*
+Binary files a/.ruff_cache/0.15.9/16919771286020200527 and b/.ruff_cache/0.15.9/16919771286020200527 differ
+Binary files a/.ruff_cache/0.15.9/6958001543841689758 and b/.ruff_cache/0.15.9/6958001543841689758 differ
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/.ruff_cache/CACHEDIR.TAG b/.ruff_cache/CACHEDIR.TAG
+--- a/.ruff_cache/CACHEDIR.TAG	1970-01-01 00:00:00
++++ b/.ruff_cache/CACHEDIR.TAG	2026-11-07 07:22:36
+@@ -0,0 +1 @@
++Signature: 8a477f597d28d172789f06886806bc55
+\ No newline at end of file
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/_version.py b/src/humanize/_version.py
+--- a/src/humanize/_version.py	1970-01-01 00:00:00
++++ b/src/humanize/_version.py	2026-11-07 07:22:36
+@@ -1,2 +1,4 @@
++from __future__ import annotations
++
+ __version__ = version = "0.0.0"
+ __version_tuple__ = version_tuple = (0, 0, 0)
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/filesize.py b/src/humanize/filesize.py
+--- a/src/humanize/filesize.py	1970-01-01 00:00:00
++++ b/src/humanize/filesize.py	2026-11-07 07:22:07
+@@ -2,10 +2,31 @@
+ 
+ from __future__ import annotations
+ 
++import re
+ from math import log
+ 
+ from humanize.i18n import _gettext as _
+ 
++# A number as it can appear inside a formatted string, e.g. "1000.0".
++# It may carry a sign and an exponent ("9.9996e+02").
++_NUMBER_RE = re.compile(r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?")
++
++
++def _displayed_number(formatted: str) -> float:
++    """Return the numeric value that ``formatted`` shows.
++
++    ``formatted`` is normally a plain number, but a custom ``format``
++    can decorate it with literal text (e.g. ``"%.1f B"``), so fall back
++    to locating the first number in the string. Returns ``0.0`` when no
++    number can be found.
++    """
++    try:
++        return float(formatted)
++    except ValueError:
++        match = _NUMBER_RE.search(formatted)
++        return float(match.group()) if match else 0.0
++
++
+ suffixes = {
+     "decimal": (
+         "kB",
+@@ -98,5 +119,16 @@
+ 
+     exp = int(min(log(abs_bytes, base), len(suffix)))
+     space = "" if gnu else " "
+-    ret: str = format % (bytes_ / (base**exp)) + space + _(suffix[exp - 1])
+-    return ret
++
++    value = bytes_ / (base**exp)
++    displayed: str = format % value
++    # The displayed number can round up to the next unit boundary
++    # (e.g. 999.96 kB renders as "1000.0 kB"). When that happens, move up
++    # to the next unit so number and unit agree. The largest unit has
++    # nowhere to move up to, so it is left alone.
++    if exp < len(suffix) and abs(_displayed_number(displayed)) >= base:
++        exp += 1
++        value = bytes_ / (base**exp)
++        displayed = format % value
++
++    return displayed + space + _(suffix[exp - 1])
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/tests/test_filesize.py b/tests/test_filesize.py
+--- a/tests/test_filesize.py	1970-01-01 00:00:00
++++ b/tests/test_filesize.py	2026-11-07 07:22:15
+@@ -82,6 +82,14 @@
+         ([1.123456789, False, True], "1B"),
+         ([1.123456789 * 10**3, False, True], "1.1K"),
+         ([1.123456789 * 10**6, False, True], "1.1M"),
++        # Values just below a unit boundary that round up to the next unit.
++        ([999_960], "1.0 MB"),
++        ([999_980_000], "1.0 GB"),
++        ([1024**3 - 1, True], "1.0 GiB"),
++        ([1024**2 - 1, False, True], "1.0M"),
++        ([999_999.6, False, False, "%.3f"], "1.000 MB"),
++        # The largest unit has no larger unit to move up to.
++        ([10**34 * 3], "30000.0 QB"),
+     ],
+ )
+ def test_naturalsize(test_args: list[int] | list[int | bool], expected: str) -> None:

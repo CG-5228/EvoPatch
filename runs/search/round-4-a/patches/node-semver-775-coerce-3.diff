@@ -1,0 +1,12 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/internal/re.js b/internal/re.js
+--- a/internal/re.js	1970-01-01 00:00:00
++++ b/internal/re.js	2026-11-08 12:51:21
+@@ -162,7 +162,7 @@
+               `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?`)
+ createToken('COERCE', `${src[t.COERCEPLAIN]}(?:$|[^\\d])`)
+ createToken('COERCEFULL', src[t.COERCEPLAIN] +
+-              `(?:${src[t.PRERELEASE]})?` +
++              `(?:${src[t.PRERELEASE]}(?!${LETTERDASHNUMBER}))?` +
+               `(?:${src[t.BUILD]})?` +
+               `(?:$|[^\\d])`)
+ createToken('COERCERTL', src[t.COERCE], true)
