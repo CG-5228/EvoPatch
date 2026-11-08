@@ -1,6 +1,6 @@
 {
   "repo": "CG-5228/EvoPatch",
-  "generated_from": "87a2e998706399bca3b36c7d8d139371aa793e5c",
+  "generated_from": "68d7917221820c46c6d4da013f6fef98e90a2f94",
   "baseline_runs": [
     1,
     2,
@@ -2167,7 +2167,81 @@
       }
     }
   ],
-  "rounds": [],
+  "rounds": [
+    {
+      "round": 1,
+      "commit": "4151edddcb4838ca0f5ccaafc42004c5c6e91894",
+      "kept": false,
+      "bar": 52.78,
+      "screens": [
+        47.22
+      ],
+      "change": "A working fix is worth nothing until it is captured: bound every optional verification round, and after a fresh green run against the current code go straight through the required review to the terminal submit step instead of opening one more check, while treating any unresolved failing signal as blocking.",
+      "session": "01m6s89w79gxemy7zwefbbhwxh",
+      "diagnosis": null,
+      "diff": "diff --git a/agent/skills/fix-workflow/SKILL.md b/agent/skills/fix-workflow/SKILL.md\nindex c78dd79..ec2b489 100644\n--- a/agent/skills/fix-workflow/SKILL.md\n+++ b/agent/skills/fix-workflow/SKILL.md\n@@ -11,3 +11,5 @@ description: The steps for fixing a reported bug. Read this first on every task.\n 4. **Test.** Run your repro again, then `work/tools/test`.\n 5. **Review.** Follow your `patch-review` skill.\n 6. **Finish.** Run `work/tools/finish \"what you changed and why\"`.\n+\n+**Close on a fresh green run.** Cap every optional check (extra reviews, sweeps, brute-force grids) before starting it: decide its budget up front, and shrink or drop it after two timeouts. Once your repro and `work/tools/test` pass against the current code, complete the required review and run `work/tools/finish` as the very next step — never open one more optional round before finishing, because an unbounded extra round is how a working fix ends up unsubmitted. Any failing or mismatching signal you cannot explain blocks finishing until it is fixed or shown out of scope, and a claim that something passes may only cite a run executed against the code as it stands now."
+    },
+    {
+      "round": 2,
+      "commit": "a235ec083415ac9892987da4c6a513b7ed69b17e",
+      "kept": false,
+      "bar": 52.78,
+      "screens": [
+        41.67
+      ],
+      "change": "I learned that most failed attempts were lost not by fixing wrongly but by reaching outside the workspace — fetching the project's code or consulting another installed copy of the library, usually via a delegated review — which voids an attempt no matter how well its tests pass, so every fact about the code must come from the working tree, in my thread and any subagent's.",
+      "session": "01m6sj7z3xxg3s5mn5357arkyb",
+      "diagnosis": null,
+      "diff": "diff --git a/agent/instructions.md b/agent/instructions.md\nindex 50399c5..1f47a88 100644\n--- a/agent/instructions.md\n+++ b/agent/instructions.md\n@@ -9,7 +9,7 @@ You fix one reported bug per conversation, in a real open-source project. You ar\n - Output over about 24,000 characters is replaced by a short preview. Use `rg -n`, `sed -n 'A,Bp' file` and `tail`, and send long output to a file.\n - This is macOS with bash 3.2 and BSD tools: use `python3`, not `python`. There is no `timeout` command, `sed -i` needs an empty suffix (`sed -i ''`), and `grep -P` doesn't exist (use `rg`). Heredocs work.\n - Python is 3.15. The tool description's Python 3.13, `genson` and `helm` don't apply here.\n-- Local network ports can't be opened, and you don't need the network.\n+- Local network ports can't be opened, and you don't need the network: never fetch the project's code, tests, or fix from it (curl, package indexes, repository hosts), and never read, import, or hunt for another copy of the library elsewhere on this machine (installed packages, global directories, other checkouts) — bind any subagent you spawn to the same limit. One command that reaches outside the workspace for either invalidates the whole attempt no matter how well its tests then do; when you need ground truth, re-anchor with `cd work/repo` and take it from the tree and the report alone.\n \n ## How to work"
+    },
+    {
+      "round": 3,
+      "commit": "5eb33ef385c0d8a4ff70069b1ff893d7b75de66a",
+      "kept": true,
+      "bar": 52.78,
+      "screens": [
+        77.78,
+        88.89
+      ],
+      "change": "I learned that correct fixes were being thrown away because evidence was gathered outside the working tree — usually by an unconstrained, never-audited helper — so every task now ends with a step that states the boundary up front and checks what helpers actually ran before trusting them.",
+      "session": "01m6sw0b9snm6ay62pmfkpj3dg",
+      "diagnosis": {
+        "cause": "Reference hunting outside the workspace: the agent (mostly delegated helpers, occasionally itself) fetched code from the network or read other installed copies of the library to compare against, without stating a boundary in the helper's brief and without ever auditing the commands the helper actually ran before trusting its verdict; out-of-bounds evidence gathering disqualified the attempt even when every test passed.",
+        "rule": "All evidence must come from the working tree: never fetch code from the network or read another installed copy of the library, in any thread. When you delegate, state that boundary in the brief, and before trusting a helper's verdict inspect the commands it actually ran and reject any that reached outside the working tree.",
+        "cited": [
+          "run-01/boltons-348-lru-1",
+          "round-1-a/node-semver-226-dotted-inc-1",
+          "run-03/humanize-359-metric-1",
+          "run-01/node-semver-775-coerce-1"
+        ],
+        "predicted_effect": "Attempts whose fixes pass the tests will stop being voided: helpers will stay inside the workspace because the brief says so, and any out-of-bounds command a helper runs anyway will be caught and discounted before the attempt finishes, instead of silently invalidating correct work.",
+        "learned": "I learned that correct fixes were being thrown away because evidence was gathered outside the working tree — usually by an unconstrained, never-audited helper — so every task now ends with a step that states the boundary up front and checks what helpers actually ran before trusting them.",
+        "session_id": "01m6sw0b9snm6ay62pmfkpj3dg",
+        "parent": "7e5cee271c1c3b3d280882ccaf4356d50eed60d1",
+        "usage": {
+          "turns": 1,
+          "execs": 169,
+          "skill_reads": {
+            "fix-workflow": 12,
+            "patch-review": 3,
+            "sandbox-recipes": 2
+          },
+          "subagent_threads": 5,
+          "subagent_names": [
+            "analyst1",
+            "analyst2",
+            "analyst3",
+            "analyst4",
+            "skeptic"
+          ],
+          "sandboxes": 1,
+          "init_failures": 0,
+          "suspected_timeouts": 0
+        }
+      },
+      "diff": "diff --git a/agent/skills/fix-workflow/SKILL.md b/agent/skills/fix-workflow/SKILL.md\nindex c78dd79..739e2be 100644\n--- a/agent/skills/fix-workflow/SKILL.md\n+++ b/agent/skills/fix-workflow/SKILL.md\n@@ -10,4 +10,9 @@ description: The steps for fixing a reported bug. Read this first on every task.\n 3. **Fix.** Change the source, not the tests.\n 4. **Test.** Run your repro again, then `work/tools/test`.\n 5. **Review.** Follow your `patch-review` skill.\n-6. **Finish.** Run `work/tools/finish \"what you changed and why\"`.\n+6. **Audit.** All evidence must come from the working tree: never fetch\n+   code from the network or read another installed copy of the library,\n+   in any thread. When you delegate, say so in the brief, and before you\n+   trust a helper's verdict inspect the commands it actually ran and\n+   reject any that reached outside the working tree.\n+7. **Finish.** Run `work/tools/finish \"what you changed and why\"`."
+    }
+  ],
   "controls": [],
   "verdict": null
 }
