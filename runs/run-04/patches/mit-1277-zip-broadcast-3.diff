@@ -1,0 +1,96 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-08 17:54:46
+@@ -4671,16 +4671,6 @@
+     different lengths.
+     """
+ 
+-    def is_scalar(obj):
+-        if scalar_types and isinstance(obj, scalar_types):
+-            return True
+-        try:
+-            iter(obj)
+-        except TypeError:
+-            return True
+-        else:
+-            return False
+-
+     size = len(objects)
+     if not size:
+         return
+@@ -4688,20 +4678,69 @@
+     new_item = [None] * size
+     iterables, iterable_positions = [], []
+     for i, obj in enumerate(objects):
+-        if is_scalar(obj):
++        if scalar_types and isinstance(obj, scalar_types):
+             new_item[i] = obj
++            continue
++        try:
++            iterator = iter(obj)
++        except TypeError:
++            new_item[i] = obj
+         else:
+-            iterables.append(iter(obj))
++            iterables.append(iterator)
+             iterable_positions.append(i)
+ 
+     if not iterables:
+         yield tuple(objects)
+         return
+ 
+-    for item in zip(*iterables, strict=strict):
+-        for i, new_item[i] in zip(iterable_positions, item):
+-            pass
+-        yield tuple(new_item)
++    count = len(iterables)
++    while True:
++        values = [None] * count
++        exhausted = False
++        for j, iterator in enumerate(iterables):
++            try:
++                values[j] = next(iterator)
++            except StopIteration:
++                exhausted = True
++                if not strict:
++                    # Like zip(), stop as soon as an iterable runs out,
++                    # without pulling the remaining ones any further
++                    break
++                if j:
++                    # Earlier iterables produced values while this one
++                    # ran out, so their lengths differ
++                    raise ValueError(
++                        'zip_broadcast() argument {} is longer than '
++                        'argument {}: iterables have different '
++                        'lengths'.format(
++                            iterable_positions[0] + 1,
++                            iterable_positions[j] + 1,
++                        )
++                    )
++                # The first iterable ran out; as zip(strict=True) does,
++                # check the remaining ones to see if they ran out too
++                for k in range(1, count):
++                    try:
++                        next(iterables[k])
++                    except StopIteration:
++                        pass
++                    else:
++                        raise ValueError(
++                            'zip_broadcast() argument {} is longer than '
++                            'argument {}: iterables have different '
++                            'lengths'.format(
++                                iterable_positions[k] + 1,
++                                iterable_positions[0] + 1,
++                            )
++                        )
++                # They all ran out together, so their lengths are equal
++                return
++        if not exhausted:
++            for i, value in zip(iterable_positions, values):
++                new_item[i] = value
++            yield tuple(new_item)
++            continue
++        return
+ 
+ 
+ def unique_in_window(iterable, n, key=None):

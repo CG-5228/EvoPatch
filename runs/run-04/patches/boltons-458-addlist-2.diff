@@ -1,0 +1,30 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-08 16:19:41
+@@ -225,6 +225,11 @@
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+         tuples and other sequences and iterables work.
+         """
++        # Materialize first: one-shot iterators (e.g. generators) must
++        # not be consumed by the linked-list insert loop before the
++        # value list is extended, and empty one-shot iterators (which
++        # are always truthy) must not create an empty entry for *k*.
++        v = list(v)
+         if not v:
+             return
+         self_insert = self._insert
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-08 16:19:41
+@@ -1123,6 +1123,11 @@
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+         tuples and other sequences and iterables work.
+         """
++        # Materialize first: one-shot iterators (e.g. generators) must
++        # not be consumed by the linked-list insert loop before the
++        # value list is extended, and empty one-shot iterators (which
++        # are always truthy) must not create an empty entry for *k*.
++        v = list(v)
+         if not v:
+             return
+         self_insert = self._insert

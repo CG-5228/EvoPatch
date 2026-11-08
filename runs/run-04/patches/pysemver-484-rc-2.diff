@@ -1,0 +1,67 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-08 17:30:36
+@@ -309,6 +309,30 @@
+         return string
+ 
+     @staticmethod
++    def _increment_attached_style(prerelease: str, token: str) -> Optional[str]:
++        """
++        Increment the counter of a prerelease in the legacy "attached" style,
++        where the counter follows the token directly, without a dot, as in
++        ``rc7`` for the token ``rc``.
++
++        Only the digits directly attached to the token are incremented, so
++        the style and the token of ``prerelease`` are preserved.
++
++        :param prerelease: the prerelease string to increment
++        :param token: the requested prerelease token
++        :return: the incremented string, or None if ``prerelease`` is not in
++            the attached style for ``token``
++        """
++        if not prerelease.startswith(token):
++            return None
++        match = re.match(r"\d+", prerelease[len(token) :])
++        if match is None:
++            return None
++        counter = str(int(match.group()) + 1)
++        rest = prerelease[len(token) + match.end() :]
++        return f"{token}{counter}{rest}"
++
++    @staticmethod
+     def _increment_string(string: str) -> str:
+         """
+         Look for the last sequence of number(s) in a string and increment.
+@@ -516,6 +540,12 @@
+         >>> str(semver.Version.parse("0.1.4").next_version("prerelease"))
+         '0.1.5-rc.1'
+ 
++        A prerelease whose counter is attached to the token keeps both its
++        style and its counter:
++
++        >>> str(semver.Version.parse("2.4.0-rc7").next_version("prerelease"))
++        '2.4.0-rc8'
++
+         :param part: One of "major", "minor", "patch", or "prerelease"
+         :param prerelease_token: prefix string of prerelease, defaults to 'rc'
+         :return: new object with the appropriate part raised
+@@ -542,7 +572,18 @@
+             if version.prerelease is not None and prerelease_token:
+                 current_token = version.prerelease.split(".")[0]
+                 if current_token != prerelease_token:
+-                    return version.replace(prerelease=f"{prerelease_token}.1", build=None)
++                    # Legacy "attached" style such as "rc7" for the token
++                    # "rc": keep counting in that same style.  Restarting at
++                    # "{token}.1" here would make the candidate number go
++                    # backwards (rc7 -> rc.1).
++                    attached = cls._increment_attached_style(
++                        version.prerelease, prerelease_token
++                    )
++                    if attached is not None:
++                        return version.replace(prerelease=attached, build=None)
++                    return version.replace(
++                        prerelease=f"{prerelease_token}.1", build=None
++                    )
+             return version.bump_prerelease(prerelease_token, bump_when_empty=True)
+ 
+     @_comparator

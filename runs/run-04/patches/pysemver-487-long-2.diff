@@ -1,0 +1,88 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-08 17:04:51
+@@ -73,6 +73,36 @@
+     return (a > b) - (a < b)
+ 
+ 
++def _cmp_decimal_strings(a: str, b: str) -> int:
++    """Compare two non-negative decimal integers given as digit strings.
++
++    Leading zeros are stripped first, so the result matches what comparing
++    the corresponding ``int`` objects would yield.  This is used for numbers
++    that are too long for Python's limit on integer-string conversions
++    (see :func:`sys.get_int_max_str_digits`), which makes ``int()`` raise.
++    """
++    a = a.lstrip("0")
++    b = b.lstrip("0")
++    if len(a) != len(b):
++        return (len(a) > len(b)) - (len(a) < len(b))
++    return (a > b) - (a < b)
++
++
++class _LongNumber:
++    """A number that ``int()`` refused to build because its decimal
++    representation is longer than Python's integer-string conversion limit.
++
++    Only ASCII digit strings get here, so the stored digits can be compared
++    numerically as plain strings (after stripping leading zeros) without
++    building an ``int``.
++    """
++
++    __slots__ = ("digits",)
++
++    def __init__(self, digits: str) -> None:
++        self.digits = digits
++
++
+ class Version:
+     """
+     A semver compatible version class.
+@@ -185,18 +215,41 @@
+ 
+     @classmethod
+     def _nat_cmp(cls, a: Optional[str], b: Optional[str]) -> int:
++        def to_part(identifier: str) -> Union[int, str, _LongNumber]:
++            # Numeric identifiers are compared as integers.  An all-digit
++            # ASCII identifier longer than Python's integer-string conversion
++            # limit makes int() raise, so keep it around as a digit string for
++            # a numeric string comparison instead.  Any other identifier (and
++            # any other int() error) is handled exactly as before.
++            if not identifier.isdigit():
++                return identifier
++            if not identifier.isascii():
++                return int(identifier)
++            try:
++                return int(identifier)
++            except ValueError as err:
++                if "integer string conversion" in str(err):
++                    return _LongNumber(identifier)
++                raise
++
+         def cmp_prerelease_tag(a, b):
+-            if isinstance(a, int) and isinstance(b, int):
+-                return _cmp(a, b)
+-            elif isinstance(a, int):
++            a_is_num = isinstance(a, (int, _LongNumber))
++            b_is_num = isinstance(b, (int, _LongNumber))
++            if a_is_num and b_is_num:
++                if isinstance(a, int) and isinstance(b, int):
++                    return _cmp(a, b)
++                a_digits = a.digits if isinstance(a, _LongNumber) else str(a)
++                b_digits = b.digits if isinstance(b, _LongNumber) else str(b)
++                return _cmp_decimal_strings(a_digits, b_digits)
++            elif a_is_num:
+                 return -1
+-            elif isinstance(b, int):
++            elif b_is_num:
+                 return 1
+             else:
+                 return _cmp(a, b)
+ 
+-        a_parts = [int(x) if x.isdigit() else x for x in (a or "").split(".")]
+-        b_parts = [int(x) if x.isdigit() else x for x in (b or "").split(".")]
++        a_parts = [to_part(x) for x in (a or "").split(".")]
++        b_parts = [to_part(x) for x in (b or "").split(".")]
+ 
+         for sub_a, sub_b in zip(a_parts, b_parts):
+             cmp_result = cmp_prerelease_tag(sub_a, sub_b)

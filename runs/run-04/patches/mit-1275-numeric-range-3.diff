@@ -1,0 +1,49 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/.ruff_cache/.gitignore b/.ruff_cache/.gitignore
+--- a/.ruff_cache/.gitignore	1970-01-01 00:00:00
++++ b/.ruff_cache/.gitignore	2026-11-08 17:54:12
+@@ -0,0 +1,2 @@
++# Automatically created by ruff.
++*
+Binary files a/.ruff_cache/0.15.9/10983626954194592928 and b/.ruff_cache/0.15.9/10983626954194592928 differ
+Binary files a/.ruff_cache/0.15.9/5813213528098114362 and b/.ruff_cache/0.15.9/5813213528098114362 differ
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/.ruff_cache/CACHEDIR.TAG b/.ruff_cache/CACHEDIR.TAG
+--- a/.ruff_cache/CACHEDIR.TAG	1970-01-01 00:00:00
++++ b/.ruff_cache/CACHEDIR.TAG	2026-11-08 17:54:12
+@@ -0,0 +1 @@
++Signature: 8a477f597d28d172789f06886806bc55
+\ No newline at end of file
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-08 17:57:38
+@@ -2458,15 +2458,23 @@
+         )
+ 
+     def __reversed__(self):
+-        # Empty iterator
+-        try:
+-            start = self._get_by_index(-1)
+-        except IndexError:
+-            return iter([])
++        # Replay the items this range produces, last first. Building a
++        # mirrored range with a synthetic stop of `self._start -
++        # self._step` is not sound: with inexact types (floats) the
++        # arithmetic of the mirror disagrees with the forward items, and
++        # with datetimes the stop may lie outside the representable
++        # range. Indexing back from the front keeps every reversed item
++        # identical to its forward counterpart and never leaves the
++        # range's own domain.
++        n = self._len
+ 
+-        return iter(
+-            numeric_range(start, self._start - self._step, -self._step)
+-        )
++        def _reversed_indices():
++            i = n - 1
++            while i >= 0:
++                yield i
++                i -= 1
++
++        return (self._start + i * self._step for i in _reversed_indices())
+ 
+     def count(self, value):
+         return int(value in self)

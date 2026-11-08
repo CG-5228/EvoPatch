@@ -1,0 +1,31 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-08 17:33:06
+@@ -1206,8 +1206,12 @@
+         while True:
+             # If we've cached some items that match the target value, emit
+             # the first one and evict it from the cache.
+-            if self._cache[value]:
+-                yield self._cache[value].popleft()
++            # Use ``dict.get`` rather than ``defaultdict.__getitem__`` so a
++            # lookup that finds nothing doesn't create an empty entry, which
++            # would show up as a phantom key when iterating.
++            cached = self._cache.get(value)
++            if cached:
++                yield cached.popleft()
+             # Otherwise we need to advance the parent iterator to search for
+             # a matching item, caching the rest.
+             else:
+@@ -1218,6 +1222,12 @@
+                         return
+                     item_value = self._key(item)
+                     if item_value == value:
++                        # An actual item produced this key, so register it
++                        # (even though the item itself is yielded directly).
++                        # This keeps the key visible to ``iter`` after the
++                        # item is consumed, without ever creating keys that
++                        # no item produced.
++                        self._cache.setdefault(value, deque())
+                         yield item
+                         break
+                     elif self._validator(item_value):

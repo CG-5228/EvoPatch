@@ -1,0 +1,26 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-08 16:31:57
+@@ -2458,15 +2458,13 @@
+         )
+ 
+     def __reversed__(self):
+-        # Empty iterator
+-        try:
+-            start = self._get_by_index(-1)
+-        except IndexError:
+-            return iter([])
+-
+-        return iter(
+-            numeric_range(start, self._start - self._step, -self._step)
+-        )
++        # Walk backwards over the very items ``__iter__`` produces. Building
++        # a descending range from ``start - step`` would recompute them with
++        # a different rounding pattern (so the values would not mirror the
++        # forward ones), its boundary can leak in an extra item under
++        # inexact arithmetic, and ``start - step`` may fall outside what the
++        # type can represent (``datetime.min - step`` raises OverflowError).
++        return (self._get_by_index(i) for i in range(self._len - 1, -1, -1))
+ 
+     def count(self, value):
+         return int(value in self)

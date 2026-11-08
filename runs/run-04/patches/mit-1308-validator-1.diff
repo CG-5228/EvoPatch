@@ -1,0 +1,37 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-08 16:03:47
+@@ -1182,7 +1182,9 @@
+         self._it = iter(iterable)
+         self._key = key
+         self._cache = defaultdict(deque)
+-        self._validator = validator or (lambda x: True)
++        self._validator = (
++            (lambda x: True) if validator is None else validator
++        )
+ 
+     def __contains__(self, value):
+         if not self._validator(value):
+@@ -1218,6 +1220,9 @@
+                         return
+                     item_value = self._key(item)
+                     if item_value == value:
++                        if not self._validator(item_value):
++                            # The validator no longer accepts this key.
++                            break
+                         if value not in self._cache:
+                             self._cache[value] = deque()
+                         yield item
+@@ -1231,7 +1236,11 @@
+             if self._validator(item_value):
+                 self._cache[item_value].append(item)
+ 
+-        return iter(self._cache)
++        # Only report keys the validator currently accepts, so that key
++        # iteration stays consistent with `in` and selection even if the
++        # validator is mutable.
++        cache = self._cache
++        return (value for value in cache if self._validator(value))
+ 
+     def __getitem__(self, value):
+         if not self._validator(value):

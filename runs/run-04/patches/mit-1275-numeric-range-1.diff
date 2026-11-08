@@ -1,0 +1,139 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-08 16:35:11
+@@ -6,6 +6,7 @@
+ from collections import Counter, defaultdict, deque
+ from collections.abc import Sequence
+ from contextlib import suppress
++from fractions import Fraction
+ from functools import cached_property, partial, wraps
+ from heapq import heapify, heapreplace
+ from itertools import (
+@@ -2263,6 +2264,42 @@
+     return ret
+ 
+ 
++class _NumericSlice(Sequence):
++    """The result of slicing a ``numeric_range`` when no equivalent
++    ``numeric_range`` can represent the slice exactly.
++
++    With inexact arithmetic (e.g. floats) the repeated additions of a
++    ``numeric_range`` drift away from the original items, and computing
++    boundary values can overflow at ``datetime.min``/``datetime.max``.
++    This stores the slice's items directly instead.
++    """
++
++    def __init__(self, items):
++        self._items = items
++
++    def __getitem__(self, key):
++        if isinstance(key, slice):
++            return _NumericSlice(self._items[key])
++        if isinstance(key, int):
++            return self._items[key]
++        raise TypeError(
++            'numeric range indices must be '
++            f'integers or slices, not {type(key).__name__}'
++        )
++
++    def __len__(self):
++        return len(self._items)
++
++    def __iter__(self):
++        return iter(self._items)
++
++    def __reversed__(self):
++        return reversed(self._items)
++
++    def __repr__(self):
++        return f'_NumericSlice({self._items!r})'
++
++
+ class numeric_range(Sequence):
+     """An extension of the built-in ``range()`` function whose arguments can
+     be any orderable numeric type.
+@@ -2385,6 +2422,40 @@
+             return self._get_by_index(key)
+         elif isinstance(key, slice):
+             start_idx, stop_idx, step_idx = key.indices(self._len)
++            if not self._exact_arithmetic:
++                # With inexact arithmetic (floats) the boundary values
++                # drift from the items this range actually produces, and
++                # with datetimes they can overflow at min/max. Slice by
++                # index instead, so the result matches
++                # `list(self)[key]` exactly.
++                items = [self[i] for i in range(start_idx, stop_idx, step_idx)]
++                if not items:
++                    # Empty: do not compute boundaries, which can overflow
++                    # at datetime.min/max.
++                    return numeric_range(
++                        self._zero, self._zero, self._step * step_idx
++                    )
++                # Return a real `numeric_range` when one reproduces the
++                # items exactly; else store the items directly.
++                if len(items) == 1:
++                    for step in (self._step * step_idx, -self._step * step_idx):
++                        try:
++                            cand = numeric_range(items[0], items[0] + step, step)
++                            if list(cand) == items:
++                                return cand
++                        except (ValueError, OverflowError, ZeroDivisionError):
++                            continue
++                    return _NumericSlice(items)
++                step = items[1] - items[0]
++                try:
++                    cand = numeric_range(
++                        items[0], items[0] + len(items) * step, step
++                    )
++                    if list(cand) == items:
++                        return cand
++                except (ValueError, OverflowError, ZeroDivisionError):
++                    pass
++                return _NumericSlice(items)
+             return numeric_range(
+                 self._start + start_idx * self._step,
+                 self._start + stop_idx * self._step,
+@@ -2447,6 +2518,14 @@
+         value = self._start + i * self._step
+         return value < self._stop if self._growing else value > self._stop
+ 
++    @cached_property
++    def _exact_arithmetic(self):
++        # Slices can be built directly from boundary values only when
++        # that arithmetic is exact and cannot overflow: ints and Fractions
++        # qualify, floats drift, and datetimes can overflow at their
++        # min/max. Other types take the index-based path.
++        return isinstance(self._step, (int, Fraction))
++
+     def __reduce__(self):
+         return numeric_range, (self._start, self._stop, self._step)
+ 
+@@ -2458,15 +2537,14 @@
+         )
+ 
+     def __reversed__(self):
+-        # Empty iterator
+-        try:
+-            start = self._get_by_index(-1)
+-        except IndexError:
+-            return iter([])
+-
+-        return iter(
+-            numeric_range(start, self._start - self._step, -self._step)
+-        )
++        # Emit the forward items in reverse index order, so the output is
++        # exactly `list(self)[::-1]`. Building a descending `numeric_range`
++        # instead would drift at the boundary with inexact arithmetic
++        # (yielding an extra, off-grid item for floats), and computing the
++        # boundary `self._start - self._step` overflows when `self._start`
++        # is at `datetime.min` or `datetime.max`.
++        for index in range(self._len - 1, -1, -1):
++            yield self._get_by_index(index)
+ 
+     def count(self, value):
+         return int(value in self)
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/out.log b/out.log
+--- a/out.log	1970-01-01 00:00:00
++++ b/out.log	2026-11-08 16:06:30
+@@ -0,0 +1 @@
++/bin/bash: work/tools/test: No such file or directory

@@ -1,0 +1,39 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-08 16:10:51
+@@ -516,6 +516,13 @@
+         >>> str(semver.Version.parse("0.1.4").next_version("prerelease"))
+         '0.1.5-rc.1'
+ 
++        If the prerelease uses the older style where the counter is
++        attached directly to the token without a dot, the counter is
++        carried on in that same style:
++
++        >>> str(semver.Version.parse("2.4.0-rc7").next_version("prerelease"))
++        '2.4.0-rc8'
++
+         :param part: One of "major", "minor", "patch", or "prerelease"
+         :param prerelease_token: prefix string of prerelease, defaults to 'rc'
+         :return: new object with the appropriate part raised
+@@ -540,6 +547,21 @@
+             return getattr(version, "bump_" + part)()
+         else:
+             if version.prerelease is not None and prerelease_token:
++                # Older tags attach the counter directly to the token
++                # ("rc7") instead of using a dot-separated identifier
++                # ("rc.7").  Such a prerelease still starts with the
++                # requested token, so continue counting in the same style
++                # instead of restarting the series at "{token}.1", which
++                # would produce a version lower than the current one.
++                attached = re.fullmatch(
++                    re.escape(str(prerelease_token)) + r"(\d+)",
++                    version.prerelease,
++                )
++                if attached is not None:
++                    prerelease = "{}{}".format(
++                        prerelease_token, int(attached.group(1)) + 1
++                    )
++                    return version.replace(prerelease=prerelease, build=None)
+                 current_token = version.prerelease.split(".")[0]
+                 if current_token != prerelease_token:
+                     return version.replace(prerelease=f"{prerelease_token}.1", build=None)

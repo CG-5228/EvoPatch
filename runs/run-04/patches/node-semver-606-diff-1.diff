@@ -1,0 +1,95 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/functions/diff.js b/functions/diff.js
+--- a/functions/diff.js	1970-01-01 00:00:00
++++ b/functions/diff.js	2026-11-08 16:00:32
+@@ -1,6 +1,8 @@
+ const parse = require('./parse.js')
+ 
+ const diff = (version1, version2) => {
++  // Parse in argument order: parse throws for invalid input, and version1's
++  // error must surface first.
+   const v1 = parse(version1, null, true)
+   const v2 = parse(version2, null, true)
+   const comparison = v1.compare(v2)
+@@ -15,46 +17,64 @@
+   const highHasPre = !!highVersion.prerelease.length
+   const lowHasPre = !!lowVersion.prerelease.length
+ 
++  // The level of a change is decided by the versions in the order they were
++  // given, not by which of the two happens to sort higher. The core change
++  // is whichever of major/minor/patch actually differs; when the cores are
++  // identical the level comes from the number of core fields that are
++  // non-zero (so 0.0.0-1 -> 0.0.0 counts as a major change).
++  const v1Major = v1.major !== v2.major
++  const v1Minor = v1.minor !== v2.minor
++  const v1Patch = v1.patch !== v2.patch
++
+   if (lowHasPre && !highHasPre) {
+-    // Going from prerelease -> no prerelease requires some special casing
++    // Going from prerelease -> no prerelease requires some special casing.
+ 
+-    // If the low version has only a major, then it will always be a major
+-    // Some examples:
+-    // 1.0.0-1 -> 1.0.0
+-    // 1.0.0-1 -> 1.1.1
+-    // 1.0.0-1 -> 2.0.0
+-    if (!lowVersion.patch && !lowVersion.minor) {
++    // If the lower version has only a major (x.0.0 with no minor/patch),
++    // releasing it is always a major change, no matter what the second
++    // version is:
++    // 1.0.0-1 -> 1.0.0, 1.0.0-1 -> 1.1.1, 1.0.0-1 -> 2.0.0
++    if (!lowVersion.minor && !lowVersion.patch) {
+       return 'major'
+     }
+ 
+-    // Otherwise it can be determined by checking the high version
+-
+-    if (highVersion.patch) {
+-      // anything higher than a patch bump would result in the wrong version
++    // The cores differ in the given order: the smallest field that
++    // differs decides the level, e.g. 3.4.6-2 -> 3.5.2 is a minor change
++    // (not a patch, as the old patch-only check claimed), while
++    // 0.0.2-1 -> 1.0.0 is a major change.
++    if (v1Major) {
++      return 'major'
++    }
++    if (v1Minor) {
++      return 'minor'
++    }
++    if (v1Patch) {
+       return 'patch'
+     }
+ 
+-    if (highVersion.minor) {
+-      // anything higher than a minor bump would result in the wrong version
++    // Identical cores: the level is the lowest non-zero field of the
++    // version being released (0.1.0-1 -> 0.1.0 is minor, 1.0.1-1 -> 1.0.1
++    // is patch).
++    if (v1.minor) {
+       return 'minor'
+     }
+-
+-    // bumping major/minor/patch all have same result
++    if (v1.patch) {
++      return 'patch'
++    }
+     return 'major'
+   }
+ 
+   // add the `pre` prefix if we are going to a prerelease version
+   const prefix = highHasPre ? 'pre' : ''
+ 
+-  if (v1.major !== v2.major) {
++  if (v1Major) {
+     return prefix + 'major'
+   }
+ 
+-  if (v1.minor !== v2.minor) {
++  if (v1Minor) {
+     return prefix + 'minor'
+   }
+ 
+-  if (v1.patch !== v2.patch) {
++  if (v1Patch) {
+     return prefix + 'patch'
+   }
+ 

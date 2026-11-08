@@ -1,0 +1,38 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/cacheutils.py b/boltons/cacheutils.py
+--- a/boltons/cacheutils.py	1970-01-01 00:00:00
++++ b/boltons/cacheutils.py	2026-11-08 17:35:31
+@@ -238,6 +238,7 @@
+                 super(LRI, self).__setitem__(key, value)
+             else:
+                 link[VALUE] = value
++                super(LRI, self).__setitem__(key, value)
+ 
+     def __getitem__(self, key):
+         with self._lock:
+@@ -316,6 +317,26 @@
+             for k in F:
+                 setitem(k, F[k])
+             return
++
++    def __ior__(self, other):
++        # dict's C-level |= would write straight to the underlying
++        # dict storage, bypassing __setitem__ and leaving the linked
++        # list stale; set each item ourselves instead. Dict operands
++        # are read through raw dict access so that |= does not
++        # mutate the operand (recency, hit counts) nor nest locks.
++        if other is self:
++            return self
++        if isinstance(other, dict):
++            pairs = [(k, dict.__getitem__(other, k))
++                     for k in list(dict.keys(other))]
++            with self._lock:
++                setitem = self.__setitem__
++                for k, v in pairs:
++                    setitem(k, v)
++        else:
++            with self._lock:
++                self.update(other)
++        return self
+ 
+     def __eq__(self, other):
+         with self._lock:

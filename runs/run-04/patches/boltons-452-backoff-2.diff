@@ -1,0 +1,26 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/iterutils.py b/boltons/iterutils.py
+--- a/boltons/iterutils.py	1970-01-01 00:00:00
++++ b/boltons/iterutils.py	2026-11-08 16:25:29
+@@ -623,8 +623,9 @@
+         stop (float): Positive number for maximum.
+         count (int): Number of steps before stopping
+             iteration. Defaults to the number of steps between *start* and
+-            *stop*. Pass the string, `'repeat'`, to continue iteration
+-            indefinitely.
++            *stop*, which requires *factor* > 1.0; passing *factor* of 1.0
++            without a *count* raises a ValueError. Pass the string,
++            `'repeat'`, to continue iteration indefinitely.
+         factor (float): Rate of exponential increase. Defaults to `2.0`,
+             e.g., `[1, 2, 4, 8, 16]`.
+         jitter (float): A factor between `-1.0` and `1.0`, used to
+@@ -647,6 +648,10 @@
+     if stop < start:
+         raise ValueError('expected stop >= start, not %r' % stop)
+     if count is None:
++        if factor == 1.0:
++            raise ValueError(
++                'expected factor > 1.0 when count is not specified, as a '
++                'flat sequence cannot reach stop, not %r' % factor)
+         denom = start if start else 1
+         count = 1 + math.ceil(math.log(stop/denom, factor))
+         count = count if start else count + 1

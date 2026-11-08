@@ -1,0 +1,14 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/iterutils.py b/boltons/iterutils.py
+--- a/boltons/iterutils.py	1970-01-01 00:00:00
++++ b/boltons/iterutils.py	2026-11-08 15:50:30
+@@ -647,6 +647,10 @@
+     if stop < start:
+         raise ValueError('expected stop >= start, not %r' % stop)
+     if count is None:
++        if factor == 1.0:
++            raise ValueError(
++                'cannot infer count when factor == 1.0: a flat sequence'
++                ' never reaches a larger stop; pass count explicitly')
+         denom = start if start else 1
+         count = 1 + math.ceil(math.log(stop/denom, factor))
+         count = count if start else count + 1

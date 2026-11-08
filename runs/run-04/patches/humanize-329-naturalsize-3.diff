@@ -1,0 +1,40 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/.ruff_cache/.gitignore b/.ruff_cache/.gitignore
+--- a/.ruff_cache/.gitignore	1970-01-01 00:00:00
++++ b/.ruff_cache/.gitignore	2026-11-08 17:15:57
+@@ -0,0 +1,2 @@
++# Automatically created by ruff.
++*
+Binary files a/.ruff_cache/0.15.9/860698776710439726 and b/.ruff_cache/0.15.9/860698776710439726 differ
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/.ruff_cache/CACHEDIR.TAG b/.ruff_cache/CACHEDIR.TAG
+--- a/.ruff_cache/CACHEDIR.TAG	1970-01-01 00:00:00
++++ b/.ruff_cache/CACHEDIR.TAG	2026-11-08 17:15:57
+@@ -0,0 +1 @@
++Signature: 8a477f597d28d172789f06886806bc55
+\ No newline at end of file
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/filesize.py b/src/humanize/filesize.py
+--- a/src/humanize/filesize.py	1970-01-01 00:00:00
++++ b/src/humanize/filesize.py	2026-11-08 17:37:58
+@@ -98,5 +98,21 @@
+ 
+     exp = int(min(log(abs_bytes, base), len(suffix)))
+     space = "" if gnu else " "
+-    ret: str = format % (bytes_ / (base**exp)) + space + _(suffix[exp - 1])
+-    return ret
++
++    ret: str = format % (bytes_ / (base**exp))
++
++    # The displayed number can round up to the next unit boundary
++    # (e.g. 999.96 kB formats as "1000.0 kB"). When that happens the unit
++    # must move up as well, unless we are already at the largest unit,
++    # where there is nothing bigger to move up to. Re-format the rounded
++    # value so the output matches what passing the rounded value itself
++    # would produce.
++    try:
++        rounded = float(ret)
++    except ValueError:
++        rounded = 0.0
++    if abs(rounded) >= base and exp < len(suffix):
++        exp += 1
++        ret = format % (rounded / base)
++
++    return ret + space + _(suffix[exp - 1])
