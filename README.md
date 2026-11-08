@@ -8,8 +8,8 @@ EvoPatch is a bug-fixing agent on [TrueForge](https://trueforge.dev). It attempt
 
 > Filled in from `runs/` at the end.
 
-- **Task and score:** _21 real merged bug fixes (9 held out, from repos `improve` never sees); score = 100 × mean share of attempts that pass all of the maintainers' tests._
-- **Baseline (3 runs, nothing changed):** _pending (`runs/spread.md`)._
+- **Task and score:** 21 real merged bug fixes from 5 open-source repos, 3 attempts each. 9 are held out, from repos `improve` never sees. Score = 100 × the mean share of attempts that pass all of the maintainers' tests with a clean audit (no fetching the project's code or its fix).
+- **Baseline (3 runs, nothing changed):** 33.33, 47.62 and 39.68; held out 40.74, 40.74 and 44.44. So every run after the change must score above 47.62, and above 44.44 held out ([`runs/spread.md`](runs/spread.md)).
 - **After the change (2+ runs):** _pending (`runs/summary.csv`)._
 - **The change that did it:** _pending: link to the commit with `Agent-Session:`, and what the agent learned._
 - **Real gain?** _pending: the five checks (`runs/verdict.md`)._
