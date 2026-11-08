@@ -1,0 +1,62 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-08 13:43:30
+@@ -223,15 +223,24 @@
+         OrderedMultiDict([('a', -1), ('a', 0), ('a', 1), ('a', 2)])
+ 
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+-        tuples and other sequences and iterables work.
++        tuples and other sequences and iterables work, including
++        one-shot iterators such as generators.
+         """
+         if not v:
+             return
+         self_insert = self._insert
+-        values = super().setdefault(k, [])
++        values = None
+         for subv in v:
++            if values is None:
++                # Only create the key once a value actually shows up,
++                # so that an empty iterator adds nothing at all. The
++                # value list and the linked-list cells are updated
++                # together, one item at a time; iterating *v* only
++                # once also keeps one-shot iterators (e.g. generators)
++                # consistent with the stored values.
++                values = super().setdefault(k, [])
+             self_insert(k, subv)
+-        values.extend(v)
++            values.append(subv)
+ 
+     def get(self, k, default=None):
+         """Return the value for key *k* if present in the dictionary, else
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-08 13:43:30
+@@ -1121,15 +1121,24 @@
+         OrderedMultiDict([('a', -1), ('a', 0), ('a', 1), ('a', 2)])
+ 
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+-        tuples and other sequences and iterables work.
++        tuples and other sequences and iterables work, including
++        one-shot iterators such as generators.
+         """
+         if not v:
+             return
+         self_insert = self._insert
+-        values = super().setdefault(k, [])
++        values = None
+         for subv in v:
++            if values is None:
++                # Only create the key once a value actually shows up,
++                # so that an empty iterator adds nothing at all. The
++                # value list and the linked-list cells are updated
++                # together, one item at a time; iterating *v* only
++                # once also keeps one-shot iterators (e.g. generators)
++                # consistent with the stored values.
++                values = super().setdefault(k, [])
+             self_insert(k, subv)
+-        values.extend(v)
++            values.append(subv)
+ 
+     def get(self, k, default=None):
+         """Return the value for key *k* if present in the dictionary, else

@@ -1,0 +1,22 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/internal/re.js b/internal/re.js
+--- a/internal/re.js	1970-01-01 00:00:00
++++ b/internal/re.js	2026-11-08 14:43:13
+@@ -75,13 +75,13 @@
+                         `(${src[t.NUMERICIDENTIFIERLOOSE]})`)
+ 
+ // ## Pre-release Version Identifier
+-// A numeric identifier, or a non-numeric identifier.
++// A non-numeric identifier, or a numeric identifier.
+ 
+-createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NUMERICIDENTIFIER]
+-}|${src[t.NONNUMERICIDENTIFIER]})`)
++createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NONNUMERICIDENTIFIER]
++}|${src[t.NUMERICIDENTIFIER]})`)
+ 
+-createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NUMERICIDENTIFIERLOOSE]
+-}|${src[t.NONNUMERICIDENTIFIER]})`)
++createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NONNUMERICIDENTIFIER]
++}|${src[t.NUMERICIDENTIFIERLOOSE]})`)
+ 
+ // ## Pre-release Version
+ // Hyphen, followed by one or more dot-separated pre-release version

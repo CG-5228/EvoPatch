@@ -1,0 +1,26 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/cacheutils.py b/boltons/cacheutils.py
+--- a/boltons/cacheutils.py	1970-01-01 00:00:00
++++ b/boltons/cacheutils.py	2026-11-08 13:49:31
+@@ -238,6 +238,7 @@
+                 super(LRI, self).__setitem__(key, value)
+             else:
+                 link[VALUE] = value
++                super(LRI, self).__setitem__(key, value)
+ 
+     def __getitem__(self, key):
+         with self._lock:
+@@ -316,6 +317,14 @@
+             for k in F:
+                 setitem(k, F[k])
+             return
++
++    def __ior__(self, other):
++        # dict.__ior__ (the |= operator) bypasses __setitem__ on dict
++        # subclasses, which would leave the linked list out of sync
++        # with the underlying dict. Route it through update().
++        with self._lock:
++            self.update(other)
++            return self
+ 
+     def __eq__(self, other):
+         with self._lock:

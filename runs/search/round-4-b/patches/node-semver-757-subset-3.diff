@@ -1,0 +1,137 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/ranges/subset.js b/ranges/subset.js
+--- a/ranges/subset.js	1970-01-01 00:00:00
++++ b/ranges/subset.js	2026-11-08 15:24:58
+@@ -3,7 +3,6 @@
+ const Range = require('../classes/range.js')
+ const Comparator = require('../classes/comparator.js')
+ const { ANY } = Comparator
+-const satisfies = require('../functions/satisfies.js')
+ const compare = require('../functions/compare.js')
+ 
+ // Complex range `r1 || r2 || ...` is a subset of `R1 || R2 || ...` iff:
+@@ -26,21 +25,24 @@
+ // - If GT and LT, and GT.semver > LT.semver, return true (null set)
+ // - If any C is a = range, and GT or LT are set, return false
+ // - If EQ
+-//   - If GT, and EQ does not satisfy GT, return true (null set)
+-//   - If LT, and EQ does not satisfy LT, return true (null set)
+-//   - If EQ satisfies every C, return true
++//   - If EQ does not satisfy c, return true (null set)
++//   - If EQ satisfies C, return true
+ //   - Else return false
++// - If GT is >=, and GT.semver does not satisfy C, return false
++// - If LT is <=, and LT.semver does not satisfy C, return false
+ // - If GT
+ //   - If GT.semver is lower than any > or >= comp in C, return false
+-//   - If GT is >=, and GT.semver does not satisfy every C, return false
+ //   - If GT.semver has a prerelease, and not in prerelease mode
+ //     - If no C has a prerelease and the GT.semver tuple, return false
+ // - If LT
+ //   - If LT.semver is greater than any < or <= comp in C, return false
+-//   - If LT is <=, and LT.semver does not satisfy every C, return false
+ //   - If LT.semver has a prerelease, and not in prerelease mode
+ //     - If no C has a prerelease and the LT.semver tuple, return false
+ // - Else return true
++//
++// Note: "satisfies X" here always means testing X against the whole simple
++// range, never against a single comparator on its own, because the prerelease
++// allow-list is a rule about the set of comparators as a whole.
+ 
+ const subset = (sub, dom, options = {}) => {
+   if (sub === dom) {
+@@ -73,6 +75,39 @@
+ const minimumVersionWithPreRelease = [new Comparator('>=0.0.0-0')]
+ const minimumVersion = [new Comparator('>=0.0.0')]
+ 
++// Does this version satisfy the simple range made up of these comparators?
++// This mirrors Range.test: when the version has a prerelease and we are not
++// in prerelease mode, it is only allowed if SOME comparator in the set has a
++// prerelease with the same major/minor/patch tuple.  Testing a version
++// against one comparator at a time, as a range of its own, would demand that
++// tuple from every single comparator and wrongly reject valid subsets like
++// `6.3.0-rc.5` in `>=6.3.0-rc.4 <7.0.0-0`.
++const satisfiesSet = (version, set, options) => {
++  if (version === ANY) {
++    return true
++  }
++
++  for (const c of set) {
++    if (!c.test(version)) {
++      return false
++    }
++  }
++
++  if (version.prerelease.length && !options.includePrerelease) {
++    for (const c of set) {
++      if (c.semver !== ANY && c.semver.prerelease.length &&
++          c.semver.major === version.major &&
++          c.semver.minor === version.minor &&
++          c.semver.patch === version.patch) {
++        return true
++      }
++    }
++    return false
++  }
++
++  return true
++}
++
+ const simpleSubset = (sub, dom, options) => {
+   if (sub === dom) {
+     return true
+@@ -124,23 +159,28 @@
+ 
+   // will iterate one or zero times
+   for (const eq of eqSet) {
+-    if (gt && !satisfies(eq, String(gt), options)) {
++    if ((gt || lt) && !satisfiesSet(eq, sub, options)) {
+       return null
+     }
+ 
+-    if (lt && !satisfies(eq, String(lt), options)) {
+-      return null
++    if (!satisfiesSet(eq, dom, options)) {
++      return false
+     }
+ 
+-    for (const c of dom) {
+-      if (!satisfies(eq, String(c), options)) {
+-        return false
+-      }
+-    }
+-
+     return true
+   }
+ 
++  // >=X and <=X include X itself, and X is always within the sub range when
++  // GT/LT are inclusive bounds, so X has to be accepted by the whole dom
++  // range, not merely by each of its comparators separately.
++  if (gt && gt.operator === '>=' && !satisfiesSet(gt.semver, dom, options)) {
++    return false
++  }
++
++  if (lt && lt.operator === '<=' && !satisfiesSet(lt.semver, dom, options)) {
++    return false
++  }
++
+   let higher, lower
+   let hasDomLT, hasDomGT
+   // if the subset has a prerelease, we need a comparator in the superset
+@@ -174,8 +214,6 @@
+         if (higher === c && higher !== gt) {
+           return false
+         }
+-      } else if (gt.operator === '>=' && !satisfies(gt.semver, String(c), options)) {
+-        return false
+       }
+     }
+     if (lt) {
+@@ -192,8 +230,6 @@
+         if (lower === c && lower !== lt) {
+           return false
+         }
+-      } else if (lt.operator === '<=' && !satisfies(lt.semver, String(c), options)) {
+-        return false
+       }
+     }
+     if (!c.operator && (lt || gt) && gtltComp !== 0) {

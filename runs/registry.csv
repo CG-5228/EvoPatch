@@ -21,3 +21,4 @@ started_utc,kind,label,session_id,agent_commit,status
 2026-11-07T09:21:31.512Z,search,round-4-a,01m6tdj069f0bpbykrp0f4w164,611230716342459a9e7fddfe0efcfc6fd53e5cab,aborted: 4 infrastructure failures in a row  last: createTurn rejected after 14.8s: Status code: 500 Body: {   "error": {     "message": "Internal server error"   } }
 2026-11-08T13:37:34Z,search,round-4-a,01m6tdj069f0bpbykrp0f4w164,1fcb05bbf72b746972c6bb3e3134b3a80fb9ea58,finished: 83.33
 2026-11-08T13:37:42.340Z,search,round-4-b,01m6xp23dwnd9ykcqdjv406y5f,b4d88977c660e1c871bdc4951235646c5cd423a5,started
+2026-11-08T15:42:24Z,search,round-4-b,01m6xp23dwnd9ykcqdjv406y5f,b4d88977c660e1c871bdc4951235646c5cd423a5,finished: 86.11
