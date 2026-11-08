@@ -1,6 +1,6 @@
 {
   "repo": "CG-5228/EvoPatch",
-  "generated_from": "9ea01c37d8e6f8b7328373393b0b81c31596626f",
+  "generated_from": "de379e2bcf8301bd89ef921f0877a09cd7cb919b",
   "baseline_runs": [
     1,
     2,
@@ -2164,6 +2164,639 @@
         "voided_unmatched": 0,
         "patches_submitted": 54,
         "patches_passing": 53
+      }
+    },
+    {
+      "run": 4,
+      "score": 84.13,
+      "train": 77.78,
+      "holdout": 92.59,
+      "commit": "16311afe28599fbca83a7c62c07113766cacdf36",
+      "tree": "b077f6046f00f400420c702f41ab46fe3c44cd11",
+      "tokens": 76666821,
+      "classes": {
+        "resolved": 53,
+        "f2p_failed": 3,
+        "audit": 3,
+        "no_patch": 4
+      },
+      "responses": {
+        "model_calls": 2899,
+        "noise_responses": 0,
+        "cut_off_responses": 14
+      },
+      "tests_only": 88.89,
+      "cost_usd": 2.9997,
+      "tool_calls": 4363,
+      "session": "01m6xx6tma3v1dxw9yd249xay1",
+      "usage": {
+        "turns": 63,
+        "execs": 4278,
+        "skill_reads": {
+          "fix-workflow": 149,
+          "patch-review": 149,
+          "sandbox-recipes": 94,
+          "release": 1
+        },
+        "subagent_threads": 84,
+        "subagent_names": [
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer2",
+          "reviewer3",
+          "reviewer3",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer2",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer3",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer2",
+          "reviewer",
+          "reviewer",
+          "reviewer",
+          "reviewer"
+        ],
+        "sandboxes": 63,
+        "init_failures": 0,
+        "suspected_timeouts": 31
+      },
+      "tasks": {
+        "boltons-348-lru": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.5
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.2
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.053
+            }
+          ]
+        },
+        "boltons-404-omd-eq": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.333
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 1
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.25
+            }
+          ]
+        },
+        "boltons-423-indexedset": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.125
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.088
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0.154
+            }
+          ]
+        },
+        "boltons-452-backoff": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "f2p_failed",
+              "bug_tests": "0/1",
+              "similarity": 0.091
+            },
+            {
+              "attempt": 2,
+              "outcome": "f2p_failed",
+              "bug_tests": "0/1",
+              "similarity": 0.071
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.238
+            }
+          ]
+        },
+        "boltons-458-addlist": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.028
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "1/1",
+              "similarity": 0.143
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0
+            }
+          ]
+        },
+        "humanize-329-naturalsize": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.038
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.059
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.043
+            }
+          ]
+        },
+        "humanize-359-metric": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "5/5",
+              "similarity": 0.038
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "5/5",
+              "similarity": 0.071
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "5/5",
+              "similarity": 0
+            }
+          ]
+        },
+        "mit-1250-value-chain": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.2
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.083
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.2
+            }
+          ]
+        },
+        "mit-1275-numeric-range": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0
+            }
+          ]
+        },
+        "mit-1277-zip-broadcast": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.217
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.118
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.021
+            }
+          ]
+        },
+        "mit-1284-bucket": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "4/4",
+              "similarity": 0.059
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "4/4",
+              "similarity": 0.118
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "4/4",
+              "similarity": 0.05
+            }
+          ]
+        },
+        "mit-1308-validator": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0.25
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "1/1",
+              "similarity": 0
+            }
+          ]
+        },
+        "node-semver-226-dotted-inc": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "audit",
+              "bug_tests": "28/28",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "28/28",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "28/28",
+              "similarity": 0
+            }
+          ]
+        },
+        "node-semver-512-tilde": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "35/35",
+              "similarity": 0.375
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "35/35",
+              "similarity": 0.333
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "35/35",
+              "similarity": 0.375
+            }
+          ]
+        },
+        "node-semver-606-diff": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "f2p_failed",
+              "bug_tests": "4/6",
+              "similarity": 0.057
+            },
+            {
+              "attempt": 2,
+              "outcome": "audit",
+              "bug_tests": "6/6",
+              "similarity": 0.111
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.083
+            }
+          ]
+        },
+        "node-semver-757-subset": {
+          "score": 0.3333,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "2/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "no_patch",
+              "bug_tests": "0/2",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "no_patch",
+              "bug_tests": "0/2",
+              "similarity": 0
+            }
+          ]
+        },
+        "node-semver-775-coerce": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "5/5",
+              "similarity": 0.25
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "5/5",
+              "similarity": 0.143
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "5/5",
+              "similarity": 0
+            }
+          ]
+        },
+        "pysemver-484-rc": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "3/3",
+              "similarity": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "3/3",
+              "similarity": 0
+            },
+            {
+              "attempt": 3,
+              "outcome": "no_patch",
+              "bug_tests": "0/3",
+              "similarity": 0
+            }
+          ]
+        },
+        "pysemver-487-long": {
+          "score": 0.6667,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.116
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.034
+            },
+            {
+              "attempt": 3,
+              "outcome": "no_patch",
+              "bug_tests": "0/6",
+              "similarity": 0
+            }
+          ]
+        },
+        "pysemver-497-token": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.263
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.185
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "6/6",
+              "similarity": 0.161
+            }
+          ]
+        },
+        "pysemver-499-rollover": {
+          "score": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "resolved",
+              "bug_tests": "9/9",
+              "similarity": 0.087
+            },
+            {
+              "attempt": 2,
+              "outcome": "resolved",
+              "bug_tests": "9/9",
+              "similarity": 0.235
+            },
+            {
+              "attempt": 3,
+              "outcome": "resolved",
+              "bug_tests": "9/9",
+              "similarity": 0.211
+            }
+          ]
+        }
+      },
+      "wall_s": 10735,
+      "stops": 0,
+      "no_patch_endings": {
+        "time_limit": 1,
+        "output_cap": 3,
+        "iteration_limit": 0,
+        "safety_filter": 0,
+        "other": 0
+      },
+      "reviewer": {
+        "attempts": 63,
+        "reviewed": 61,
+        "briefs": 84,
+        "briefs_with_network_rule": 7,
+        "reviewer_hit": 3,
+        "root_hit": 1,
+        "voided": 3,
+        "voided_reviewer_only": 2,
+        "voided_root_only": 1,
+        "voided_both": 0,
+        "voided_unmatched": 0,
+        "patches_submitted": 59,
+        "patches_passing": 56
       }
     }
   ],
