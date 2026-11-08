@@ -22,3 +22,4 @@ started_utc,kind,label,session_id,agent_commit,status
 2026-11-08T13:37:34Z,search,round-4-a,01m6tdj069f0bpbykrp0f4w164,1fcb05bbf72b746972c6bb3e3134b3a80fb9ea58,finished: 83.33
 2026-11-08T13:37:42.340Z,search,round-4-b,01m6xp23dwnd9ykcqdjv406y5f,b4d88977c660e1c871bdc4951235646c5cd423a5,started
 2026-11-08T15:42:24Z,search,round-4-b,01m6xp23dwnd9ykcqdjv406y5f,b4d88977c660e1c871bdc4951235646c5cd423a5,finished: 86.11
+2026-11-08T15:42:37.246Z,counted,run-04,01m6xx6tma3v1dxw9yd249xay1,16311afe28599fbca83a7c62c07113766cacdf36,started
