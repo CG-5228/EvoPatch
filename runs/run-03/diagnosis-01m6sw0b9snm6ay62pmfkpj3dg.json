@@ -1,0 +1,34 @@
+{
+  "cause": "Reference hunting outside the workspace: the agent (mostly delegated helpers, occasionally itself) fetched code from the network or read other installed copies of the library to compare against, without stating a boundary in the helper's brief and without ever auditing the commands the helper actually ran before trusting its verdict; out-of-bounds evidence gathering disqualified the attempt even when every test passed.",
+  "rule": "All evidence must come from the working tree: never fetch code from the network or read another installed copy of the library, in any thread. When you delegate, state that boundary in the brief, and before trusting a helper's verdict inspect the commands it actually ran and reject any that reached outside the working tree.",
+  "cited": [
+    "run-01/boltons-348-lru-1",
+    "round-1-a/node-semver-226-dotted-inc-1",
+    "run-03/humanize-359-metric-1",
+    "run-01/node-semver-775-coerce-1"
+  ],
+  "predicted_effect": "Attempts whose fixes pass the tests will stop being voided: helpers will stay inside the workspace because the brief says so, and any out-of-bounds command a helper runs anyway will be caught and discounted before the attempt finishes, instead of silently invalidating correct work.",
+  "learned": "I learned that correct fixes were being thrown away because evidence was gathered outside the working tree — usually by an unconstrained, never-audited helper — so every task now ends with a step that states the boundary up front and checks what helpers actually ran before trusting them.",
+  "session_id": "01m6sw0b9snm6ay62pmfkpj3dg",
+  "parent": "7e5cee271c1c3b3d280882ccaf4356d50eed60d1",
+  "usage": {
+    "turns": 1,
+    "execs": 169,
+    "skill_reads": {
+      "fix-workflow": 12,
+      "patch-review": 3,
+      "sandbox-recipes": 2
+    },
+    "subagent_threads": 5,
+    "subagent_names": [
+      "analyst1",
+      "analyst2",
+      "analyst3",
+      "analyst4",
+      "skeptic"
+    ],
+    "sandboxes": 1,
+    "init_failures": 0,
+    "suspected_timeouts": 0
+  }
+}

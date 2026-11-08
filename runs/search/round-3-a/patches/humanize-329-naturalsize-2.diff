@@ -1,0 +1,25 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/filesize.py b/src/humanize/filesize.py
+--- a/src/humanize/filesize.py	1970-01-01 00:00:00
++++ b/src/humanize/filesize.py	2026-11-07 03:12:42
+@@ -97,6 +97,20 @@
+         return f"{int(bytes_)}B" if gnu else _("%d Bytes") % int(bytes_)
+ 
+     exp = int(min(log(abs_bytes, base), len(suffix)))
++    bytes_per_unit = base**exp
++
++    # The value rounded by `format` can reach `base` (e.g. 999.96 kB formats
++    # as "1000.0 kB"). When that happens show the next unit instead, so the
++    # number and the unit move together. The largest unit is kept as-is:
++    # there is nothing bigger to move up to.
++    try:
++        displayed = abs(float(format % (bytes_ / bytes_per_unit)))
++    except (TypeError, ValueError):
++        displayed = abs(bytes_ / bytes_per_unit)
++    if displayed >= base and exp < len(suffix):
++        exp += 1
++        bytes_per_unit = base**exp
++
+     space = "" if gnu else " "
+-    ret: str = format % (bytes_ / (base**exp)) + space + _(suffix[exp - 1])
++    ret: str = format % (bytes_ / bytes_per_unit) + space + _(suffix[exp - 1])
+     return ret

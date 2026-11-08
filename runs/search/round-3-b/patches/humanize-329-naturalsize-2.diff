@@ -1,0 +1,23 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/filesize.py b/src/humanize/filesize.py
+--- a/src/humanize/filesize.py	1970-01-01 00:00:00
++++ b/src/humanize/filesize.py	2026-11-07 05:21:05
+@@ -98,5 +98,18 @@
+ 
+     exp = int(min(log(abs_bytes, base), len(suffix)))
+     space = "" if gnu else " "
+-    ret: str = format % (bytes_ / (base**exp)) + space + _(suffix[exp - 1])
++    scaled = bytes_ / (base**exp)
++    rendered = format % scaled
++    # The scaled value can round up to the base (e.g. 999960 bytes renders as
++    # "1000.0 kB"). When that happens, move up to the next unit so the number
++    # and the suffix stay in sync. The largest suffix has nowhere to go, so it
++    # keeps showing itself for huge values.
++    try:
++        rounds_up_to_base = abs(float(rendered)) >= base
++    except ValueError:
++        rounds_up_to_base = False
++    if rounds_up_to_base and exp < len(suffix):
++        exp += 1
++        rendered = format % (bytes_ / (base**exp))
++    ret: str = rendered + space + _(suffix[exp - 1])
+     return ret

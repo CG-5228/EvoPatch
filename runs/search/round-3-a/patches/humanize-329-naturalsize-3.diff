@@ -1,0 +1,74 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/filesize.py b/src/humanize/filesize.py
+--- a/src/humanize/filesize.py	1970-01-01 00:00:00
++++ b/src/humanize/filesize.py	2026-11-07 04:32:35
+@@ -2,6 +2,7 @@
+ 
+ from __future__ import annotations
+ 
++import re
+ from math import log
+ 
+ from humanize.i18n import _gettext as _
+@@ -97,6 +98,61 @@
+         return f"{int(bytes_)}B" if gnu else _("%d Bytes") % int(bytes_)
+ 
+     exp = int(min(log(abs_bytes, base), len(suffix)))
++    # ``log`` can round up at a boundary, leaving the scaled value below 1;
++    # demote in that case so the unit and the number stay in step.
++    while exp > 1 and base**exp > abs_bytes:
++        exp -= 1
+     space = "" if gnu else " "
+-    ret: str = format % (bytes_ / (base**exp)) + space + _(suffix[exp - 1])
++    scaled = bytes_ / (base**exp)
++
++    # The formatted number can round up to the base (e.g. "1000.0 kB").
++    # When that happens the unit must move up with it, unless we are
++    # already at the largest unit.
++    while exp < len(suffix):
++        magnitude = _displayed_magnitude(format, scaled)
++        if magnitude is None or magnitude < base:
++            break
++        exp += 1
++        scaled = bytes_ / (base**exp)
++
++    ret: str = format % scaled + space + _(suffix[exp - 1])
+     return ret
++
++
++_FORMATTED_NUMBER = re.compile(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?")
++
++# The single value conversion a ``format`` template applies (``%%`` is an
++# escaped literal, never a conversion).
++_CONVERSION_SPEC = re.compile(r"%(?:[-+ #0]*)(?:\d+)?(?:\.\d+)?[diouxXeEfFgGrsa]")
++
++
++def _displayed_magnitude(format: str, value: float) -> float | None:
++    """Absolute number as ``format`` renders ``value``, or ``None``.
++
++    ``None`` means the formatted text does not expose a parseable number,
++    in which case the exponent must be left alone.
++    """
++    try:
++        rendered = format % value
++    except (TypeError, ValueError):
++        return None
++    field = rendered
++    spec = _CONVERSION_SPEC.search(format)
++    if spec is not None:
++        # Strip the template's literal prefix/suffix so that digits written
++        # into the template itself are not mistaken for the rendered value.
++        prefix = format[: spec.start()].replace("%%", "%")
++        suffix = format[spec.end() :].replace("%%", "%")
++        if (
++            rendered.startswith(prefix)
++            and rendered.endswith(suffix)
++            and len(rendered) >= len(prefix) + len(suffix)
++        ):
++            field = rendered[len(prefix) : len(rendered) - len(suffix)]
++    match = _FORMATTED_NUMBER.search(field)
++    if match is None:
++        return None
++    try:
++        return abs(float(match.group()))
++    except ValueError:
++        return None

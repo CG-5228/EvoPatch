@@ -1,0 +1,23 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/internal/re.js b/internal/re.js
+--- a/internal/re.js	1970-01-01 00:00:00
++++ b/internal/re.js	2026-11-06 21:42:56
+@@ -161,8 +161,18 @@
+               `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` +
+               `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?`)
+ createToken('COERCE', `${src[t.COERCEPLAIN]}(?:$|[^\\d])`)
++
++// A prerelease identifier must be matched as a whole.  Trying the
++// non-numeric form first stops an identifier that starts with a digit from
++// being cut short at the first digit that is followed by a letter: the
++// numeric form would match '7f3c' as just '7' and leave 'f3c' behind, so
++// only the leading digits of the identifier would survive.
++const COERCEPRERELEASEIDENTIFIER =
++  `(?:${src[t.NONNUMERICIDENTIFIER]}|${src[t.NUMERICIDENTIFIER]})`
++const COERCEPRERELEASE =
++  `-(${COERCEPRERELEASEIDENTIFIER}(?:\\.${COERCEPRERELEASEIDENTIFIER})*)`
+ createToken('COERCEFULL', src[t.COERCEPLAIN] +
+-              `(?:${src[t.PRERELEASE]})?` +
++              `(?:${COERCEPRERELEASE})?` +
+               `(?:${src[t.BUILD]})?` +
+               `(?:$|[^\\d])`)
+ createToken('COERCERTL', src[t.COERCE], true)

@@ -1,0 +1,48 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/setutils.py b/boltons/setutils.py
+--- a/boltons/setutils.py	1970-01-01 00:00:00
++++ b/boltons/setutils.py	2026-11-06 21:20:02
+@@ -405,6 +405,18 @@
+         if step is not None and step < 0:
+             step = -step
+             iterable = reversed(self)
++        # islice() rejects indices above sys.maxsize while list slicing
++        # clamps them to the sequence length; clamp oversized integer bounds
++        # (already normalized above) so slices keep matching list(s).
++        # Non-integer bounds are left alone to keep raising the same
++        # TypeError as islice and list do.
++        len_self = len(self)
++        if isinstance(start, int) and start > len_self:
++            start = len_self
++        if isinstance(stop, int) and stop > len_self:
++            stop = len_self
++        if isinstance(step, int) and step > max(len_self, 1):
++            step = max(len_self, 1)
+         return islice(iterable, start, stop, step)
+ 
+     # list operations
+@@ -418,6 +430,9 @@
+             return self.from_iterable(iter_slice)
+         if index < 0:
+             index += len(self)
++        if index < 0 or index >= len(self):
++            # out-of-range positions (negative or positive) raise like a list
++            raise IndexError('IndexedSet index out of range')
+         real_index = self._get_real_index(index)
+         try:
+             ret = self.item_list[real_index]
+@@ -429,7 +444,14 @@
+         "pop(index) -> remove the item at a given index (-1 by default)"
+         item_index_map = self.item_index_map
+         len_self = len(item_index_map)
+-        if index is None or index == -1 or index == len_self - 1:
++        if index is None:
++            index = -1
++        if index < 0:
++            index += len_self
++        if index < 0 or index >= len_self:
++            # out-of-range positions (negative or positive) raise like a list
++            raise IndexError('IndexedSet index out of range')
++        if index == len_self - 1:
+             ret = self.item_list.pop()
+             del item_index_map[ret]
+         else:

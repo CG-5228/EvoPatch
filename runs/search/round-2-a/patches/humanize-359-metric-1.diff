@@ -1,0 +1,30 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/number.py b/src/humanize/number.py
+--- a/src/humanize/number.py	1970-01-01 00:00:00
++++ b/src/humanize/number.py	2026-11-06 23:41:40
+@@ -550,11 +550,25 @@
+     old_bucket = exponent // 3 * 3
+     value /= 10**old_bucket
+     digits = int(max(0, precision - exponent % 3 - 1))
+-    if exponent < 30 and round(abs(value), digits) >= 1000:
++    rounded = round(abs(value), digits)
++    if exponent < 30 and rounded >= 1000:
+         exponent += 3 - exponent % 3
+         new_bucket = exponent // 3 * 3
+         value /= 10 ** (new_bucket - old_bucket)
+         digits = int(max(0, precision - exponent % 3 - 1))
++    elif rounded >= 10 ** (exponent % 3 + 1) and digits > 0:
++        # Rounding can carry the mantissa up to the next power of ten
++        # (e.g. 9.996 -> 10.0), which would otherwise print one digit more
++        # than `precision` allows. Drop the last decimal place to keep the
++        # output at `precision` significant digits.
++        digits -= 1
++    elif rounded >= 1000 and precision >= 3:
++        # Rounding carried the value past the largest prefix (Q), so it can
++        # no longer be shown as e.g. "1000 Q" within `precision` digits;
++        # fall back to scientific notation like exponent >= 33 does.
++        # (Only reachable for exponent >= 30, where the bucket cannot grow,
++        # with digits == 0, i.e. precision == 3.)
++        return scientific(value * 10**old_bucket, precision - 1) + unit
+ 
+     if exponent >= 3:
+         ordinal_ = "kMGTPEZYRQ"[exponent // 3 - 1]

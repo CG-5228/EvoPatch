@@ -1,0 +1,78 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/setutils.py b/boltons/setutils.py
+--- a/boltons/setutils.py	1970-01-01 00:00:00
++++ b/boltons/setutils.py	2026-11-07 00:45:51
+@@ -394,14 +394,31 @@
+         iterable = self
+         # start/stop are apparent (dead-slot-free) indices, the same space
+         # islice consumes; mapping them through _get_real_index() (item_list
+-        # space) over-counted by the dead slots before each bound. Only
+-        # negatives need normalizing, as islice rejects them.
++        # space) over-counted by the dead slots before each bound. Bound
++        # resolution therefore happens here, in apparent space: negatives are
++        # resolved against len(self) and everything out of range is clamped,
++        # exactly like a list, since islice rejects negatives and bounds
++        # beyond sys.maxsize. Non-integers are rejected up front, the same
++        # way list slicing does, rather than depending on islice.
+         # NB: a negative step slices the reversed stream with forward bounds
+         # (x[2:4:-1] == reversed(x)[2:4]), behavior since 2013.
+-        if start is not None and start < 0:
+-            start = max(len(self) + start, 0)
+-        if stop is not None and stop < 0:
+-            stop = max(len(self) + stop, 0)
++        if start is not None:
++            start = operator.index(start)
++        if stop is not None:
++            stop = operator.index(stop)
++        if step is not None:
++            step = operator.index(step)
++        length = len(self)
++        if start is not None:
++            if start < 0:
++                start = max(length + start, 0)
++            elif start > length:
++                start = length
++        if stop is not None:
++            if stop < 0:
++                stop = max(length + stop, 0)
++            elif stop > length:
++                stop = length
+         if step is not None and step < 0:
+             step = -step
+             iterable = reversed(self)
+@@ -416,8 +433,13 @@
+         else:
+             iter_slice = self.iter_slice(start, stop, step)
+             return self.from_iterable(iter_slice)
++        len_self = len(self)
+         if index < 0:
+-            index += len(self)
++            index += len_self
++        if index < 0 or index >= len_self:
++            # out of range, including negatives past the front, must not
++            # wrap around a second time in _get_real_index like a list
++            raise IndexError('IndexedSet index out of range')
+         real_index = self._get_real_index(index)
+         try:
+             ret = self.item_list[real_index]
+@@ -429,7 +451,20 @@
+         "pop(index) -> remove the item at a given index (-1 by default)"
+         item_index_map = self.item_index_map
+         len_self = len(item_index_map)
+-        if index is None or index == -1 or index == len_self - 1:
++        if index is not None:
++            index = operator.index(index)  # like list.pop: reject non-integers
++        if not len_self:
++            # same contract as list.pop on an empty list
++            raise IndexError('pop from empty list')
++        if index is None:
++            index = -1
++        if index < 0:
++            index += len_self
++        if index < 0 or index >= len_self:
++            # an index that is still out of range after adjusting for len
++            # must not wrap around a second time in _get_real_index
++            raise IndexError('pop index out of range')
++        if index == len_self - 1:
+             ret = self.item_list.pop()
+             del item_index_map[ret]
+         else:

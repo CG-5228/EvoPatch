@@ -1,0 +1,33 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/number.py b/src/humanize/number.py
+--- a/src/humanize/number.py	1970-01-01 00:00:00
++++ b/src/humanize/number.py	2026-11-06 21:05:13
+@@ -547,14 +547,27 @@
+     if exponent >= 33 or exponent < -30:
+         return scientific(value, precision - 1) + unit
+ 
++    original = value
+     old_bucket = exponent // 3 * 3
+     value /= 10**old_bucket
+     digits = int(max(0, precision - exponent % 3 - 1))
+-    if exponent < 30 and round(abs(value), digits) >= 1000:
+-        exponent += 3 - exponent % 3
++    if round(abs(value), digits) >= 1000:
++        # Rounding carried the mantissa past the end of its bucket, so the
++        # value moves into the next unit prefix.
++        new_exponent = exponent + 3 - exponent % 3
++        if new_exponent >= 33:
++            # No prefix is larger than Q (10^32), and keeping the rounded
++            # value would need trailing zeroes, so fall back to scientific.
++            return scientific(original, precision - 1) + unit
++        exponent = new_exponent
+         new_bucket = exponent // 3 * 3
+         value /= 10 ** (new_bucket - old_bucket)
+         digits = int(max(0, precision - exponent % 3 - 1))
++    elif round(abs(value), digits) >= 10 ** (exponent % 3 + 1):
++        # Rounding carried the mantissa into the next decade (9.996 -> 10.0,
++        # 99.96 -> 100.0), so the trailing digit has become a leading one.
++        # Drop it to keep at most `precision` significant figures.
++        digits = max(0, digits - 1)
+ 
+     if exponent >= 3:
+         ordinal_ = "kMGTPEZYRQ"[exponent // 3 - 1]

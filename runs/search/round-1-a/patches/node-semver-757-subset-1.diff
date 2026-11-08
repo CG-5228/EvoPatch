@@ -1,0 +1,130 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/ranges/subset.js b/ranges/subset.js
+--- a/ranges/subset.js	1970-01-01 00:00:00
++++ b/ranges/subset.js	2026-11-06 21:38:09
+@@ -3,8 +3,8 @@
+ const Range = require('../classes/range.js')
+ const Comparator = require('../classes/comparator.js')
+ const { ANY } = Comparator
+-const satisfies = require('../functions/satisfies.js')
+ const compare = require('../functions/compare.js')
++const parseOptions = require('../internal/parse-options.js')
+ 
+ // Complex range `r1 || r2 || ...` is a subset of `R1 || R2 || ...` iff:
+ // - Every simple range `r1, r2, ...` is a null set, OR
+@@ -26,18 +26,21 @@
+ // - If GT and LT, and GT.semver > LT.semver, return true (null set)
+ // - If any C is a = range, and GT or LT are set, return false
+ // - If EQ
+-//   - If GT, and EQ does not satisfy GT, return true (null set)
+-//   - If LT, and EQ does not satisfy LT, return true (null set)
+-//   - If EQ satisfies every C, return true
++//   - If GT, and EQ falls outside GT, return true (null set)
++//   - If LT, and EQ falls outside LT, return true (null set)
++//   - If EQ is a member of the simple range C (as a whole, prerelease
++//     exclusion included), return true
+ //   - Else return false
+ // - If GT
+ //   - If GT.semver is lower than any > or >= comp in C, return false
+-//   - If GT is >=, and GT.semver does not satisfy every C, return false
++//   - If GT is >=, and GT.semver falls outside any C, return false
++//     (the prerelease exclusion rule is range-wide, and is enforced by the
++//     needDomGTPre/needDomLTPre checks below, not by individual C)
+ //   - If GT.semver has a prerelease, and not in prerelease mode
+ //     - If no C has a prerelease and the GT.semver tuple, return false
+ // - If LT
+ //   - If LT.semver is greater than any < or <= comp in C, return false
+-//   - If LT is <=, and LT.semver does not satisfy every C, return false
++//   - If LT is <=, and LT.semver falls outside any C, return false
+ //   - If LT.semver has a prerelease, and not in prerelease mode
+ //     - If no C has a prerelease and the LT.semver tuple, return false
+ // - Else return true
+@@ -47,6 +50,9 @@
+     return true
+   }
+ 
++  // Range parses options itself; normalize here too so that every check
++  // below can read options.includePrerelease safely.
++  options = parseOptions(options)
+   sub = new Range(sub, options)
+   dom = new Range(dom, options)
+   let sawNonNull = false
+@@ -124,21 +130,18 @@
+ 
+   // will iterate one or zero times
+   for (const eq of eqSet) {
+-    if (gt && !satisfies(eq, String(gt), options)) {
++    if (gt && !gt.test(eq)) {
+       return null
+     }
+ 
+-    if (lt && !satisfies(eq, String(lt), options)) {
++    if (lt && !lt.test(eq)) {
+       return null
+     }
+ 
+-    for (const c of dom) {
+-      if (!satisfies(eq, String(c), options)) {
+-        return false
+-      }
+-    }
+-
+-    return true
++    // this simple range holds nothing but `eq`, so it is a subset only if
++    // `eq` itself is in dom.  The prerelease exclusion rule is range-wide,
++    // so it is applied to dom as a whole rather than to each comparator.
++    return inDom(dom, eq, options)
+   }
+ 
+   let higher, lower
+@@ -174,7 +177,7 @@
+         if (higher === c && higher !== gt) {
+           return false
+         }
+-      } else if (gt.operator === '>=' && !satisfies(gt.semver, String(c), options)) {
++      } else if (gt.operator === '>=' && !c.test(gt.semver)) {
+         return false
+       }
+     }
+@@ -192,7 +195,7 @@
+         if (lower === c && lower !== lt) {
+           return false
+         }
+-      } else if (lt.operator === '<=' && !satisfies(lt.semver, String(c), options)) {
++      } else if (lt.operator === '<=' && !c.test(lt.semver)) {
+         return false
+       }
+     }
+@@ -216,6 +219,33 @@
+   // then this isn't a subset.  eg >=1.2.3-pre is not a subset of >=1.0.0,
+   // because it includes prereleases in the 1.2.3 tuple
+   if (needDomGTPre || needDomLTPre) {
++    return false
++  }
++
++  return true
++}
++
++// is `version` a member of the simple range `set`?  This mirrors what
++// Range.test does: every comparator must accept the version, and a version
++// carrying a prerelease is only allowed when some comparator in the same
++// set carries a prerelease of the very same version tuple.
++const inDom = (set, version, options) => {
++  for (const c of set) {
++    if (!c.test(version)) {
++      return false
++    }
++  }
++
++  if (version.prerelease.length && !options.includePrerelease) {
++    for (const c of set) {
++      const allowed = c.semver
++      if (allowed !== ANY && allowed.prerelease.length &&
++          allowed.major === version.major &&
++          allowed.minor === version.minor &&
++          allowed.patch === version.patch) {
++        return true
++      }
++    }
+     return false
+   }
+ 

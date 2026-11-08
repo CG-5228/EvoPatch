@@ -1,0 +1,81 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-06 21:02:31
+@@ -223,8 +223,14 @@
+         OrderedMultiDict([('a', -1), ('a', 0), ('a', 1), ('a', 2)])
+ 
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+-        tuples and other sequences and iterables work.
++        tuples and other sequences and iterables work, including
++        one-shot iterators (e.g., generators), which are consumed
++        exactly once and treated like the equivalent list.
+         """
++        # Materialize before anything else: a one-shot iterator must be
++        # iterated exactly once, and whether it is empty can only be
++        # known after consuming it.
++        v = list(v)
+         if not v:
+             return
+         self_insert = self._insert
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-06 21:02:31
+@@ -1121,8 +1121,14 @@
+         OrderedMultiDict([('a', -1), ('a', 0), ('a', 1), ('a', 2)])
+ 
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+-        tuples and other sequences and iterables work.
++        tuples and other sequences and iterables work, including
++        one-shot iterators (e.g., generators), which are consumed
++        exactly once and treated like the equivalent list.
+         """
++        # Materialize before anything else: a one-shot iterator must be
++        # iterated exactly once, and whether it is empty can only be
++        # known after consuming it.
++        v = list(v)
+         if not v:
+             return
+         self_insert = self._insert
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/tests/test_dictutils.py b/tests/test_dictutils.py
+--- a/tests/test_dictutils.py	1970-01-01 00:00:00
++++ b/tests/test_dictutils.py	2026-11-06 21:03:33
+@@ -270,6 +270,39 @@
+     assert len(list(e_omd.iteritems(multi=True))) == 0
+ 
+ 
++def test_addlist_one_shot_iterators():
++    # one-shot iterators (generators) must behave like the equivalent list
++    omd = OMD()
++    omd.addlist('k', (n * 2 for n in range(3)))
++    assert omd.getlist('k') == [0, 2, 4]
++    assert omd.get('k') == 4
++    assert omd.keys() == ['k']
++    assert len(omd) == 1
++    assert repr(omd) == "OrderedMultiDict([('k', 0), ('k', 2), ('k', 4)])"
++
++    # appending from an iterator preserves existing values
++    omd.addlist('k', iter([6, 8]))
++    assert omd.getlist('k') == [0, 2, 4, 6, 8]
++
++    # an empty iterator adds nothing at all
++    e_omd = OMD([('k', 1)])
++    e_omd.addlist('other', iter([]))
++    assert e_omd.keys() == ['k']
++    assert len(e_omd) == 1
++    assert 'other' not in e_omd
++
++    # same contract on the urlutils side
++    from boltons.urlutils import QueryParamDict
++    qp = QueryParamDict()
++    qp.addlist('a', (c for c in 'xy'))
++    assert qp.getlist('a') == ['x', 'y']
++    assert qp.to_text() == 'a=x&a=y'
++    e_qp = QueryParamDict()
++    e_qp.addlist('a', iter([]))
++    assert len(e_qp) == 0
++    assert 'a' not in e_qp
++
++
+ def test_pop_all():
+     omd = OMD()
+     omd.add('even', 0)

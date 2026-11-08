@@ -1,0 +1,89 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/ranges/subset.js b/ranges/subset.js
+--- a/ranges/subset.js	1970-01-01 00:00:00
++++ b/ranges/subset.js	2026-11-07 04:17:30
+@@ -3,7 +3,6 @@
+ const Range = require('../classes/range.js')
+ const Comparator = require('../classes/comparator.js')
+ const { ANY } = Comparator
+-const satisfies = require('../functions/satisfies.js')
+ const compare = require('../functions/compare.js')
+ 
+ // Complex range `r1 || r2 || ...` is a subset of `R1 || R2 || ...` iff:
+@@ -25,10 +24,17 @@
+ // - Let LT be the lowest < or <= comparator in c
+ // - If GT and LT, and GT.semver > LT.semver, return true (null set)
+ // - If any C is a = range, and GT or LT are set, return false
++// Note: all of the "satisfies" checks below are per-comparator tests that
++// compare versions numerically.  The prerelease rule of Range#test (a range
++// only admits prereleases of a tuple for which one of its own comparators
++// has a prerelease) applies to whole ranges, not to individual comparators,
++// so it is enforced separately via needDomEQPre/needDomGTPre/needDomLTPre.
++//
+ // - If EQ
+ //   - If GT, and EQ does not satisfy GT, return true (null set)
+ //   - If LT, and EQ does not satisfy LT, return true (null set)
+-//   - If EQ satisfies every C, return true
++//   - If EQ satisfies every C, and C allows prereleases of EQ's tuple
++//     (or in prerelease mode), return true
+ //   - Else return false
+ // - If GT
+ //   - If GT.semver is lower than any > or >= comp in C, return false
+@@ -124,20 +130,37 @@
+ 
+   // will iterate one or zero times
+   for (const eq of eqSet) {
+-    if (gt && !satisfies(eq, String(gt), options)) {
++    if (gt && !gt.test(eq)) {
+       return null
+     }
+ 
+-    if (lt && !satisfies(eq, String(lt), options)) {
++    if (lt && !lt.test(eq)) {
+       return null
+     }
+ 
++    // outside of prerelease mode, a range only admits a prerelease version
++    // if one of its comparators has a prerelease in the same tuple, so dom
++    // must have such a comparator for eq to be in dom at all
++    let needDomEQPre = !options.includePrerelease && eq.prerelease.length ?
++      eq : false
++
+     for (const c of dom) {
+-      if (!satisfies(eq, String(c), options)) {
++      if (needDomEQPre &&
++          c.semver.prerelease && c.semver.prerelease.length &&
++          c.semver.major === needDomEQPre.major &&
++          c.semver.minor === needDomEQPre.minor &&
++          c.semver.patch === needDomEQPre.patch) {
++        needDomEQPre = false
++      }
++      if (!c.test(eq)) {
+         return false
+       }
+     }
+ 
++    if (needDomEQPre) {
++      return false
++    }
++
+     return true
+   }
+ 
+@@ -174,7 +197,7 @@
+         if (higher === c && higher !== gt) {
+           return false
+         }
+-      } else if (gt.operator === '>=' && !satisfies(gt.semver, String(c), options)) {
++      } else if (gt.operator === '>=' && !c.test(gt.semver)) {
+         return false
+       }
+     }
+@@ -192,7 +215,7 @@
+         if (lower === c && lower !== lt) {
+           return false
+         }
+-      } else if (lt.operator === '<=' && !satisfies(lt.semver, String(c), options)) {
++      } else if (lt.operator === '<=' && !c.test(lt.semver)) {
+         return false
+       }
+     }

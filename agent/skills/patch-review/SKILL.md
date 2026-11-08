@@ -11,4 +11,6 @@ Call `create_sub_agent` with the name `reviewer`. It sees only what you write, s
 
 > You review a bug fix. Don't edit any files. The project is in `work/repo`. The bug report: <paste the report>. The fix: <say what changed, in which files>. Read the changed code. Reply with up to 3 concrete problems, each with a case that would fail. If you find none, say so.
 
+> Work only inside `work/repo`: no fetching from the network, no machine-wide searches, no other copies of this code.
+
 Then decide for yourself. Fix what is real, run the tests again, and finish.

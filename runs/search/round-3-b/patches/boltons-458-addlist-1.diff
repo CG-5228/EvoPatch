@@ -1,0 +1,70 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-07 04:59:41
+@@ -225,13 +225,28 @@
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+         tuples and other sequences and iterables work.
+         """
+-        if not v:
++        # Materialize the iterable once so one-shot iterators (e.g.,
++        # generators) are not exhausted by a first pass over *v*,
++        # leaving the dict values list out of sync with the linked
++        # list. Also lets an empty iterator add nothing at all, and
++        # avoids probing truthiness of *v*, which some iterables
++        # (e.g., numpy arrays) do not support.
++        try:
++            vlist = list(v)
++        except TypeError:
++            # *v* is not iterable; preserve the historical behavior of
++            # silently ignoring falsy values (e.g., None) and raising
++            # TypeError for other non-iterables.
++            if not v:
++                return
++            raise
++        if not vlist:
+             return
+         self_insert = self._insert
+         values = super().setdefault(k, [])
+-        for subv in v:
++        for subv in vlist:
+             self_insert(k, subv)
+-        values.extend(v)
++        values.extend(vlist)
+ 
+     def get(self, k, default=None):
+         """Return the value for key *k* if present in the dictionary, else
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-07 04:59:41
+@@ -1123,13 +1123,28 @@
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+         tuples and other sequences and iterables work.
+         """
+-        if not v:
++        # Materialize the iterable once so one-shot iterators (e.g.,
++        # generators) are not exhausted by a first pass over *v*,
++        # leaving the dict values list out of sync with the linked
++        # list. Also lets an empty iterator add nothing at all, and
++        # avoids probing truthiness of *v*, which some iterables
++        # (e.g., numpy arrays) do not support.
++        try:
++            vlist = list(v)
++        except TypeError:
++            # *v* is not iterable; preserve the historical behavior of
++            # silently ignoring falsy values (e.g., None) and raising
++            # TypeError for other non-iterables.
++            if not v:
++                return
++            raise
++        if not vlist:
+             return
+         self_insert = self._insert
+         values = super().setdefault(k, [])
+-        for subv in v:
++        for subv in vlist:
+             self_insert(k, subv)
+-        values.extend(v)
++        values.extend(vlist)
+ 
+     def get(self, k, default=None):
+         """Return the value for key *k* if present in the dictionary, else

@@ -1,0 +1,61 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/iterutils.py b/boltons/iterutils.py
+--- a/boltons/iterutils.py	1970-01-01 00:00:00
++++ b/boltons/iterutils.py	2026-11-06 20:55:43
+@@ -598,6 +598,18 @@
+     >>> list(backoff_iter(0.25, 100.0, factor=10))
+     [0.25, 2.5, 25.0, 100.0]
+ 
++    A flat sequence with a factor of 1.0 reaches stop only when it
++    already covers it; otherwise an explicit *count* is required:
++
++    >>> list(backoff_iter(4.0, 4.0, factor=1.0))
++    [4.0]
++    >>> list(backoff_iter(2.0, 30.0, count=4, factor=1.0))
++    [2.0, 2.0, 2.0, 2.0]
++    >>> list(backoff_iter(2.0, 30.0, factor=1.0))  # doctest: +ELLIPSIS
++    Traceback (most recent call last):
++        ...
++    ValueError: cannot infer count with factor=1.0: ...
++
+     A simplified usage example:
+ 
+     .. code-block:: python
+@@ -626,7 +638,10 @@
+             *stop*. Pass the string, `'repeat'`, to continue iteration
+             indefinitely.
+         factor (float): Rate of exponential increase. Defaults to `2.0`,
+-            e.g., `[1, 2, 4, 8, 16]`.
++            e.g., `[1, 2, 4, 8, 16]`. A factor of 1.0 yields a flat
++            sequence; when *count* is omitted and that sequence never
++            reaches *stop*, a ValueError is raised instead of inferring a
++            count.
+         jitter (float): A factor between `-1.0` and `1.0`, used to
+             uniformly randomize and thus spread out timeouts in a distributed
+             system, avoiding rhythm effects. Positive values use the base
+@@ -647,9 +662,23 @@
+     if stop < start:
+         raise ValueError('expected stop >= start, not %r' % stop)
+     if count is None:
+-        denom = start if start else 1
+-        count = 1 + math.ceil(math.log(stop/denom, factor))
+-        count = count if start else count + 1
++        if factor == 1.0:
++            # A flat sequence never climbs, so a count can only be inferred
++            # when the sequence already covers stop: start == stop, or a
++            # zero start whose first step up to 1 (or clamp) reaches stop.
++            if stop == start:
++                count = 1
++            elif start == 0.0 and stop <= 1.0:
++                count = 2
++            else:
++                raise ValueError(
++                    'cannot infer count with factor=1.0: the sequence'
++                    ' never reaches stop (%r) from start (%r); pass count'
++                    ' explicitly' % (stop, start))
++        else:
++            denom = start if start else 1
++            count = 1 + math.ceil(math.log(stop/denom, factor))
++            count = count if start else count + 1
+     if count != 'repeat' and count < 0:
+         raise ValueError('count must be positive or "repeat", not %r' % count)
+     if jitter:

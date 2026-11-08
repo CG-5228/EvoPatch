@@ -1,0 +1,56 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/iterutils.py b/boltons/iterutils.py
+--- a/boltons/iterutils.py	1970-01-01 00:00:00
++++ b/boltons/iterutils.py	2026-11-07 03:11:02
+@@ -647,9 +647,17 @@
+     if stop < start:
+         raise ValueError('expected stop >= start, not %r' % stop)
+     if count is None:
+-        denom = start if start else 1
+-        count = 1 + math.ceil(math.log(stop/denom, factor))
+-        count = count if start else count + 1
++        if factor == 1.0:
++            if stop > start:
++                raise ValueError(
++                    'cannot infer count with factor=1.0: flat sequence'
++                    ' never reaches stop=%r from start=%r; pass count'
++                    ' explicitly' % (stop, start))
++            count = 1
++        else:
++            denom = start if start else 1
++            count = 1 + math.ceil(math.log(stop/denom, factor))
++            count = count if start else count + 1
+     if count != 'repeat' and count < 0:
+         raise ValueError('count must be positive or "repeat", not %r' % count)
+     if jitter:
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/tests/test_iterutils.py b/tests/test_iterutils.py
+--- a/tests/test_iterutils.py	1970-01-01 00:00:00
++++ b/tests/test_iterutils.py	2026-11-07 03:25:08
+@@ -464,6 +464,28 @@
+     assert fives == [5] * 1000
+ 
+ 
++def test_backoff_unit_factor():
++    from boltons.iterutils import backoff, backoff_iter
++
++    # explicit count yields a flat sequence
++    assert list(backoff_iter(2.0, 30.0, count=4, factor=1.0)) == [2.0] * 4
++    assert backoff(2.0, 30.0, count=4, factor=1.0) == [2.0] * 4
++    # 'repeat' is unaffected
++    assert next(backoff_iter(5, 5, count="repeat", factor=1.0)) == 5.0
++
++    # inferring a count is impossible: a flat sequence cannot climb to a
++    # larger stop; must be a descriptive ValueError, not ZeroDivisionError
++    with pytest.raises(ValueError):
++        list(backoff_iter(2.0, 30.0, factor=1.0))
++    with pytest.raises(ValueError):
++        backoff(2.0, 30.0, factor=1.0)
++    with pytest.raises(ValueError):
++        list(backoff_iter(0, 16, factor=1.0))
++
++    # flat sequence already at stop is inferrable
++    assert list(backoff_iter(5.0, 5.0, factor=1.0)) == [5.0]
++
++
+ def test_backoff_zero_start():
+     from boltons.iterutils import backoff
+ 

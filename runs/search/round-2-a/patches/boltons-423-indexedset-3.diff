@@ -1,0 +1,48 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/setutils.py b/boltons/setutils.py
+--- a/boltons/setutils.py	1970-01-01 00:00:00
++++ b/boltons/setutils.py	2026-11-07 01:36:27
+@@ -416,20 +416,42 @@
+         else:
+             iter_slice = self.iter_slice(start, stop, step)
+             return self.from_iterable(iter_slice)
++        # Normalize the negative index exactly once, then bounds-check in
++        # apparent (dead-slot-free) space. _get_real_index() also adds
++        # len(self) to negatives, so without this check an out-of-range
++        # position like x[-len-1] was double-normalized into an in-range
++        # slot and returned an item instead of raising IndexError (as a
++        # list does) once anything had been removed.
+         if index < 0:
+             index += len(self)
++        if index < 0 or index >= len(self):
++            raise IndexError('IndexedSet index out of range')
+         real_index = self._get_real_index(index)
+         try:
+             ret = self.item_list[real_index]
+         except IndexError:
+-            raise IndexError('IndexedSet index out of range')
++            raise IndexError('IndexedSet index out of range') from None
+         return ret
+ 
+     def pop(self, index=None):
+         "pop(index) -> remove the item at a given index (-1 by default)"
+         item_index_map = self.item_index_map
+         len_self = len(item_index_map)
+-        if index is None or index == -1 or index == len_self - 1:
++        if index is None:
++            index = -1
++        else:
++            index = operator.index(index)
++        # Normalize the negative index exactly once and bounds-check in
++        # apparent (dead-slot-free) space before mapping into item_list
++        # space. Previously an out-of-range negative index (e.g., pop(-15)
++        # on a 9-item set) was double-normalized by _get_real_index() and
++        # silently removed an unrelated item instead of raising IndexError
++        # like a list.
++        if index < 0:
++            index += len_self
++        if index < 0 or index >= len_self:
++            raise IndexError('IndexedSet pop index out of range')
++        if index == len_self - 1:
+             ret = self.item_list.pop()
+             del item_index_map[ret]
+         else:

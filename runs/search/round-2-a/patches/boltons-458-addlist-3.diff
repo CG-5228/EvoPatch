@@ -1,0 +1,50 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-07 01:12:02
+@@ -227,11 +227,19 @@
+         """
+         if not v:
+             return
++        # One-shot iterables (e.g., generators) can only be traversed
++        # once, so materialize them before touching the dict. This keeps
++        # the linked list and the per-key value list in agreement, and an
++        # empty iterator adds nothing (no key is created), matching the
++        # behavior of an equivalent empty list.
++        collected = list(v)
++        if not collected:
++            return
+         self_insert = self._insert
+         values = super().setdefault(k, [])
+-        for subv in v:
++        for subv in collected:
+             self_insert(k, subv)
+-        values.extend(v)
++        values.extend(collected)
+ 
+     def get(self, k, default=None):
+         """Return the value for key *k* if present in the dictionary, else
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-07 01:12:02
+@@ -1125,11 +1125,19 @@
+         """
+         if not v:
+             return
++        # One-shot iterables (e.g., generators) can only be traversed
++        # once, so materialize them before touching the dict. This keeps
++        # the linked list and the per-key value list in agreement, and an
++        # empty iterator adds nothing (no key is created), matching the
++        # behavior of an equivalent empty list.
++        collected = list(v)
++        if not collected:
++            return
+         self_insert = self._insert
+         values = super().setdefault(k, [])
+-        for subv in v:
++        for subv in collected:
+             self_insert(k, subv)
+-        values.extend(v)
++        values.extend(collected)
+ 
+     def get(self, k, default=None):
+         """Return the value for key *k* if present in the dictionary, else

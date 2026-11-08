@@ -1,8 +1,9 @@
 // npm run improve -- --from runs/run-01,runs/run-02,runs/run-03 [--no-commit] [--proof-dir dir]
 //
 // The agent reads its own failures and makes one small change to itself.
-//   1. Bundles the failed training attempts: bug report, patch, the trace of what it did, and which tests failed,
-//      with no test source and no expected values. Holdout tasks never appear here.
+//   1. Bundles the failed training attempts, void ones included: bug report, patch, the trace of what it did, every
+//      command it ran, and which tests failed, with no test source and no expected values. Which rule voided an
+//      attempt never appears here, and neither do holdout tasks.
 //   2. Opens a TrueForge session with the agent itself. Analyst subagents read the traces, a skeptic checks the
 //      cause against passing traces, and the root writes its diagnosis before it edits anything.
 //   3. Host guards accept or reject the change (scripts/guards.ts). The host writes nothing of its own.
@@ -69,7 +70,7 @@ for (const source of sources) {
     for (const a of r.attempts) attempts.push({ id: `${basename(source)}/${a.task_id}-${a.attempt}`, score: a, turn: a.turn_id ? byId.get(a.turn_id) : undefined, dir });
   }
 }
-const failed = attempts.filter((a) => !a.score.resolved && a.score.failure_class !== "audit");
+const failed = attempts.filter((a) => !a.score.resolved);
 if (failed.length < 2) {
   console.log(`Only ${failed.length} failed training attempts: there's nothing general to learn from.`);
   process.exit(0);
@@ -85,6 +86,14 @@ function renderTrace(a: Attempt): string {
   return text.length > 16000 ? `${text.slice(0, 8000)}\n\n[... middle of the trace removed ...]\n\n${text.slice(-8000)}` : text;
 }
 
+/** Every command in order, with its thread. A long trace loses its middle; this doesn't, and it's the same for every attempt, so it can't point at what voided one. */
+function renderCommands(a: Attempt): string {
+  if (!a.turn) return "";
+  const events = a.turn.events as unknown as { type: string; threadId?: string; title?: string }[];
+  const names = new Map(events.filter((e) => e.type === "thread.created").map((e) => [e.threadId, e.title]));
+  return traceOf(a.turn).map((s, i) => `#${i + 1} [${names.get(s.thread) ?? s.thread}] ${s.command.replace(/\s+/g, " ").slice(0, 240)}`).join("\n");
+}
+
 /** CI-style result: which tests, no expected values. Parameters are stripped because they can hold the answer. */
 function testSummary(a: Attempt) {
   const task = tasks.get(a.score.task_id)!;
@@ -95,7 +104,7 @@ function testSummary(a: Attempt) {
     exception: f.message.match(/\b\w*(Error|Exception|Warning)\b/)?.[0] ?? "assertion",
   }));
   return {
-    outcome: a.score.failure_class,
+    outcome: a.score.failure_class === "audit" ? "void" : a.score.failure_class,
     bug_tests_passed: `${a.score.f2p_passed} of ${a.score.f2p_total}`,
     regressions: a.score.p2p_failed,
     failures: [...new Map(failures.map((f) => [JSON.stringify(f), f])).values()],
@@ -111,6 +120,7 @@ function writeAttempt(root: string, a: Attempt): void {
   writeFileSync(join(dir, "report.md"), task.issue_text);
   writeFileSync(join(dir, "patch.diff"), existsSync(patch) ? readFileSync(patch) : "");
   writeFileSync(join(dir, "trace.md"), renderTrace(a));
+  writeFileSync(join(dir, "commands.md"), renderCommands(a));
   writeFileSync(join(dir, "result.json"), JSON.stringify({ attempt: a.id, bug_class: task.bug_class, ...testSummary(a) }, null, 1) + "\n");
 }
 
@@ -146,7 +156,8 @@ try {
 Unpack your evidence: \`mkdir -p bundle out && tar -xzf uploads/improve-bundle.tar.gz -C bundle\`.
 
 - \`bundle/agent/\`: your current instructions and skills.
-- \`bundle/failures/<attempt>/\`: attempts you got wrong. \`report.md\` is the bug report, \`patch.diff\` is what you submitted, \`trace.md\` is what you did, \`result.json\` says which tests failed and how the attempt ended. You can't see the tests or the right answer.
+- \`bundle/failures/<attempt>/\`: attempts you got wrong. \`report.md\` is the bug report, \`patch.diff\` is what you submitted, \`trace.md\` is what you did, \`commands.md\` is every command run in the attempt with the thread that ran it (\`main\` is you, any other name is a subagent you started), \`result.json\` says which tests failed and how the attempt ended. You can't see the tests or the right answer.
+- An \`outcome\` of \`void\` in \`result.json\` means the attempt didn't count, whatever its tests did. An attempt is void if it fetches this project's code or its fix from the network, or reads another copy of this library on this machine.
 - \`bundle/passes/<attempt>/\`: attempts at the same tasks that passed.
 - \`bundle/earlier-rounds.json\`: earlier changes and what they did to the score. Don't repeat a change that was dropped.
 

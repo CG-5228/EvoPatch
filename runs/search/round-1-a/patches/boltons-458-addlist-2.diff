@@ -1,0 +1,46 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-06 21:11:17
+@@ -227,11 +227,17 @@
+         """
+         if not v:
+             return
++        # Materialize once so one-shot iterables (generators, iterators)
++        # are stored in both the linked list and the flat values list,
++        # instead of being consumed by the first pass below.
++        items = list(v)
++        if not items:
++            return
+         self_insert = self._insert
+         values = super().setdefault(k, [])
+-        for subv in v:
++        for subv in items:
+             self_insert(k, subv)
+-        values.extend(v)
++        values.extend(items)
+ 
+     def get(self, k, default=None):
+         """Return the value for key *k* if present in the dictionary, else
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-06 21:11:17
+@@ -1125,11 +1125,17 @@
+         """
+         if not v:
+             return
++        # Materialize once so one-shot iterables (generators, iterators)
++        # are stored in both the linked list and the flat values list,
++        # instead of being consumed by the first pass below.
++        items = list(v)
++        if not items:
++            return
+         self_insert = self._insert
+         values = super().setdefault(k, [])
+-        for subv in v:
++        for subv in items:
+             self_insert(k, subv)
+-        values.extend(v)
++        values.extend(items)
+ 
+     def get(self, k, default=None):
+         """Return the value for key *k* if present in the dictionary, else

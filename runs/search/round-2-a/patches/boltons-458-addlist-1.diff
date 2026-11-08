@@ -1,0 +1,44 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-06 23:49:41
+@@ -225,13 +225,14 @@
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+         tuples and other sequences and iterables work.
+         """
+-        if not v:
++        values = [] if v is None else list(v)
++        if not values:
+             return
+         self_insert = self._insert
+-        values = super().setdefault(k, [])
+-        for subv in v:
++        stored = super().setdefault(k, [])
++        for subv in values:
+             self_insert(k, subv)
+-        values.extend(v)
++        stored.extend(values)
+ 
+     def get(self, k, default=None):
+         """Return the value for key *k* if present in the dictionary, else
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-06 23:49:41
+@@ -1123,13 +1123,14 @@
+         Called ``addlist`` for consistency with :meth:`getlist`, but
+         tuples and other sequences and iterables work.
+         """
+-        if not v:
++        values = [] if v is None else list(v)
++        if not values:
+             return
+         self_insert = self._insert
+-        values = super().setdefault(k, [])
+-        for subv in v:
++        stored = super().setdefault(k, [])
++        for subv in values:
+             self_insert(k, subv)
+-        values.extend(v)
++        stored.extend(values)
+ 
+     def get(self, k, default=None):
+         """Return the value for key *k* if present in the dictionary, else

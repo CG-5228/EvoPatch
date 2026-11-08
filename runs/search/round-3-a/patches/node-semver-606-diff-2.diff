@@ -1,0 +1,37 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/functions/diff.js b/functions/diff.js
+--- a/functions/diff.js	1970-01-01 00:00:00
++++ b/functions/diff.js	2026-11-07 03:23:44
+@@ -27,15 +27,30 @@
+       return 'major'
+     }
+ 
+-    // Otherwise it can be determined by checking the high version
++    // Otherwise the level is found by comparing the two versions
++    // component-wise, e.g. 3.4.6-2 -> 3.5.2 is a minor change even though
++    // the high version's patch is nonzero.
+ 
++    if (lowVersion.major !== highVersion.major) {
++      return 'major'
++    }
++
++    if (lowVersion.minor !== highVersion.minor) {
++      return 'minor'
++    }
++
++    if (lowVersion.patch !== highVersion.patch) {
++      return 'patch'
++    }
++
++    // The core versions are identical: a prerelease released as its own
++    // version. The level is then determined by the lowest nonzero component.
++
+     if (highVersion.patch) {
+-      // anything higher than a patch bump would result in the wrong version
+       return 'patch'
+     }
+ 
+     if (highVersion.minor) {
+-      // anything higher than a minor bump would result in the wrong version
+       return 'minor'
+     }
+ 

@@ -1,0 +1,39 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/setutils.py b/boltons/setutils.py
+--- a/boltons/setutils.py	1970-01-01 00:00:00
++++ b/boltons/setutils.py	2026-11-07 03:20:21
+@@ -418,6 +418,8 @@
+             return self.from_iterable(iter_slice)
+         if index < 0:
+             index += len(self)
++        if index < 0 or index >= len(self):
++            raise IndexError('IndexedSet index out of range')
+         real_index = self._get_real_index(index)
+         try:
+             ret = self.item_list[real_index]
+@@ -429,15 +431,17 @@
+         "pop(index) -> remove the item at a given index (-1 by default)"
+         item_index_map = self.item_index_map
+         len_self = len(item_index_map)
+-        if index is None or index == -1 or index == len_self - 1:
+-            ret = self.item_list.pop()
+-            del item_index_map[ret]
+-        else:
+-            real_index = self._get_real_index(index)
+-            ret = self.item_list[real_index]
+-            self.item_list[real_index] = _MISSING
+-            del item_index_map[ret]
+-            self._add_dead(real_index)
++        if index is None:
++            index = -1
++        if index < 0:
++            index += len_self
++        if index < 0 or index >= len_self:
++            raise IndexError('%s index out of range' % self.__class__.__name__)
++        real_index = self._get_real_index(index)
++        ret = self.item_list[real_index]
++        self.item_list[real_index] = _MISSING
++        del item_index_map[ret]
++        self._add_dead(real_index)
+         self._cull()
+         return ret
+ 

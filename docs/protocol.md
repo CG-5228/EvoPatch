@@ -43,7 +43,7 @@ The line is drawn at the transport: anything the model returns is the agent's, e
 
 ## Improve
 
-The agent sees failed training attempts: the report, its patch, a trace of what it did, how the attempt ended, and which tests failed, with no test source and no expected values. Audit results never reach it, so it can't learn the audit. It must write a diagnosis citing failures on at least 2 tasks before it edits. Guards reject edits over 40 changed lines, over the size caps, or quoting task details. Rejected proposals are kept in `runs/rejected/`. A session that ends early counts as a rejected proposal, and each round gets 3 tries.
+The agent sees failed training attempts: the report, its patch, a trace of what it did, how the attempt ended, and which tests failed, with no test source and no expected values. From round 2 it also sees void attempts and a full list of commands (see "Changes after the freeze"). Which audit rule voided an attempt never reaches it. It must write a diagnosis citing failures on at least 2 tasks before it edits. Guards reject edits over 40 changed lines, over the size caps, or quoting task details. Rejected proposals are kept in `runs/rejected/`. A session that ends early counts as a rejected proposal, and each round gets 3 tries.
 
 ## People
 
@@ -90,3 +90,18 @@ Two records stay incomplete, and rows already written are left as they are.
 
 - **`duration_s`:** run 3's row says 9,044 s, which starts at the 17:49 resume. The run took 4 h 24 min from first start to finish. Run 2's row has the same gap: 9,883 s for 5 h 26 min. `runs/registry.csv` has the real times.
 - **`infra.json`:** it misses events the old code lost when a stop dropped their attempts. Run 3's lists 6 of the 9 events in the run log, and run 2's lists 5 of 8. The missing ones are `humanize-359-metric-2`, `node-semver-757-subset-1` and `mit-1275-numeric-range-2` in run 3, and `boltons-452-backoff-1`, `boltons-458-addlist-1` and `node-semver-757-subset-1` in run 2. All were model errors and each attempt ran again, so none of them changes a score.
+
+### 6 Nov: from round 2, `improve` also sees void attempts
+
+This one changes what the agent reads, so it matters more than the notes above. Chris decided it at about 21:10 UTC on 6 Nov: after the three baselines, during round 1's first screen, and before any screen result was reported to him. Round 1's edit came from the frozen `improve`. Every later round uses this one.
+
+**Why.** The frozen rule kept void attempts out of `improve`, so the agent couldn't learn the audit. The baselines showed what that cost. 82 of 189 attempts were void, while 156 of 161 submitted patches passed the maintainers' tests. 77 of the 82 involve the reviewer subagent, and only 2 of 246 reviewer briefs carry a network rule. `improve` could see 20 of 108 training attempts and none of the 46 void ones, so it couldn't work on the largest cause of lost score.
+
+**What changed,** all in `scripts/improve.ts`:
+
+- Void training attempts now enter `failures/`, with `outcome: void`. The prompt explains that with the sentence already in every task prompt: "An attempt is void if it fetches this project's code or its fix from the network, or reads another copy of this library on this machine."
+- Every attempt, void or not, gets `commands.md`: each command in order, cut to 240 characters, with the thread that ran it. `trace.md` drops the middle of a long attempt. At its 16,000-character limit, only 14 of the 46 void attempts still showed a command the audit had matched. The list doesn't mark which command that was.
+
+**What didn't change:** `agent/`, `evals/`, the tasks, the scorer, the audit, the holdout, the guards, the screens and the keep rule. The audit's rule names and matched commands still never reach the agent, and holdout attempts still never enter `improve`. The baselines stand.
+
+**How to read it.** This is a change to the improve protocol, made after seeing baseline results. Any edit from round 2 on learned from evidence the frozen protocol withheld. The gates are unchanged, so such an edit still has to beat the same bar, including on repos it never learned from.

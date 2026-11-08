@@ -1,0 +1,36 @@
+{
+  "cause": "Verification escapes the working tree: when the agent or a helper it delegates to is unsure, it fetches or searches outside the workspace (remote sources, machine-wide hunts for other copies of the code, pristine copies unpacked elsewhere) to gain confidence instead of re-reading its own diff and re-running the repro. The boundary exists only as prose — helper briefs usually omit it and no one sweeps a helper's actual command log before trusting its verdict — so the escape goes unnoticed and voids the attempt even when the fix is correct.",
+  "rule": "Resolve uncertainty only from inside the working tree: when a local result confuses you, re-read your diff and re-run the repro rather than fetching or searching outside it; put that ban verbatim in every helper brief, and before trusting any helper's verdict sweep the commands it actually ran for out-of-tree verification (fetches, machine-wide searches, other copies), discarding and redoing in-tree anything found.",
+  "cited": [
+    "run-02/node-semver-606-diff-1",
+    "round-3-b/boltons-404-omd-eq-3",
+    "run-03/humanize-329-naturalsize-1",
+    "run-01/boltons-348-lru-1",
+    "run-03/node-semver-512-tilde-2"
+  ],
+  "predicted_effect": "Attempts that would have been voided by an out-of-tree comparison stay in-tree — confusion no longer triggers machine-wide searches or fetched references, and helper reviews no longer smuggle in external evidence — so their often already-correct fixes get scored as passes instead of being thrown away.",
+  "learned": "Fixes were being thrown away not because they were wrong but because verification slipped outside the working tree — through helpers and self-doubt alike — so the boundary must live verbatim in every helper brief and be swept out of the commands a helper actually ran before its verdict is trusted.",
+  "session_id": "01m6tc9kn7kpf2tv14dq2xpmh1",
+  "parent": "93bf056753f22a2bdba8664b4052289c9162ee0b",
+  "usage": {
+    "turns": 1,
+    "execs": 230,
+    "skill_reads": {
+      "fix-workflow": 18,
+      "patch-review": 11,
+      "sandbox-recipes": 1
+    },
+    "subagent_threads": 6,
+    "subagent_names": [
+      "analyst-a",
+      "analyst-b",
+      "analyst-c",
+      "analyst-d",
+      "analyst-e",
+      "skeptic"
+    ],
+    "sandboxes": 1,
+    "init_failures": 0,
+    "suspected_timeouts": 0
+  }
+}

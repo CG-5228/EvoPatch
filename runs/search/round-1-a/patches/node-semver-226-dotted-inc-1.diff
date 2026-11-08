@@ -1,0 +1,33 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/classes/semver.js b/classes/semver.js
+--- a/classes/semver.js	1970-01-01 00:00:00
++++ b/classes/semver.js	2026-11-06 21:07:44
+@@ -305,16 +305,19 @@
+         if (identifier) {
+           // 1.2.0-beta.1 bumps to 1.2.0-beta.2,
+           // 1.2.0-beta.fooblz or 1.2.0-beta bumps to 1.2.0-beta.0
+-          let prerelease = [identifier, base]
+-          if (identifierBase === false) {
+-            prerelease = [identifier]
+-          }
+-          if (compareIdentifiers(this.prerelease[0], identifier) === 0) {
+-            if (isNaN(this.prerelease[1])) {
+-              this.prerelease = prerelease
+-            }
+-          } else {
+-            this.prerelease = prerelease
++          // The identifier may itself be dot separated (e.g. 'rc.next'), in
++          // which case it matches when each of its parts lines up with the
++          // leading prerelease identifiers and the counter follows right
++          // after them: 5.2.0-rc.next.3 bumps to 5.2.0-rc.next.4.
++          const ids = identifier.split('.')
++          const matches =
++            ids.length <= this.prerelease.length &&
++            ids.every((id, i) => compareIdentifiers(this.prerelease[i], id) === 0)
++          if (!matches || isNaN(this.prerelease[ids.length])) {
++            // store the identifier as its individual prerelease identifiers
++            // (identical to `[identifier]` joined, and required so that a
++            // later inc() on this object can match the dotted parts again)
++            this.prerelease = identifierBase === false ? [...ids] : [...ids, base]
+           }
+         }
+         break

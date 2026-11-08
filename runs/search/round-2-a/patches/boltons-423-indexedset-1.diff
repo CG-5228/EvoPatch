@@ -1,0 +1,47 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/setutils.py b/boltons/setutils.py
+--- a/boltons/setutils.py	1970-01-01 00:00:00
++++ b/boltons/setutils.py	2026-11-07 00:18:55
+@@ -151,13 +151,23 @@
+             num_dead = 1
+             while items[-(num_dead + 1)] is _MISSING:
+                 num_dead += 1
+-            if ded and ded[-1][1] == len(items):
++            tail_start = len(items) - num_dead
++            # drop every dead interval inside the popped tail run, not
++            # just the last one; adjacent-but-unmerged intervals are
++            # possible, and a stale leftover would corrupt index/pop
++            # after the list shrinks
++            while ded and ded[-1][1] > tail_start:
+                 del ded[-1]
+-            del items[-num_dead:]
++            del items[tail_start:]
+ 
+     def _get_real_index(self, index):
+         if index < 0:
+             index += len(self)
++        if not 0 <= index < len(self):
++            # normalize-once then validate, like a list: a position
++            # below -len(self) or at/above len(self) is out of range.
++            # Without this, item_list[negative] silently wraps around.
++            raise IndexError('IndexedSet index out of range')
+         if not self.dead_indices:
+             return index
+         real_index = index
+@@ -416,8 +426,6 @@
+         else:
+             iter_slice = self.iter_slice(start, stop, step)
+             return self.from_iterable(iter_slice)
+-        if index < 0:
+-            index += len(self)
+         real_index = self._get_real_index(index)
+         try:
+             ret = self.item_list[real_index]
+@@ -427,6 +435,8 @@
+ 
+     def pop(self, index=None):
+         "pop(index) -> remove the item at a given index (-1 by default)"
++        if index is not None:
++            index = operator.index(index)
+         item_index_map = self.item_index_map
+         len_self = len(item_index_map)
+         if index is None or index == -1 or index == len_self - 1:

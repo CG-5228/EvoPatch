@@ -1,0 +1,48 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/dictutils.py b/boltons/dictutils.py
+--- a/boltons/dictutils.py	1970-01-01 00:00:00
++++ b/boltons/dictutils.py	2026-11-06 21:54:37
+@@ -227,11 +227,18 @@
+         """
+         if not v:
+             return
++        # consume the iterable in a single pass (it may be a one-shot
++        # iterator), then store the collected values in both the linked
++        # list and the backing list of values so the two always agree;
++        # an empty iterable adds nothing
++        subvals = list(v)
++        if not subvals:
++            return
+         self_insert = self._insert
+         values = super().setdefault(k, [])
+-        for subv in v:
++        for subv in subvals:
+             self_insert(k, subv)
+-        values.extend(v)
++        values.extend(subvals)
+ 
+     def get(self, k, default=None):
+         """Return the value for key *k* if present in the dictionary, else
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/boltons/urlutils.py b/boltons/urlutils.py
+--- a/boltons/urlutils.py	1970-01-01 00:00:00
++++ b/boltons/urlutils.py	2026-11-06 21:54:37
+@@ -1125,11 +1125,18 @@
+         """
+         if not v:
+             return
++        # consume the iterable in a single pass (it may be a one-shot
++        # iterator), then store the collected values in both the linked
++        # list and the backing list of values so the two always agree;
++        # an empty iterable adds nothing
++        subvals = list(v)
++        if not subvals:
++            return
+         self_insert = self._insert
+         values = super().setdefault(k, [])
+-        for subv in v:
++        for subv in subvals:
+             self_insert(k, subv)
+-        values.extend(v)
++        values.extend(subvals)
+ 
+     def get(self, k, default=None):
+         """Return the value for key *k* if present in the dictionary, else
