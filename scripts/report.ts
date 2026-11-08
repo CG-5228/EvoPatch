@@ -216,13 +216,20 @@ interface Round {
 const roundsFile = join(RUNS_DIR, "rounds.json");
 const rounds = existsSync(roundsFile) ? (JSON.parse(readFileSync(roundsFile, "utf8")) as Round[]) : [];
 
+const sessionOf = (commit: string) => git("log", "-1", "--format=%B", commit).match(/^Agent-Session: (\S+)$/m)?.[1];
+
+/** A file a learn commit added under runs/, read from that commit: reverting a dropped round removes it from the tree, not from history. */
+function fromLearnCommit<T>(commit: string, name: string): T | null {
+  const path = git("show", "--name-only", "--format=", commit).split("\n").find((p) => p.startsWith("runs/") && p.endsWith(`/${name}`));
+  return path ? (JSON.parse(git("show", `${commit}:${path}`)) as T) : null;
+}
+
 /** Each round with the diagnosis it was based on and the change it made. */
 function detail(round: Round) {
   const commit = round.commit;
   if (!commit) return round;
-  const session = git("log", "-1", "--format=%B", commit).match(/^Agent-Session: (\S+)$/m)?.[1];
-  const file = runs.map((r) => join(runDir(r), `diagnosis-${session}.json`)).find((f) => existsSync(f));
-  return { ...round, session, diagnosis: file ? JSON.parse(readFileSync(file, "utf8")) : null, diff: git("show", "--format=", commit, "--", "agent") };
+  const session = sessionOf(commit);
+  return { ...round, session, diagnosis: session ? fromLearnCommit(commit, `diagnosis-${session}.json`) : null, diff: git("show", "--format=", commit, "--", "agent") };
 }
 
 function verdict() {
@@ -321,7 +328,12 @@ const env = rows.length ? (JSON.parse(readFileSync(join(runDir(rows[0].run), "en
 const site = `https://${GITHUB_REPO.split("/")[0].toLowerCase()}.github.io/${GITHUB_REPO.split("/")[1]}/`;
 const blob = `https://github.com/${GITHUB_REPO}/blob/main`;
 
-const improveCosts = runs.flatMap((r) => readdirSync(runDir(r)).filter((f) => /^improve-.*\.json$/.test(f)).map((f) => turnStats((JSON.parse(readFileSync(join(runDir(r), f), "utf8")) as { turns: TurnExport[] }).turns).costUsd));
+// Every learn commit's improve session, kept or reverted.
+const improveCosts = git("log", "--format=%H", "--grep=^Agent-Session: ", "--", "agent").split("\n").filter(Boolean).flatMap((sha) => {
+  const session = sessionOf(sha);
+  const exported = session ? fromLearnCommit<{ turns: TurnExport[] }>(sha, `improve-${session}.json`) : null;
+  return exported ? [turnStats(exported.turns).costUsd] : [];
+});
 const costs = [
   ["Counted runs", rows.length, sum(rows.map((r) => r.cost_usd))],
   ["Screens", screens.length, sum(screens.map((s) => s.cost_usd))],
