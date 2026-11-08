@@ -248,7 +248,7 @@ function tiles(data) {
     return t;
   };
   const avg = (rs, k) => mean(rs.map((r) => r[k]).filter((v) => v !== null));
-  const sub = final.length ? `Mean of ${baseline.length} baseline and ${final.length} final runs` : `Mean of ${baseline.length} baseline runs`;
+  const sub = final.length ? `Mean of ${baseline.length} baseline runs, then ${final.length === 1 ? "the 1 final run" : `${final.length} final runs`}` : `Mean of ${baseline.length} baseline runs`;
   $("tiles").append(
     tile("Held-out score", avg(baseline, "holdout"), final.length ? avg(final, "holdout") : null, sub),
     tile("Train score (in-sample)", avg(baseline, "train"), final.length ? avg(final, "train") : null, sub),
