@@ -1,0 +1,25 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/filesize.py b/src/humanize/filesize.py
+--- a/src/humanize/filesize.py	1970-01-01 00:00:00
++++ b/src/humanize/filesize.py	2026-11-08 16:21:05
+@@ -97,6 +97,20 @@
+         return f"{int(bytes_)}B" if gnu else _("%d Bytes") % int(bytes_)
+ 
+     exp = int(min(log(abs_bytes, base), len(suffix)))
++
++    # The displayed number can round up to the base itself (e.g. 999960 bytes
++    # formats as "1000.0 kB"). When that happens, step up to the next unit so
++    # the unit keeps pace with the rounded number. The largest suffix has
++    # nothing bigger to move up to, so it keeps its unit.
++    size = format % (bytes_ / (base**exp))
++    try:
++        rounds_up = abs(float(size)) >= base
++    except ValueError:
++        rounds_up = False
++    if rounds_up and exp < len(suffix):
++        exp += 1
++        size = format % (bytes_ / (base**exp))
++
+     space = "" if gnu else " "
+-    ret: str = format % (bytes_ / (base**exp)) + space + _(suffix[exp - 1])
++    ret: str = size + space + _(suffix[exp - 1])
+     return ret

@@ -1,0 +1,70 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/more_itertools/more.py b/more_itertools/more.py
+--- a/more_itertools/more.py	1970-01-01 00:00:00
++++ b/more_itertools/more.py	2026-11-08 15:50:30
+@@ -4,7 +4,7 @@
+ import types
+ 
+ from collections import Counter, defaultdict, deque
+-from collections.abc import Sequence
++from collections.abc import Iterator, Sequence
+ from contextlib import suppress
+ from functools import cached_property, partial, wraps
+ from heapq import heapify, heapreplace
+@@ -4671,34 +4671,46 @@
+     different lengths.
+     """
+ 
+-    def is_scalar(obj):
++    def get_iterator(obj):
++        """Return an iterator for *obj*, or ``None`` if it is a scalar.
++
++        Classifying an object must never "open" (call ``__iter__`` on) a
++        real iterable more than once, and iterators may only be opened
++        once at all. We therefore avoid probing with ``iter(obj)``:
++        - objects matching *scalar_types* are scalars without probing;
++        - objects that are already iterators are iterables (never open);
++        - otherwise we call ``iter(obj)`` exactly once and reuse the
++          resulting iterator as both the classification and the source.
++        A ``TypeError`` from that single call means the object is scalar.
++        """
+         if scalar_types and isinstance(obj, scalar_types):
+-            return True
++            return None
++        if isinstance(obj, Iterator):
++            return obj
+         try:
+-            iter(obj)
++            return iter(obj)
+         except TypeError:
+-            return True
+-        else:
+-            return False
++            return None
+ 
+     size = len(objects)
+     if not size:
+         return
+ 
+     new_item = [None] * size
+-    iterables, iterable_positions = [], []
++    iterable_positions, iterators = [], []
+     for i, obj in enumerate(objects):
+-        if is_scalar(obj):
++        iterator = get_iterator(obj)
++        if iterator is None:
+             new_item[i] = obj
+         else:
+-            iterables.append(iter(obj))
+             iterable_positions.append(i)
++            iterators.append(iterator)
+ 
+-    if not iterables:
++    if not iterators:
+         yield tuple(objects)
+         return
+ 
+-    for item in zip(*iterables, strict=strict):
++    for item in zip(*iterators, strict=strict):
+         for i, new_item[i] in zip(iterable_positions, item):
+             pass
+         yield tuple(new_item)

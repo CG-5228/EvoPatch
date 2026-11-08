@@ -1,0 +1,41 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/number.py b/src/humanize/number.py
+--- a/src/humanize/number.py	1970-01-01 00:00:00
++++ b/src/humanize/number.py	2026-11-08 15:57:40
+@@ -550,11 +550,32 @@
+     old_bucket = exponent // 3 * 3
+     value /= 10**old_bucket
+     digits = int(max(0, precision - exponent % 3 - 1))
+-    if exponent < 30 and round(abs(value), digits) >= 1000:
+-        exponent += 3 - exponent % 3
+-        new_bucket = exponent // 3 * 3
+-        value /= 10 ** (new_bucket - old_bucket)
+-        digits = int(max(0, precision - exponent % 3 - 1))
++    # Rounding to `digits` decimals can push the value up to the next power
++    # of ten, which would otherwise print `precision + 1` significant digits.
++    # When that happens, bump the exponent by one so the digits are
++    # recomputed against the rounded magnitude.
++    if round(abs(value), digits) >= 10 ** (exponent % 3 + 1):
++        exponent += 1
++        if exponent >= 33:
++            # Rounding crossed 10**33, which has no metric prefix: fall back
++            # to scientific notation, as values >= 10**33 already do (but
++            # scientific() cannot render precision=0, so keep bucketing then).
++            if precision >= 1:
++                return scientific(10**exponent, precision - 1) + unit
++            exponent -= 1
++            value = round(abs(value), digits)
++        if precision - exponent % 3 > 0:
++            # Recompute the bucketing from the bumped exponent. If that would
++            # leave zero digits (possible with a small `precision`), keep the
++            # rounded value in the old bucket instead: its output already has
++            # at most `precision` digits, whereas rescaling would print
++            # zero-padded digits beyond `precision`.
++            new_bucket = exponent // 3 * 3
++            value /= 10 ** (new_bucket - old_bucket)
++            digits = int(max(0, precision - exponent % 3 - 1))
++        else:
++            exponent -= 1
++            value = round(abs(value), digits)
+ 
+     if exponent >= 3:
+         ordinal_ = "kMGTPEZYRQ"[exponent // 3 - 1]

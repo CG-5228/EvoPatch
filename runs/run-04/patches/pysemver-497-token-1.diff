@@ -1,0 +1,29 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-08 16:07:09
+@@ -562,8 +562,23 @@
+                     version.prerelease == prerelease_token
+                     or version.prerelease.startswith(prerelease_token + ".")
+                 ):
+-                    return version.replace(prerelease=f"{prerelease_token}.1", build=None)
+-            return version.bump_prerelease(prerelease_token, bump_when_empty=True)
++                    candidate = version.replace(
++                        prerelease=f"{prerelease_token}.1", build=None
++                    )
++                    if candidate > version:
++                        return candidate
++                    # Restarting the token on the same release would not
++                    # yield a version greater than the current one, so move
++                    # to the next patch release and start the token there.
++                    return version.bump_patch().replace(
++                        prerelease=f"{prerelease_token}.1", build=None
++                    )
++            candidate = version.bump_prerelease(prerelease_token, bump_when_empty=True)
++            if version.prerelease and candidate <= version:
++                # Safety net: never return a version that is not greater
++                # than the one this method was called on.
++                return version.bump_patch().replace(prerelease=candidate.prerelease)
++            return candidate
+ 
+     @_comparator
+     def __eq__(self, other: Comparable) -> bool:  # type: ignore

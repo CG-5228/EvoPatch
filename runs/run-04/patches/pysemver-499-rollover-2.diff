@@ -1,0 +1,22 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-08 16:53:57
+@@ -560,7 +560,17 @@
+                 )
+                 if match:
+                     num = int(match.group(1))
+-                    return version.replace(
++                    candidate = version.replace(
++                        prerelease=f"{prerelease_token}{num + 1}", build=None
++                    )
++                    if candidate > version:
++                        return candidate
++                    # Raising the counter alone would sort below the original
++                    # (e.g. "rc10" < "rc9", because the identifiers compare
++                    # as strings). Keep the old-style form and advance the
++                    # patch version instead, so the result still sorts above
++                    # the version we started from.
++                    return version.bump_patch().replace(
+                         prerelease=f"{prerelease_token}{num + 1}", build=None
+                     )
+ 

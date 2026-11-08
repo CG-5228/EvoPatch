@@ -1,0 +1,26 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/number.py b/src/humanize/number.py
+--- a/src/humanize/number.py	1970-01-01 00:00:00
++++ b/src/humanize/number.py	2026-11-08 16:50:29
+@@ -550,10 +550,19 @@
+     old_bucket = exponent // 3 * 3
+     value /= 10**old_bucket
+     digits = int(max(0, precision - exponent % 3 - 1))
+-    if exponent < 30 and round(abs(value), digits) >= 1000:
+-        exponent += 3 - exponent % 3
++    if round(abs(value), digits) >= 10 ** (exponent % 3 + 1):
++        # Rounding carries past a power of ten, so the mantissa would need
++        # one digit more than `precision` allows. Recompute the exponent (and
++        # bucket, if the carry crosses one) so the output keeps `precision`
++        # significant digits.
++        if exponent + 1 >= 33:
++            return (
++                scientific(value * 10**old_bucket, max(precision - 1, 0)) + unit
++            )
++        exponent += 1
+         new_bucket = exponent // 3 * 3
+-        value /= 10 ** (new_bucket - old_bucket)
++        if new_bucket != old_bucket:
++            value /= 10 ** (new_bucket - old_bucket)
+         digits = int(max(0, precision - exponent % 3 - 1))
+ 
+     if exponent >= 3:

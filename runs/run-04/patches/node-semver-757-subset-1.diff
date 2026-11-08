@@ -1,0 +1,63 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/ranges/subset.js b/ranges/subset.js
+--- a/ranges/subset.js	1970-01-01 00:00:00
++++ b/ranges/subset.js	2026-11-08 16:15:11
+@@ -73,6 +73,15 @@
+ const minimumVersionWithPreRelease = [new Comparator('>=0.0.0-0')]
+ const minimumVersion = [new Comparator('>=0.0.0')]
+ 
++// Does this exact version satisfy this single comparator, judged purely by
++// the comparator itself?  satisfies() must not be used for that: it applies
++// the range-level prerelease policy, which rejects a prerelease version
++// against an unrelated comparator (eg 6.3.0-rc.5 against <7.0.0-0) even
++// though the comparator numerically admits it.  Whether the *range* allows a
++// prerelease is decided separately, by the needDomGTPre/needDomLTPre logic.
++const satisfiesComp = (version, comp, options) =>
++  new Comparator(String(comp), options).test(version)
++
+ const simpleSubset = (sub, dom, options) => {
+   if (sub === dom) {
+     return true
+@@ -124,18 +133,19 @@
+ 
+   // will iterate one or zero times
+   for (const eq of eqSet) {
+-    if (gt && !satisfies(eq, String(gt), options)) {
++    if (gt && !satisfiesComp(eq, gt, options)) {
+       return null
+     }
+ 
+-    if (lt && !satisfies(eq, String(lt), options)) {
++    if (lt && !satisfiesComp(eq, lt, options)) {
+       return null
+     }
+ 
+-    for (const c of dom) {
+-      if (!satisfies(eq, String(c), options)) {
+-        return false
+-      }
++    // the eq version must be allowed by the superset range as a whole: the
++    // prerelease policy applies to the whole simple range, not per comparator
++    const domRange = dom.map(String).join(' ')
++    if (!satisfies(eq, domRange, options)) {
++      return false
+     }
+ 
+     return true
+@@ -174,7 +184,7 @@
+         if (higher === c && higher !== gt) {
+           return false
+         }
+-      } else if (gt.operator === '>=' && !satisfies(gt.semver, String(c), options)) {
++      } else if (gt.operator === '>=' && !satisfiesComp(gt.semver, c, options)) {
+         return false
+       }
+     }
+@@ -192,7 +202,7 @@
+         if (lower === c && lower !== lt) {
+           return false
+         }
+-      } else if (lt.operator === '<=' && !satisfies(lt.semver, String(c), options)) {
++      } else if (lt.operator === '<=' && !satisfiesComp(lt.semver, c, options)) {
+         return false
+       }
+     }

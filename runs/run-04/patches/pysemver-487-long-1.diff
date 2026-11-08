@@ -1,0 +1,80 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/semver/version.py b/src/semver/version.py
+--- a/src/semver/version.py	1970-01-01 00:00:00
++++ b/src/semver/version.py	2026-11-08 16:08:57
+@@ -1,6 +1,7 @@
+ """Version handling by a semver compatible version class."""
+ 
+ import re
++import sys
+ from functools import wraps
+ from typing import (
+     Any,
+@@ -73,6 +74,16 @@
+     return (a > b) - (a < b)
+ 
+ 
++def _int_max_str_digits() -> int:
++    """Current limit of ``int(str)`` digit conversions; 0 means unlimited.
++
++    On interpreters where the limit does not exist (or has been disabled),
++    return 0 so that callers always use ``int()`` itself.
++    """
++    get_limit = getattr(sys, "get_int_max_str_digits", None)
++    return get_limit() if get_limit is not None else 0
++
++
+ class Version:
+     """
+     A semver compatible version class.
+@@ -185,21 +196,40 @@
+ 
+     @classmethod
+     def _nat_cmp(cls, a: Optional[str], b: Optional[str]) -> int:
+-        def cmp_prerelease_tag(a, b):
+-            if isinstance(a, int) and isinstance(b, int):
+-                return _cmp(a, b)
+-            elif isinstance(a, int):
+-                return -1
+-            elif isinstance(b, int):
+-                return 1
++        def prerelease_key(identifier: str) -> Tuple[int, int, str]:
++            """Order-preserving sort key for one prerelease identifier.
++
++            Numeric identifiers become ``(0, num_digits, digits)`` so that
++            equal-length digit strings compare numerically and longer ones
++            compare greater, without having to pass them through ``int()``:
++            valid numeric identifiers may be arbitrarily long and exceed the
++            interpreter's limit for integer string conversion.  Every other
++            identifier becomes ``(1, 0, identifier)`` and sorts after numeric
++            ones, exactly as before.
++            """
++            if not identifier.isdigit():
++                return (1, 0, identifier)
++            limit = _int_max_str_digits()
++            if (
++                limit
++                and len(identifier) > limit
++                and identifier.isascii()
++                and not identifier.startswith("0")
++            ):
++                # Too long for int(), but a valid numeric identifier (no
++                # leading zeros): the digits are already in canonical form.
++                digits = identifier
+             else:
+-                return _cmp(a, b)
++                # Convert as always, raising exactly the errors int() has
++                # always raised for identifiers it cannot convert.
++                digits = str(int(identifier))
++            return (0, len(digits), digits)
+ 
+-        a_parts = [int(x) if x.isdigit() else x for x in (a or "").split(".")]
+-        b_parts = [int(x) if x.isdigit() else x for x in (b or "").split(".")]
++        a_parts = [prerelease_key(x) for x in (a or "").split(".")]
++        b_parts = [prerelease_key(x) for x in (b or "").split(".")]
+ 
+         for sub_a, sub_b in zip(a_parts, b_parts):
+-            cmp_result = cmp_prerelease_tag(sub_a, sub_b)
++            cmp_result = _cmp(sub_a, sub_b)
+             if cmp_result != 0:
+                 return cmp_result
+ 

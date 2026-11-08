@@ -1,0 +1,27 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/classes/semver.js b/classes/semver.js
+--- a/classes/semver.js	1970-01-01 00:00:00
++++ b/classes/semver.js	2026-11-08 16:01:37
+@@ -309,11 +309,18 @@
+           if (identifierBase === false) {
+             prerelease = [identifier]
+           }
+-          if (compareIdentifiers(this.prerelease[0], identifier) === 0) {
+-            if (isNaN(this.prerelease[1])) {
+-              this.prerelease = prerelease
+-            }
+-          } else {
++          // The identifier may itself contain dots (e.g. 'rc.next').
++          // Match it against the leading parts of the prerelease: if the
++          // prerelease starts with the identifier and the part right after
++          // it is numeric, that number is the counter that was just bumped,
++          // so keep it instead of resetting the prerelease.
++          const idParts = String(identifier).split('.')
++          const afterId = this.prerelease[idParts.length]
++          const matchesIdentifier =
++            this.prerelease.length > idParts.length &&
++            idParts.every((part, idx) => compareIdentifiers(this.prerelease[idx], part) === 0) &&
++            typeof afterId === 'number'
++          if (!matchesIdentifier) {
+             this.prerelease = prerelease
+           }
+         }

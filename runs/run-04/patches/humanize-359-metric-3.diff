@@ -1,0 +1,38 @@
+diff -ruN -x __pycache__ -x *.pyc -x .pytest_cache -x node_modules -x *.orig -x *.rej -x .DS_Store a/src/humanize/number.py b/src/humanize/number.py
+--- a/src/humanize/number.py	1970-01-01 00:00:00
++++ b/src/humanize/number.py	2026-11-08 17:57:57
+@@ -544,17 +544,31 @@
+         return _format_not_finite(value)
+     exponent = math.floor(math.log10(abs(value))) if value != 0 else 0
+ 
+-    if exponent >= 33 or exponent < -30:
+-        return scientific(value, precision - 1) + unit
++    if exponent < -30:
++        return scientific(value, max(0, precision - 1)) + unit
+ 
++    original_value = value
+     old_bucket = exponent // 3 * 3
+     value /= 10**old_bucket
+     digits = int(max(0, precision - exponent % 3 - 1))
+-    if exponent < 30 and round(abs(value), digits) >= 1000:
++    rounded = round(abs(value), digits)
++    if exponent < 30 and rounded >= 1000:
+         exponent += 3 - exponent % 3
+         new_bucket = exponent // 3 * 3
+         value /= 10 ** (new_bucket - old_bucket)
+         digits = int(max(0, precision - exponent % 3 - 1))
++    elif rounded >= 10:
++        # Rounding crossed a power of ten within the bucket: the scaled value
++        # now sits one (or more) orders of magnitude higher, so fewer decimal
++        # places are needed to keep exactly `precision` significant digits.
++        # Reaching the top of the prefix scale falls through to scientific().
++        exponent = old_bucket + (3 if rounded >= 1000 else 2 if rounded >= 100 else 1)
++        digits = int(max(0, precision - exponent % 3 - 1))
++
++    # Rounding can push the value over the top of the prefix scale too, so
++    # this bound is only safe to test once the exponent is final.
++    if exponent >= 33:
++        return scientific(original_value, max(0, precision - 1)) + unit
+ 
+     if exponent >= 3:
+         ordinal_ = "kMGTPEZYRQ"[exponent // 3 - 1]
