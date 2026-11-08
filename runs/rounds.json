@@ -29,5 +29,16 @@
       88.89
     ],
     "change": "I learned that correct fixes were being thrown away because evidence was gathered outside the working tree — usually by an unconstrained, never-audited helper — so every task now ends with a step that states the boundary up front and checks what helpers actually ran before trusting them."
+  },
+  {
+    "round": 4,
+    "commit": "611230716342459a9e7fddfe0efcfc6fd53e5cab",
+    "kept": true,
+    "bar": 77.78,
+    "screens": [
+      83.33,
+      86.11
+    ],
+    "change": "Fixes were being thrown away not because they were wrong but because verification slipped outside the working tree — through helpers and self-doubt alike — so the boundary must live verbatim in every helper brief and be swept out of the commands a helper actually ran before its verdict is trusted."
   }
 ]
